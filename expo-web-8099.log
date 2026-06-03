@@ -1,0 +1,7 @@
+  --non-interactive is not supported, use $CI=1 instead
+Starting project at C:\Battleworld\AnnusMirabilis\CURIOSITY\PHASE_1\ZEMO_JAILTIME
+› Port 8099 is being used by another process
+Input is required, but 'npx expo' is in non-interactive mode.
+Required input:
+> Use port 8100 instead?
+› Skipping dev server

@@ -1,0 +1,85 @@
+export const FocusCourtAssets = {
+  ASSET_JUDGE_LION_GAVEL: require('../../assets/focus-court/focus_court_asset_001.png'),
+  ASSET_OWL_JUSTICE_INSPECT: require('../../assets/focus-court/focus_court_asset_002.png'),
+  ASSET_PROSECUTOR_FOX_POINT: require('../../assets/focus-court/focus_court_asset_003.png'),
+  ASSET_ATTORNEY_CROC_EVIDENCE: require('../../assets/focus-court/focus_court_asset_004.png'),
+  ASSET_BAILIFF_BULLDOG_GUARD: require('../../assets/focus-court/focus_court_asset_005.png'),
+  ASSET_PARROT_REPORTER_NEWS: require('../../assets/focus-court/focus_court_asset_006.png'),
+  ASSET_RHINO_GUARD: require('../../assets/focus-court/focus_court_asset_007.png'),
+  ASSET_MONKEY_CLERK_RECORDS: require('../../assets/focus-court/focus_court_asset_008.png'),
+
+  ASSET_DEFENDANT_NERVOUS: require('../../assets/focus-court/focus_court_asset_009.png'),
+  ASSET_DEFENDANT_CAUGHT_PHONE: require('../../assets/focus-court/focus_court_asset_010.png'),
+  ASSET_DEFENDANT_JAIL_BARS: require('../../assets/focus-court/focus_court_asset_011.png'),
+  ASSET_DEFENDANT_FREEDOM_WALK: require('../../assets/focus-court/focus_court_asset_012.png'),
+  ASSET_DEFENDANT_READING_FOCUS: require('../../assets/focus-court/focus_court_asset_013.png'),
+  ASSET_DEFENDANT_SLEEP_SUCCESS: require('../../assets/focus-court/focus_court_asset_014.png'),
+  ASSET_DEFENDANT_FITNESS_WIN: require('../../assets/focus-court/focus_court_asset_015.png'),
+  ASSET_DEFENDANT_EXCUSE_NOTE: require('../../assets/focus-court/focus_court_asset_016.png'),
+
+  ASSET_CHARGES_FILED_SCROLL: require('../../assets/focus-court/focus_court_asset_017.png'),
+  ASSET_SENTENCE_SERVED_SCROLL: require('../../assets/focus-court/focus_court_asset_018.png'),
+  ASSET_PAROLE_GRANTED_BADGE: require('../../assets/focus-court/focus_court_asset_019.png'),
+  ASSET_GUILTY_STAMP: require('../../assets/focus-court/focus_court_asset_020.png'),
+  ASSET_CASE_DISMISSED_STAMP: require('../../assets/focus-court/focus_court_asset_021.png'),
+  ASSET_LEGAL_NOTICE_ENVELOPE: require('../../assets/focus-court/focus_court_asset_022.png'),
+  ASSET_GAVEL_IMPACT: require('../../assets/focus-court/focus_court_asset_023.png'),
+  ASSET_FOCUS_SCALES: require('../../assets/focus-court/focus_court_asset_024.png'),
+
+  ASSET_LAW_ANTI_DOOMSCROLL: require('../../assets/focus-court/focus_court_asset_025.png'),
+  ASSET_LAW_MIDNIGHT_SWIPE: require('../../assets/focus-court/focus_court_asset_026.png'),
+  ASSET_LAW_PRODUCTIVITY_CODE: require('../../assets/focus-court/focus_court_asset_027.png'),
+  ASSET_LAW_BEDTIME_ROBBERY: require('../../assets/focus-court/focus_court_asset_028.png'),
+  ASSET_LAW_REELS_CONTAINMENT: require('../../assets/focus-court/focus_court_asset_029.png'),
+  ASSET_LAW_GAMING_PROBATION: require('../../assets/focus-court/focus_court_asset_030.png'),
+  ASSET_LAW_NOTIFICATION_NOISE: require('../../assets/focus-court/focus_court_asset_031.png'),
+  ASSET_LAW_MORNING_MIND: require('../../assets/focus-court/focus_court_asset_032.png'),
+
+  ASSET_DISTRACTION_JAIL_BUILDING: require('../../assets/focus-court/focus_court_asset_033.png'),
+  ASSET_PHONE_LOCKED_CHEST: require('../../assets/focus-court/focus_court_asset_034.png'),
+  ASSET_JAIL_TIMER_HOURGLASS: require('../../assets/focus-court/focus_court_asset_035.png'),
+  ASSET_MAXIMUM_SENTENCE_ALARM: require('../../assets/focus-court/focus_court_asset_036.png'),
+  ASSET_EMERGENCY_BYPASS_KEY: require('../../assets/focus-court/focus_court_asset_037.png'),
+  ASSET_MERCY_PASS_TICKET: require('../../assets/focus-court/focus_court_asset_038.png'),
+  ASSET_SENTENCE_REDUCTION_CHECKLIST: require('../../assets/focus-court/focus_court_asset_039.png'),
+  ASSET_BROKEN_CHAIN_FREEDOM: require('../../assets/focus-court/focus_court_asset_040.png'),
+
+  ASSET_EVIDENCE_BOARD_SCREEN_TIME: require('../../assets/focus-court/focus_court_asset_041.png'),
+  ASSET_EXHIBIT_A_FILE: require('../../assets/focus-court/focus_court_asset_042.png'),
+  ASSET_EVIDENCE_LOST_SLEEP: require('../../assets/focus-court/focus_court_asset_043.png'),
+  ASSET_EVIDENCE_LOST_FOCUS: require('../../assets/focus-court/focus_court_asset_044.png'),
+  ASSET_EVIDENCE_SKIPPED_GOALS: require('../../assets/focus-court/focus_court_asset_045.png'),
+  ASSET_REPEAT_OFFENDER_APP: require('../../assets/focus-court/focus_court_asset_046.png'),
+  ASSET_DANGER_HOURS_CLOCK: require('../../assets/focus-court/focus_court_asset_047.png'),
+  ASSET_DREAMS_DELAYED_BOARD: require('../../assets/focus-court/focus_court_asset_048.png'),
+
+  ASSET_CLEAN_RECORD_MEDAL: require('../../assets/focus-court/focus_court_asset_049.png'),
+  ASSET_FOCUS_COINS_STACK: require('../../assets/focus-court/focus_court_asset_050.png'),
+  ASSET_SUPREME_FOCUS_TROPHY: require('../../assets/focus-court/focus_court_asset_051.png'),
+  ASSET_COURTROOM_UPGRADE_BENCH: require('../../assets/focus-court/focus_court_asset_052.png'),
+  ASSET_DREAM_RECOVERED_STAR: require('../../assets/focus-court/focus_court_asset_053.png'),
+  ASSET_WEEKLY_TRIAL_REPORT: require('../../assets/focus-court/focus_court_asset_054.png'),
+  ASSET_FULL_PARDON_CERTIFICATE: require('../../assets/focus-court/focus_court_asset_055.png'),
+  ASSET_FREEDOM_PATH_SIGNPOST: require('../../assets/focus-court/focus_court_asset_056.png'),
+
+  ASSET_APP_LOGO_FOCUS_COURT: require('../../assets/focus-court/focus_court_asset_057.png'),
+  ASSET_EMPTY_NO_CHARGES: require('../../assets/focus-court/focus_court_asset_058.png'),
+  ASSET_SELECT_SUSPECTS_LINEUP: require('../../assets/focus-court/focus_court_asset_059.png'),
+  ASSET_COURT_AUTHORITY_PERMISSION: require('../../assets/focus-court/focus_court_asset_060.png'),
+  ASSET_SUPREME_COURT_MODE_PAYWALL: require('../../assets/focus-court/focus_court_asset_061.png'),
+  ASSET_LAW_BOOK_LIBRARY: require('../../assets/focus-court/focus_court_asset_062.png'),
+  ASSET_STRICT_MODE_LOCK: require('../../assets/focus-court/focus_court_asset_063.png'),
+  ASSET_COURT_CELEBRATION_CONFETTI: require('../../assets/focus-court/focus_court_asset_064.png'),
+} as const;
+
+export type FocusCourtAssetKey = keyof typeof FocusCourtAssets;
+
+export const OnboardingArt = {
+  COURT_SESSION: require('../../assets/onboarding/onboarding_001.png'),
+  EVIDENCE_BRUTAL: require('../../assets/onboarding/onboarding_002.png'),
+  DREAMS: require('../../assets/onboarding/onboarding_003.png'),
+  SUSPECTS: require('../../assets/onboarding/onboarding_004.png'),
+  PAROLE: require('../../assets/onboarding/onboarding_005.png'),
+} as const;
+
+export type OnboardingArtKey = keyof typeof OnboardingArt;

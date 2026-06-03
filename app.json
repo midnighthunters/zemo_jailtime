@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "JailTime: Focus Court",
+    "slug": "jailtime-focus-court",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "jailtimefocuscourt",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": false,
+    "assetBundlePatterns": [
+      "assets/**/*"
+    ],
+    "plugins": [
+      "expo-router",
+      "expo-notifications",
+      "expo-asset"
+    ],
+    "experiments": {
+      "typedRoutes": false
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.jailtime.focuscourt"
+    },
+    "android": {
+      "package": "com.jailtime.focuscourt",
+      "adaptiveIcon": {
+        "backgroundColor": "#180B08"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    }
+  }
+}
