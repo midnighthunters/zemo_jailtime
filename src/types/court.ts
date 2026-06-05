@@ -2,6 +2,22 @@ import type { FocusCourtAssetKey } from '@/src/constants/assets';
 
 export type StrictnessLevel = 'soft' | 'balanced' | 'brutal';
 export type HumorLevel = 'light' | 'sarcastic' | 'dramatic';
+export type FocusReason = 'sleep_better' | 'study_work' | 'be_present' | 'less_doomscrolling';
+export type DangerWindow = 'morning' | 'afternoon' | 'evening' | 'late_night';
+export type EnforcementMode = 'notice' | 'softBlock' | 'hardBlock' | 'focusSession';
+export type LawTrigger = 'appLaunch' | 'dailyLimit' | 'blockedWindow' | 'pickupLoop' | 'focusSession' | 'unlockCount';
+export type PermissionStatus = 'unknown' | 'granted' | 'missing' | 'blocked' | 'notAvailable';
+export type PermissionId =
+  | 'notifications'
+  | 'screenTimeAuthorization'
+  | 'usageAccess'
+  | 'installedApps'
+  | 'appShielding'
+  | 'overlayBlocker'
+  | 'accessibilityBlocker'
+  | 'backgroundMonitoring'
+  | 'bootRecovery';
+export type ShieldIntensity = 'gentle' | 'standard' | 'lockdown';
 
 export type DreamType =
   | 'sleep'
@@ -49,9 +65,16 @@ export type FocusLaw = {
   description: string;
   category: AppCategory | 'all';
   appIds: string[];
+  trigger?: LawTrigger;
+  enforcementMode?: EnforcementMode;
+  requiredPermissionIds?: readonly PermissionId[];
   dailyLimitMinutes?: number;
   blockedStart?: string;
   blockedEnd?: string;
+  activeDays?: readonly (0 | 1 | 2 | 3 | 4 | 5 | 6)[];
+  focusSessionMinutes?: number;
+  cooldownMinutes?: number;
+  unlockLimit?: number;
   graceOpens: number;
   firstPunishmentMinutes: number;
   repeatMultiplier: number;
@@ -63,6 +86,16 @@ export type FocusLaw = {
   judgeLine: string;
   prosecutorLine: string;
   paroleRewardLine: string;
+};
+
+export type PermissionRequirement = {
+  id: PermissionId;
+  title: string;
+  description: string;
+  platform: 'all' | 'ios' | 'android';
+  requiredForProduction: boolean;
+  settingsPath: string;
+  status: PermissionStatus;
 };
 
 export type Charge = {
@@ -98,12 +131,28 @@ export type ParoleRecord = {
 
 export type UserProfile = {
   name?: string;
+  whyFocus?: FocusReason;
+  dangerWindow?: DangerWindow;
+  dailyScreenGoalMinutes: number;
   dreams: DreamType[];
   customDream?: string;
   bedtime: string;
   wakeTime: string;
   strictness: StrictnessLevel;
   humorLevel: HumorLevel;
+  screenTimeSettings: {
+    monitoringEnabled: boolean;
+    shieldIntensity: ShieldIntensity;
+    blockDuringActiveSentence: boolean;
+    allowEmergencyBypass: boolean;
+    emergencyBypassMinutes: number;
+    requireFocusSessionForParole: boolean;
+    notifyBeforeLimitMinutes: number;
+    weekendRelaxationMinutes: number;
+    backgroundRefreshEnabled: boolean;
+    reopenCooldownMinutes: number;
+  };
+  permissionStatuses: Record<PermissionId, PermissionStatus>;
   cleanRecordStreak: number;
   focusCoins: number;
   parolePoints: number;

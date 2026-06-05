@@ -1,19 +1,16 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { CourtButton } from '@/src/components/CourtButton';
 import { OnboardingScene } from '@/src/components/OnboardingScene';
+import { PermissionChecklist } from '@/src/components/PermissionChecklist';
 import { colors } from '@/src/constants/theme';
-import { ONBOARDING_STEPS } from '@/src/data/onboarding';
-import { NotificationService } from '@/src/services/notifications/NotificationService';
+import { getOnboardingStep } from '@/src/data/onboarding';
 
 export default function PermissionsOnboarding() {
   return (
-    <OnboardingScene step={ONBOARDING_STEPS[1]}>
+    <OnboardingScene step={getOnboardingStep('evidence')}>
       <View style={styles.list}>
-        {['Evidence summaries', 'Bedtime legal notices', 'Parole opportunities'].map((item) => (
-          <Text key={item} style={styles.item}>{item}</Text>
-        ))}
+        <Text style={styles.item}>Production blocking needs usage evidence, notifications, and shield authority.</Text>
+        <PermissionChecklist compact limit={4} />
       </View>
-      <CourtButton title="Request Notice Permission" variant="ghost" small onPress={() => NotificationService.requestPermissions()} />
     </OnboardingScene>
   );
 }
@@ -26,6 +23,7 @@ const styles = StyleSheet.create({
   item: {
     color: colors.cream,
     fontSize: 14,
+    lineHeight: 20,
     fontWeight: '800',
   },
 });

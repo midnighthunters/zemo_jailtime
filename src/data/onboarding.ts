@@ -22,6 +22,15 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     cta: 'Enter Court',
   },
   {
+    id: 'profile',
+    route: '/onboarding/profile',
+    title: 'Open Your Case File',
+    subtitle: 'Tell the court who we are defending and why focus matters.',
+    artKey: 'COURT_SESSION',
+    assetKeys: ['ASSET_MONKEY_CLERK_RECORDS', 'ASSET_EXHIBIT_A_FILE'],
+    cta: 'File Statement',
+  },
+  {
     id: 'evidence',
     route: '/onboarding/permissions',
     title: 'The Evidence Is Brutal',
@@ -40,6 +49,15 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     cta: 'Protect Dreams',
   },
   {
+    id: 'routine',
+    route: '/onboarding/routine',
+    title: 'Map Your Danger Hours',
+    subtitle: 'Your sentence gets fairer when the court knows your daily rhythm.',
+    artKey: 'EVIDENCE_BRUTAL',
+    assetKeys: ['ASSET_DANGER_HOURS_CLOCK', 'ASSET_EVIDENCE_LOST_SLEEP'],
+    cta: 'Set Schedule',
+  },
+  {
     id: 'suspects',
     route: '/onboarding/suspects',
     title: 'Select The Usual Suspects',
@@ -47,6 +65,15 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     artKey: 'SUSPECTS',
     assetKeys: ['ASSET_SELECT_SUSPECTS_LINEUP'],
     cta: 'Name Suspects',
+  },
+  {
+    id: 'style',
+    route: '/onboarding/style',
+    title: 'Choose Court Style',
+    subtitle: 'Pick how strict and dramatic your focus court should be.',
+    artKey: 'PAROLE',
+    assetKeys: ['ASSET_STRICT_MODE_LOCK', 'ASSET_FOCUS_SCALES'],
+    cta: 'Approve Style',
   },
   {
     id: 'laws',
@@ -67,6 +94,12 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     cta: 'Start Trial',
   },
 ];
+
+export function getOnboardingStep(id: string) {
+  const step = ONBOARDING_STEPS.find((item) => item.id === id);
+  if (!step) throw new Error(`Missing onboarding step: ${id}`);
+  return step;
+}
 
 export const DREAM_OPTIONS: { id: DreamType; label: string }[] = [
   { id: 'sleep', label: 'Sleep' },

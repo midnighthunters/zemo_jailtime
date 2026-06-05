@@ -2,27 +2,64 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { DEFAULT_LAWS } from '@/src/data/laws';
+import { DEFAULT_PERMISSION_STATUSES } from '@/src/data/permissions';
 import { DEFAULT_SUSPECTS } from '@/src/data/suspects';
-import type { AppSuspect, Charge, CourtCase, DreamType, FocusLaw, StrictnessLevel, UserProfile } from '@/src/types/court';
+import type { AppSuspect, Charge, CourtCase, DreamType, FocusLaw, PermissionId, PermissionStatus, StrictnessLevel, UserProfile } from '@/src/types/court';
 import { evidenceLine, randomCaseId } from '@/src/utils/copy';
 import { nowIso, todayKey } from '@/src/utils/date';
+import { evaluateLawViolation, selectBestViolation, violationCopy } from '@/src/utils/lawPolicy';
 import { sentenceForRepeat } from '@/src/utils/sentence';
 
 const freeSuspectLimit = 3;
 const freeLawLimit = 3;
 
 const initialProfile: UserProfile = {
+  whyFocus: 'sleep_better',
+  dangerWindow: 'late_night',
+  dailyScreenGoalMinutes: 120,
   dreams: ['sleep', 'study', 'fitness'],
   bedtime: '22:30',
   wakeTime: '06:30',
   strictness: 'balanced',
   humorLevel: 'dramatic',
+  screenTimeSettings: {
+    monitoringEnabled: false,
+    shieldIntensity: 'standard',
+    blockDuringActiveSentence: true,
+    allowEmergencyBypass: true,
+    emergencyBypassMinutes: 5,
+    requireFocusSessionForParole: false,
+    notifyBeforeLimitMinutes: 5,
+    weekendRelaxationMinutes: 30,
+    backgroundRefreshEnabled: false,
+    reopenCooldownMinutes: 10,
+  },
+  permissionStatuses: DEFAULT_PERMISSION_STATUSES,
   cleanRecordStreak: 0,
   focusCoins: 35,
   parolePoints: 25,
   mercyPasses: 1,
   hasCompletedOnboarding: false,
 };
+
+function mergeById<T extends { id: string }>(defaults: T[], saved?: T[]) {
+  return defaults.map((item) => ({ ...item, ...(saved?.find((savedItem) => savedItem.id === item.id) ?? {}) }));
+}
+
+function mergeProfile(saved?: Partial<UserProfile>): UserProfile {
+  return {
+    ...initialProfile,
+    ...saved,
+    screenTimeSettings: {
+      ...initialProfile.screenTimeSettings,
+      ...saved?.screenTimeSettings,
+    },
+    permissionStatuses: {
+      ...DEFAULT_PERMISSION_STATUSES,
+      ...saved?.permissionStatuses,
+    },
+  };
+}
 
 function createCase(): CourtCase {
   return {
@@ -53,6 +90,9 @@ type CourtState = {
     createdAt: string;
   }[];
   completeOnboarding: () => void;
+  updateProfile: (profile: Partial<Omit<UserProfile, 'hasCompletedOnboarding'>>) => void;
+  updateScreenTimeSettings: (settings: Partial<UserProfile['screenTimeSettings']>) => void;
+  setPermissionStatus: (id: PermissionId, status: PermissionStatus) => void;
   toggleDream: (dream: DreamType) => void;
   toggleSuspect: (id: string, isPro?: boolean) => ToggleResult;
   toggleLaw: (id: string, isPro?: boolean) => ToggleResult;
@@ -88,6 +128,34 @@ export const useCourtStore = create<CourtState>()(
 
       completeOnboarding() {
         set((state) => ({ profile: { ...state.profile, hasCompletedOnboarding: true } }));
+      },
+
+      updateProfile(profile) {
+        set((state) => ({ profile: { ...state.profile, ...profile } }));
+      },
+
+      updateScreenTimeSettings(settings) {
+        set((state) => ({
+          profile: {
+            ...state.profile,
+            screenTimeSettings: {
+              ...state.profile.screenTimeSettings,
+              ...settings,
+            },
+          },
+        }));
+      },
+
+      setPermissionStatus(id, status) {
+        set((state) => ({
+          profile: {
+            ...state.profile,
+            permissionStatuses: {
+              ...state.profile.permissionStatuses,
+              [id]: status,
+            },
+          },
+        }));
       },
 
       toggleDream(dream) {
@@ -152,26 +220,25 @@ export const useCourtStore = create<CourtState>()(
       simulateAppOpen(appId) {
         const state = get();
         const suspect = state.suspects.find((item) => item.id === appId);
-        if (!suspect) return undefined;
+        if (!suspect || !suspect.isSelected) return undefined;
 
         const nextOpenCount = suspect.dailyOpenCount + 1;
         const nextUsage = suspect.dailyUsageMinutes + Math.ceil(4 + suspect.dangerLevel * 2);
         const updatedSuspect = { ...suspect, dailyOpenCount: nextOpenCount, dailyUsageMinutes: nextUsage };
-        const matchingLaw = state.laws.find(
-          (law) =>
-            law.isEnabled &&
-            (law.category === 'all' || law.category === suspect.category || law.appIds.includes(suspect.id)),
+        const violation = selectBestViolation(
+          state.laws.map((law) => evaluateLawViolation(law, suspect, nextOpenCount, nextUsage)),
         );
 
         let charge: Charge | undefined;
-        if (matchingLaw && nextOpenCount > matchingLaw.graceOpens) {
+        if (violation) {
+          const matchingLaw = violation.law;
           const punishmentMinutes = sentenceForRepeat(matchingLaw, state.charges);
           charge = {
             id: `${matchingLaw.id}-${Date.now()}`,
             lawId: matchingLaw.id,
             appId: suspect.id,
             title: 'Charges Filed',
-            description: `${matchingLaw.shortName} was violated by ${suspect.displayName}.`,
+            description: `${matchingLaw.shortName} was violated by ${suspect.displayName}: ${violationCopy(violation.reason)}.`,
             evidenceLine: evidenceLine(suspect.displayName, nextOpenCount),
             severity: suspect.dangerLevel,
             punishmentMinutes,
@@ -344,6 +411,19 @@ export const useCourtStore = create<CourtState>()(
     {
       name: 'focus-court-store',
       storage: createJSONStorage(() => AsyncStorage),
+      merge: (persisted, current) => {
+        const saved = persisted as Partial<CourtState> | undefined;
+        return {
+          ...current,
+          ...saved,
+          profile: mergeProfile(saved?.profile),
+          laws: mergeById(DEFAULT_LAWS, saved?.laws),
+          suspects: mergeById(DEFAULT_SUSPECTS, saved?.suspects),
+          activeCase: saved?.activeCase ?? current.activeCase,
+          charges: saved?.charges ?? current.charges,
+          paroleRecords: saved?.paroleRecords ?? current.paroleRecords,
+        };
+      },
     },
   ),
 );

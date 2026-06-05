@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { StyleSheet, View } from 'react-native';
+import Animated, { FadeInUp, LinearTransition } from 'react-native-reanimated';
 import { colors, radius, shadows } from '@/src/constants/theme';
 
 type ParchmentCardProps = {
@@ -9,7 +10,11 @@ type ParchmentCardProps = {
 };
 
 export function ParchmentCard({ children, style }: ParchmentCardProps) {
-  return <View style={[styles.card, style]}>{children}</View>;
+  return (
+    <Animated.View entering={FadeInUp.duration(280).springify().damping(18)} layout={LinearTransition.springify().damping(18)}>
+      <View style={[styles.card, style]}>{children}</View>
+    </Animated.View>
+  );
 }
 
 const styles = StyleSheet.create({

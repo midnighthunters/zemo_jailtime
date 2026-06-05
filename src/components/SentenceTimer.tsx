@@ -1,4 +1,6 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { useEffect } from 'react';
+import { StyleSheet, Text } from 'react-native';
+import Animated, { FadeIn, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import { colors } from '@/src/constants/theme';
 import { formatCountdown } from '@/src/utils/format';
 
@@ -8,12 +10,23 @@ type SentenceTimerProps = {
 
 export function SentenceTimer({ seconds }: SentenceTimerProps) {
   const low = seconds > 0 && seconds < 180;
+  const pulse = useSharedValue(0);
+
+  useEffect(() => {
+    pulse.value = low ? withRepeat(withSequence(withTiming(1, { duration: 520 }), withTiming(0, { duration: 520 })), -1, false) : withTiming(0, { duration: 220 });
+  }, [low, pulse]);
+
+  const pulseStyle = useAnimatedStyle(() => ({
+    opacity: 1 - pulse.value * 0.1,
+    transform: [{ scale: 1 + pulse.value * 0.035 }],
+  }));
+
   return (
-    <View style={styles.root}>
+    <Animated.View entering={FadeIn.duration(260)} style={styles.root}>
       <Text style={styles.label}>JAIL TIMER</Text>
-      <Text style={[styles.time, low && styles.low]}>{formatCountdown(seconds)}</Text>
+      <Animated.Text style={[styles.time, low && styles.low, pulseStyle]}>{formatCountdown(seconds)}</Animated.Text>
       <Text style={styles.copy}>Complete one focus action and the court may consider parole.</Text>
-    </View>
+    </Animated.View>
   );
 }
 

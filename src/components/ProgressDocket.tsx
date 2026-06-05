@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
+import Animated, { FadeInUp, LinearTransition } from 'react-native-reanimated';
 import { colors, radius } from '@/src/constants/theme';
 
 type ProgressDocketProps = {
@@ -7,14 +8,14 @@ type ProgressDocketProps = {
 
 export function ProgressDocket({ items }: ProgressDocketProps) {
   return (
-    <View style={styles.grid}>
-      {items.map((item) => (
-        <View key={item.label} style={styles.item}>
+    <Animated.View entering={FadeInUp.duration(280).delay(120).springify().damping(18)} layout={LinearTransition.springify().damping(18)} style={styles.grid}>
+      {items.map((item, index) => (
+        <Animated.View key={item.label} entering={FadeInUp.duration(260).delay(160 + index * 55).springify().damping(17)} layout={LinearTransition.springify().damping(18)} style={styles.item}>
           <Text style={styles.value}>{item.value}</Text>
           <Text style={styles.label}>{item.label}</Text>
-        </View>
+        </Animated.View>
       ))}
-    </View>
+    </Animated.View>
   );
 }
 

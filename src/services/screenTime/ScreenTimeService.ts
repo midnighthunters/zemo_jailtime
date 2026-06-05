@@ -1,4 +1,4 @@
-import type { AppCategory, AppSuspect } from '@/src/types/court';
+import type { AppCategory, AppSuspect, FocusLaw, PermissionId, UserProfile } from '@/src/types/court';
 
 export type ScreenTimeUsageEvent = {
   appId: string;
@@ -14,6 +14,8 @@ export type ScreenTimeService = {
   getPermissionStatus: () => Promise<{ granted: boolean; reason?: string }>;
   getTodayUsage: () => Promise<ScreenTimeUsageEvent[]>;
   getInstalledApps: () => Promise<AppSuspect[]>;
+  applyPolicy?: (policy: { laws: FocusLaw[]; suspects: AppSuspect[]; settings: UserProfile['screenTimeSettings'] }) => Promise<void>;
+  openPermissionSettings?: (permissionId: PermissionId) => Promise<void>;
   startMonitoring: () => Promise<void>;
   stopMonitoring: () => Promise<void>;
   shieldApp?: (appId: string, minutes: number) => Promise<void>;

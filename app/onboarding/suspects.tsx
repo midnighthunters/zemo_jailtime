@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import { OnboardingScene } from '@/src/components/OnboardingScene';
 import { SuspectAppCard } from '@/src/components/SuspectAppCard';
-import { ONBOARDING_STEPS } from '@/src/data/onboarding';
+import { getOnboardingStep } from '@/src/data/onboarding';
 import { useCourtStore } from '@/src/store/useCourtStore';
 import { usePremiumStore } from '@/src/store/usePremiumStore';
 
@@ -13,7 +13,7 @@ export default function SuspectsOnboarding() {
   const isPro = usePremiumStore((state) => state.isPro);
 
   return (
-    <OnboardingScene step={ONBOARDING_STEPS[3]}>
+    <OnboardingScene step={getOnboardingStep('suspects')}>
       <View style={styles.list}>
         {suspects.slice(0, 6).map((suspect) => (
           <SuspectAppCard

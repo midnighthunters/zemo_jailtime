@@ -30,6 +30,14 @@ export const MockScreenTimeService: ScreenTimeService & {
     return DEFAULT_SUSPECTS;
   },
 
+  async applyPolicy() {
+    return undefined;
+  },
+
+  async openPermissionSettings() {
+    return undefined;
+  },
+
   async startMonitoring() {
     return undefined;
   },

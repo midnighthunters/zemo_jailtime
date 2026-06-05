@@ -13,7 +13,7 @@ import type { AppCategory, StrictnessLevel } from '@/src/types/court';
 import { useCourtStore } from '@/src/store/useCourtStore';
 import { usePremiumStore } from '@/src/store/usePremiumStore';
 
-const filters: Array<AppCategory | 'all'> = ['all', 'shortVideo', 'social', 'video', 'game', 'shopping', 'news'];
+const filters: Array<AppCategory | 'all'> = ['all', 'shortVideo', 'social', 'video', 'game', 'shopping', 'dating', 'news', 'custom'];
 const strictness: StrictnessLevel[] = ['soft', 'balanced', 'brutal'];
 
 export default function LawsTab() {
@@ -26,6 +26,8 @@ export default function LawsTab() {
   const isPro = usePremiumStore((state) => state.isPro);
   const visible = filter === 'all' ? laws : laws.filter((law) => law.category === filter || law.category === 'all');
   const enabledCount = laws.filter((law) => law.isEnabled).length;
+  const hardBlockCount = laws.filter((law) => law.isEnabled && law.enforcementMode === 'hardBlock').length;
+  const focusSessionCount = laws.filter((law) => law.isEnabled && law.trigger === 'focusSession').length;
 
   return (
     <CourtBackground>
@@ -37,12 +39,14 @@ export default function LawsTab() {
           assetKey="ASSET_LAW_BOOK_LIBRARY"
         />
 
-        <CourtCard variant="purple">
+        <CourtCard variant="purple" delay={80}>
           <View style={styles.heroRow}>
             <View style={styles.heroText}>
               <StampBadge label="Free limit: 3 laws" tone="gold" />
               <Text style={styles.heroTitle}>{enabledCount} active laws</Text>
-              <Text style={styles.heroCopy}>Supreme Court Mode unlocks unlimited laws, strict mode, and custom law names.</Text>
+              <Text style={styles.heroCopy}>
+                {hardBlockCount} hard blocks, {focusSessionCount} focus-session laws. Supreme Court Mode unlocks unlimited laws and strict mode.
+              </Text>
             </View>
             <AssetImage assetKey="ASSET_STRICT_MODE_LOCK" width={116} height={116} />
           </View>
@@ -75,17 +79,19 @@ export default function LawsTab() {
         </View>
 
         <View style={styles.quickSettings}>
+          <CourtButton title="Screen Time Setup" variant="purple" small onPress={() => router.push('/modals/screen-time-settings')} />
           <CourtButton title="Custom Law" variant="wood" small onPress={() => router.push('/modals/law-editor')} />
           <CourtButton title="Weekly Report" variant="ghost" small onPress={() => router.push('/modals/weekly-report')} />
           <CourtButton title="Upgrade" variant="gold" small onPress={() => router.push('/modals/paywall')} />
         </View>
 
         <View style={styles.list}>
-          {visible.map((law) => (
+          {visible.map((law, index) => (
             <LawCard
               key={law.id}
               law={law}
               locked={law.isPremium && !isPro}
+              delay={120 + index * 35}
               onToggle={() => {
                 const result = toggleLaw(law.id, isPro);
                 if (!result.allowed) router.push('/modals/paywall');

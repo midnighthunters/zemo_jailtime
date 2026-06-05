@@ -17,6 +17,12 @@ export const IosScreenTimeService: ScreenTimeService = {
     // TODO: Use FamilyActivityPicker native wrapper to let users select apps.
     return [];
   },
+  async applyPolicy() {
+    // TODO: Translate enabled laws into DeviceActivity schedules and ManagedSettings shields.
+  },
+  async openPermissionSettings() {
+    // TODO: Present AuthorizationCenter and FamilyActivityPicker from a Swift native module.
+  },
   async startMonitoring() {
     // TODO: Schedule DeviceActivityMonitor intervals.
   },

@@ -43,6 +43,7 @@ export default function RootLayout() {
         <Stack.Screen name="modals/parole-granted" options={{ presentation: 'modal' }} />
         <Stack.Screen name="modals/emergency-bypass" options={{ presentation: 'modal' }} />
         <Stack.Screen name="modals/law-editor" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="modals/screen-time-settings" options={{ presentation: 'modal' }} />
         <Stack.Screen name="modals/paywall" options={{ presentation: 'modal' }} />
         <Stack.Screen name="modals/weekly-report" options={{ presentation: 'modal' }} />
       </Stack>

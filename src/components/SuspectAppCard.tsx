@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeInUp, LinearTransition, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import type { AppSuspect } from '@/src/types/court';
 import { colors, radius, shadows } from '@/src/constants/theme';
 import { StampBadge } from '@/src/components/StampBadge';
@@ -7,22 +8,38 @@ type SuspectAppCardProps = {
   suspect: AppSuspect;
   onPress?: () => void;
   compact?: boolean;
+  delay?: number;
 };
 
-export function SuspectAppCard({ suspect, onPress, compact }: SuspectAppCardProps) {
+export function SuspectAppCard({ suspect, onPress, compact, delay = 0 }: SuspectAppCardProps) {
+  const scale = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
   return (
-    <Pressable onPress={onPress} style={[styles.card, compact && styles.compact, suspect.isSelected && styles.selected]}>
-      <View style={[styles.icon, { backgroundColor: suspect.iconColor }]}>
-        <Text style={styles.iconText}>{suspect.displayName.slice(0, 1)}</Text>
-      </View>
-      <View style={styles.body}>
-        <Text style={styles.name}>{suspect.displayName}</Text>
-        <Text style={styles.villain}>{suspect.villainName}</Text>
-        {!compact ? (
-          <Text style={styles.meta}>{suspect.dailyOpenCount} opens | {suspect.dailyUsageMinutes} min today</Text>
-        ) : null}
-      </View>
-      {suspect.isPremium ? <StampBadge label="Pro" tone="purple" /> : null}
+    <Pressable
+      onPress={onPress}
+      onPressIn={() => {
+        scale.value = withSpring(0.97, { damping: 14, stiffness: 260 });
+      }}
+      onPressOut={() => {
+        scale.value = withSpring(1, { damping: 14, stiffness: 260 });
+      }}
+    >
+      <Animated.View entering={FadeInUp.duration(260).delay(delay).springify().damping(18)} layout={LinearTransition.springify().damping(18)} style={[styles.card, compact && styles.compact, suspect.isSelected && styles.selected, animatedStyle]}>
+        <View style={[styles.icon, { backgroundColor: suspect.iconColor }]}>
+          <Text style={styles.iconText}>{suspect.displayName.slice(0, 1)}</Text>
+        </View>
+        <View style={styles.body}>
+          <Text style={styles.name}>{suspect.displayName}</Text>
+          <Text style={styles.villain}>{suspect.villainName}</Text>
+          {!compact ? (
+            <Text style={styles.meta}>{suspect.dailyOpenCount} opens | {suspect.dailyUsageMinutes} min today</Text>
+          ) : null}
+        </View>
+        {suspect.isPremium ? <StampBadge label="Pro" tone="purple" /> : null}
+      </Animated.View>
     </Pressable>
   );
 }

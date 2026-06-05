@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import type { ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, { FadeInUp, LinearTransition, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { colors, radius, shadows } from '@/src/constants/theme';
 
 type ButtonVariant = 'gold' | 'danger' | 'success' | 'purple' | 'wood' | 'ghost';
@@ -48,6 +48,8 @@ export function CourtButton({ title, onPress, variant = 'gold', disabled, loadin
       }}
     >
       <Animated.View
+        entering={FadeInUp.duration(240).springify().damping(17)}
+        layout={LinearTransition.springify().damping(18)}
         style={[
           styles.button,
           small && styles.small,

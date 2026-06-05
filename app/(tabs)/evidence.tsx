@@ -49,7 +49,7 @@ export default function EvidenceTab() {
           assetKey="ASSET_EVIDENCE_BOARD_SCREEN_TIME"
         />
 
-        <CourtCard variant="dark">
+        <CourtCard variant="dark" delay={80}>
           <View style={styles.boardTop}>
             <View style={styles.boardText}>
               <Text style={styles.boardTitle}>Today's charges</Text>
@@ -62,14 +62,14 @@ export default function EvidenceTab() {
           </View>
         </CourtCard>
 
-        <EvidenceCard exhibit="EXHIBIT A" text={`Exhibit A: ${worst.dailyUsageMinutes || 47} minutes vanished into ${worst.displayName.toLowerCase()}.`} severity={5} assetKey="ASSET_EXHIBIT_A_FILE" />
-        <EvidenceCard exhibit="EXHIBIT B" text={`You opened ${worst.displayName.toLowerCase()} ${worst.dailyOpenCount || 9} times after warning.`} severity={4} assetKey="ASSET_REPEAT_OFFENDER_APP" />
-        <EvidenceCard exhibit="EXHIBIT C" text="Sleep was robbed at 2:34 AM." severity={4} assetKey="ASSET_EVIDENCE_LOST_SLEEP" />
-        <EvidenceCard exhibit="EXHIBIT D" text="Your gym plan was delayed by scrolling." severity={3} assetKey="ASSET_EVIDENCE_SKIPPED_GOALS" />
-        <EvidenceCard exhibit="DANGER HOUR" text="The worst hour is becoming obvious. The court recommends a lockdown window." severity={3} assetKey="ASSET_DANGER_HOURS_CLOCK" />
-        <EvidenceCard exhibit="DREAMS DELAYED" text="Every tap can steal sleep, focus, and dreams." severity={2} assetKey="ASSET_DREAMS_DELAYED_BOARD" />
+        <EvidenceCard exhibit="EXHIBIT A" text={`Exhibit A: ${worst.dailyUsageMinutes || 47} minutes vanished into ${worst.displayName.toLowerCase()}.`} severity={5} assetKey="ASSET_EXHIBIT_A_FILE" delay={120} />
+        <EvidenceCard exhibit="EXHIBIT B" text={`You opened ${worst.displayName.toLowerCase()} ${worst.dailyOpenCount || 9} times after warning.`} severity={4} assetKey="ASSET_REPEAT_OFFENDER_APP" delay={170} />
+        <EvidenceCard exhibit="EXHIBIT C" text="Sleep was robbed at 2:34 AM." severity={4} assetKey="ASSET_EVIDENCE_LOST_SLEEP" delay={220} />
+        <EvidenceCard exhibit="EXHIBIT D" text="Your gym plan was delayed by scrolling." severity={3} assetKey="ASSET_EVIDENCE_SKIPPED_GOALS" delay={270} />
+        <EvidenceCard exhibit="DANGER HOUR" text="The worst hour is becoming obvious. The court recommends a lockdown window." severity={3} assetKey="ASSET_DANGER_HOURS_CLOCK" delay={320} />
+        <EvidenceCard exhibit="DREAMS DELAYED" text="Every tap can steal sleep, focus, and dreams." severity={2} assetKey="ASSET_DREAMS_DELAYED_BOARD" delay={370} />
 
-        <CourtCard variant="purple">
+        <CourtCard variant="purple" delay={420}>
           <View style={styles.reportRow}>
             <AssetImage assetKey="ASSET_WEEKLY_TRIAL_REPORT" width={92} height={92} />
             <View style={styles.reportText}>

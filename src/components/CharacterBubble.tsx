@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeInLeft, FadeInRight, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import type { FocusCourtAssetKey } from '@/src/constants/assets';
 import { AssetImage } from '@/src/components/AssetImage';
 import { colors, radius, shadows } from '@/src/constants/theme';
@@ -10,13 +12,25 @@ type CharacterBubbleProps = {
 };
 
 export function CharacterBubble({ assetKey, name, line }: CharacterBubbleProps) {
+  const float = useSharedValue(0);
+
+  useEffect(() => {
+    float.value = withRepeat(withSequence(withTiming(1, { duration: 2200 }), withTiming(0, { duration: 2200 })), -1, false);
+  }, [float]);
+
+  const avatarStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: float.value * -5 }],
+  }));
+
   return (
     <View style={styles.root}>
-      <AssetImage assetKey={assetKey} width={92} height={92} />
-      <View style={styles.bubble}>
+      <Animated.View entering={FadeInLeft.duration(300).springify().damping(16)} style={avatarStyle}>
+        <AssetImage assetKey={assetKey} width={92} height={92} />
+      </Animated.View>
+      <Animated.View entering={FadeInRight.duration(320).delay(80).springify().damping(18)} style={styles.bubble}>
         <Text style={styles.name}>{name}</Text>
         <Text style={styles.line}>{line}</Text>
-      </View>
+      </Animated.View>
     </View>
   );
 }

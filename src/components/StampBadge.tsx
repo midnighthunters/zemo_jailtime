@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
+import Animated, { ZoomIn } from 'react-native-reanimated';
 import { colors, radius } from '@/src/constants/theme';
 
 type StampBadgeProps = {
@@ -17,9 +18,9 @@ const toneColor = {
 export function StampBadge({ label, tone = 'gold' }: StampBadgeProps) {
   const color = toneColor[tone];
   return (
-    <View style={[styles.badge, { borderColor: color, backgroundColor: `${color}24` }]}>
+    <Animated.View entering={ZoomIn.duration(220).springify().damping(13)} style={[styles.badge, { borderColor: color, backgroundColor: `${color}24` }]}>
       <Text style={[styles.text, { color }]}>{label.toUpperCase()}</Text>
-    </View>
+    </Animated.View>
   );
 }
 

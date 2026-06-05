@@ -1,4 +1,5 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeInUp, LinearTransition } from 'react-native-reanimated';
 import { AssetImage } from '@/src/components/AssetImage';
 import { CourtBackground } from '@/src/components/CourtBackground';
 import { CourtButton } from '@/src/components/CourtButton';
@@ -25,7 +26,7 @@ export default function ParoleTab() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <ScreenHeader eyebrow="PAROLE BOARD" title="Rewards" subtitle="Good behavior earns freedom, coins, and a cleaner record." assetKey="ASSET_PAROLE_GRANTED_BADGE" />
 
-        <CourtCard variant="dark">
+        <CourtCard variant="dark" delay={80}>
           <View style={styles.hero}>
             <View style={styles.heroText}>
               <Text style={styles.rankLabel}>CURRENT RANK</Text>
@@ -45,8 +46,8 @@ export default function ParoleTab() {
         />
 
         <View style={styles.rewards}>
-          {REWARD_CARDS.map((reward) => (
-            <CourtCard key={reward.title} variant="parchment">
+          {REWARD_CARDS.map((reward, index) => (
+            <CourtCard key={reward.title} variant="parchment" delay={160 + index * 45}>
               <View style={styles.rewardRow}>
                 <AssetImage assetKey={reward.assetKey} width={76} height={76} />
                 <View style={styles.rewardText}>
@@ -58,7 +59,7 @@ export default function ParoleTab() {
           ))}
         </View>
 
-        <CourtCard variant="wood">
+        <CourtCard variant="wood" delay={260}>
           <View style={styles.upgradeRow}>
             <AssetImage assetKey="ASSET_COURTROOM_UPGRADE_BENCH" width={88} height={88} />
             <View style={styles.upgradeText}>
@@ -71,14 +72,14 @@ export default function ParoleTab() {
 
         <View style={styles.history}>
           <Text style={styles.sectionTitle}>Recent Parole History</Text>
-          {paroleRecords.slice(0, 5).map((record) => (
-            <View key={record.id} style={styles.historyItem}>
+          {paroleRecords.slice(0, 5).map((record, index) => (
+            <Animated.View key={record.id} entering={FadeInUp.duration(260).delay(300 + index * 45).springify().damping(18)} layout={LinearTransition.springify().damping(18)} style={styles.historyItem}>
               <AssetImage assetKey="ASSET_BROKEN_CHAIN_FREEDOM" width={44} height={44} />
               <View style={styles.historyText}>
                 <Text style={styles.historyMessage}>{record.message}</Text>
                 <Text style={styles.historyPoints}>+{record.pointsEarned} parole points</Text>
               </View>
-            </View>
+            </Animated.View>
           ))}
         </View>
       </ScrollView>

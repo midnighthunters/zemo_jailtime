@@ -26,7 +26,7 @@ export default function JailTab() {
         <ScreenHeader eyebrow="DISTRACTION JAIL" title="Sentence" subtitle="Serve time or earn parole through action." assetKey="ASSET_DISTRACTION_JAIL_BUILDING" />
 
         {!active ? (
-          <CourtCard variant="dark">
+          <CourtCard variant="dark" delay={80}>
             <View style={styles.empty}>
               <AssetImage assetKey="ASSET_EMPTY_NO_CHARGES" width={156} height={156} />
               <Text style={styles.emptyTitle}>No active sentence.</Text>
@@ -36,7 +36,7 @@ export default function JailTab() {
           </CourtCard>
         ) : (
           <>
-            <CourtCard variant="dark">
+            <CourtCard variant="dark" delay={80}>
               <View style={styles.jailHero}>
                 <AssetImage assetKey="ASSET_DEFENDANT_JAIL_BARS" width={150} height={150} />
                 <View style={styles.timerBox}>
@@ -47,7 +47,7 @@ export default function JailTab() {
               <Text style={styles.reason}>{latestCharge?.evidenceLine ?? 'Evidence submitted.'}</Text>
             </CourtCard>
 
-            <CourtCard variant="wood" assetKey="ASSET_JAIL_TIMER_HOURGLASS">
+            <CourtCard variant="wood" assetKey="ASSET_JAIL_TIMER_HOURGLASS" delay={150}>
               <Text style={styles.costTitle}>What this cost you</Text>
               <Text style={styles.costCopy}>The victim is tomorrow morning. Reduce this sentence by completing one real action.</Text>
             </CourtCard>
@@ -55,8 +55,8 @@ export default function JailTab() {
             <CharacterBubble assetKey="ASSET_BAILIFF_BULLDOG_GUARD" name="Bailiff Bulldog" line="Phone down. Sentence begins now." />
 
             <View style={styles.actions}>
-              {MINI_ACTIONS.map((action) => (
-                <CourtCard key={action.id} variant="parchment">
+              {MINI_ACTIONS.map((action, index) => (
+                <CourtCard key={action.id} variant="parchment" delay={220 + index * 45}>
                   <View style={styles.actionRow}>
                     <AssetImage assetKey={action.assetKey} width={64} height={64} />
                     <View style={styles.actionText}>

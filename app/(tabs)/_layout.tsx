@@ -1,9 +1,24 @@
+import { useEffect } from 'react';
 import { Tabs } from 'expo-router';
-import { Text } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { colors, radius } from '@/src/constants/theme';
 
 function TabGlyph({ label, focused }: { label: string; focused: boolean }) {
-  return <Text style={{ color: focused ? colors.gold : colors.muted, fontWeight: '900', fontSize: 15 }}>{label}</Text>;
+  const scale = useSharedValue(focused ? 1.16 : 1);
+
+  useEffect(() => {
+    scale.value = withSpring(focused ? 1.16 : 1, { damping: 12, stiffness: 240 });
+  }, [focused, scale]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }, { translateY: focused ? -2 : 0 }],
+  }));
+
+  return (
+    <Animated.Text style={[{ color: focused ? colors.gold : colors.muted, fontWeight: '900', fontSize: 15 }, animatedStyle]}>
+      {label}
+    </Animated.Text>
+  );
 }
 
 export default function TabsLayout() {

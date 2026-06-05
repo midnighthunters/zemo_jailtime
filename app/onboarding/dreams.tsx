@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { OnboardingScene } from '@/src/components/OnboardingScene';
 import { colors, radius } from '@/src/constants/theme';
-import { DREAM_OPTIONS, ONBOARDING_STEPS } from '@/src/data/onboarding';
+import { DREAM_OPTIONS, getOnboardingStep } from '@/src/data/onboarding';
 import { useCourtStore } from '@/src/store/useCourtStore';
 
 export default function DreamsOnboarding() {
@@ -9,7 +9,7 @@ export default function DreamsOnboarding() {
   const toggleDream = useCourtStore((state) => state.toggleDream);
 
   return (
-    <OnboardingScene step={ONBOARDING_STEPS[2]}>
+    <OnboardingScene step={getOnboardingStep('dreams')}>
       <View style={styles.grid}>
         {DREAM_OPTIONS.map((dream) => {
           const selected = dreams.includes(dream.id);

@@ -38,7 +38,7 @@ export default function CourtroomTab() {
           assetKey="ASSET_APP_LOGO_FOCUS_COURT"
         />
 
-        <CourtCard variant="dark" style={styles.hero}>
+        <CourtCard variant="dark" style={styles.hero} delay={80}>
           <View style={styles.heroTop}>
             <View style={styles.heroCopy}>
               <StampBadge label={statusLabel(activeCase.status)} tone={statusTone} />
@@ -62,7 +62,7 @@ export default function CourtroomTab() {
           ]}
         />
 
-        <CourtCard variant="wood" assetKey="ASSET_CLEAN_RECORD_MEDAL">
+        <CourtCard variant="wood" assetKey="ASSET_CLEAN_RECORD_MEDAL" delay={180}>
           <ParoleMeter value={paroleChance} label="Parole readiness" />
         </CourtCard>
 
@@ -74,10 +74,11 @@ export default function CourtroomTab() {
             <CourtButton title="Reset Day" variant="ghost" small onPress={resetCourtDay} />
           </View>
           <View style={styles.suspects}>
-            {selectedSuspects.map((suspect) => (
+            {selectedSuspects.map((suspect, index) => (
               <SuspectAppCard
                 key={suspect.id}
                 suspect={suspect}
+                delay={220 + index * 45}
                 onPress={() => {
                   const charge = simulateAppOpen(suspect.id);
                   if (charge) router.push('/modals/charges-filed');
@@ -87,7 +88,7 @@ export default function CourtroomTab() {
           </View>
         </View>
 
-        <CourtCard variant="parchment">
+        <CourtCard variant="parchment" delay={260}>
           <Text style={styles.darkLabel}>WORST OFFENDER PREVIEW</Text>
           <Text style={styles.darkTitle}>{worst.displayName}</Text>
           <Text style={styles.darkCopy}>Exhibit A: {worst.dailyUsageMinutes || 47} minutes vanished into {worst.displayName.toLowerCase()}.</Text>

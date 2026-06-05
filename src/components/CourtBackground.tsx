@@ -1,6 +1,8 @@
 import { LinearGradient } from 'expo-linear-gradient';
+import { useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/src/constants/theme';
 
@@ -10,11 +12,38 @@ type CourtBackgroundProps = {
 };
 
 export function CourtBackground({ children, padded = true }: CourtBackgroundProps) {
+  const glow = useSharedValue(0);
+
+  useEffect(() => {
+    glow.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 4200, easing: Easing.inOut(Easing.sin) }),
+        withTiming(0, { duration: 4200, easing: Easing.inOut(Easing.sin) }),
+      ),
+      -1,
+      false,
+    );
+  }, [glow]);
+
+  const spotlightStyle = useAnimatedStyle(() => ({
+    opacity: 0.78 + glow.value * 0.22,
+    transform: [{ translateY: glow.value * 12 }, { scale: 1 + glow.value * 0.05 }],
+  }));
+
+  const sideGlowStyle = useAnimatedStyle(() => ({
+    opacity: 0.72 + glow.value * 0.2,
+    transform: [{ translateX: glow.value * -18 }, { translateY: glow.value * 10 }, { scale: 1 + glow.value * 0.07 }],
+  }));
+
+  const railStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: glow.value * 4 }],
+  }));
+
   return (
     <LinearGradient colors={[colors.background, colors.background2, colors.woodDark]} style={styles.root}>
-      <View style={styles.spotlight} />
-      <View style={styles.sideGlow} />
-      <View style={styles.floorRail} />
+      <Animated.View style={[styles.spotlight, spotlightStyle]} />
+      <Animated.View style={[styles.sideGlow, sideGlowStyle]} />
+      <Animated.View style={[styles.floorRail, railStyle]} />
       <SafeAreaView edges={['top', 'left', 'right']} style={[styles.safe, padded && styles.padded]}>
         {children}
       </SafeAreaView>
