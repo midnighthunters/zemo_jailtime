@@ -19,7 +19,9 @@ export function LawCard({ law, locked, onToggle, delay = 0 }: LawCardProps) {
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
-  const permissionLabels = law.requiredPermissionIds
+  const enforcementMode = law.enforcementMode ?? 'softBlock';
+  const trigger = law.trigger ?? 'appLaunch';
+  const permissionLabels = (law.requiredPermissionIds ?? [])
     .map((id) => permissionCopy(id)?.title)
     .filter((label): label is string => Boolean(label))
     .slice(0, 3);
@@ -44,11 +46,11 @@ export function LawCard({ law, locked, onToggle, delay = 0 }: LawCardProps) {
           <Text style={styles.description}>{law.description}</Text>
           <View style={styles.meta}>
             <StampBadge label={locked ? 'Supreme Court' : law.category} tone={locked ? 'purple' : law.isEnabled ? 'success' : 'gold'} />
-            <StampBadge label={law.enforcementMode} tone={law.enforcementMode === 'hardBlock' ? 'purple' : 'gold'} />
+            <StampBadge label={enforcementMode} tone={enforcementMode === 'hardBlock' ? 'purple' : 'gold'} />
             <Text style={styles.sentence}>{law.firstPunishmentMinutes}-{law.maxSentenceMinutes} min sentence</Text>
           </View>
           <View style={styles.details}>
-            <Text style={styles.detail}>{law.trigger}</Text>
+            <Text style={styles.detail}>{trigger}</Text>
             <Text style={styles.detail}>{describesSchedule(law)}</Text>
             {permissionLabels.map((label) => (
               <Text key={label} style={styles.detail}>{label}</Text>

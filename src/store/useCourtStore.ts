@@ -96,6 +96,7 @@ type CourtState = {
   toggleDream: (dream: DreamType) => void;
   toggleSuspect: (id: string, isPro?: boolean) => ToggleResult;
   toggleLaw: (id: string, isPro?: boolean) => ToggleResult;
+  updateLaw: (id: string, law: Partial<FocusLaw>, isPro?: boolean) => ToggleResult;
   setStrictness: (strictness: StrictnessLevel, isPro?: boolean) => ToggleResult;
   setBedtime: (bedtime: string) => void;
   setWakeTime: (wakeTime: string) => void;
@@ -197,6 +198,19 @@ export const useCourtStore = create<CourtState>()(
         }
         set((current) => ({
           laws: current.laws.map((item) => (item.id === id ? { ...item, isEnabled: !item.isEnabled } : item)),
+        }));
+        return { allowed: true };
+      },
+
+      updateLaw(id, law, isPro = false) {
+        const state = get();
+        const target = state.laws.find((item) => item.id === id);
+        if (!target) return { allowed: false, reason: 'Law not found' };
+        if ((target.isPremium || target.category === 'custom') && !isPro) {
+          return { allowed: false, reason: 'Supreme Court Mode unlocks custom law editing.' };
+        }
+        set((current) => ({
+          laws: current.laws.map((item) => (item.id === id ? { ...item, ...law, id: item.id } : item)),
         }));
         return { allowed: true };
       },

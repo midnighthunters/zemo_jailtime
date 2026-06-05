@@ -17,6 +17,12 @@ export const AndroidUsageStatsService: ScreenTimeService = {
     // TODO: Query launcher apps natively and map them into AppSuspect values.
     return [];
   },
+  async applyPolicy() {
+    // TODO: Translate enabled laws into UsageStats polling, warning notifications, and block-screen state.
+  },
+  async openPermissionSettings() {
+    // TODO: Open Usage Access, overlay, notification, and accessibility settings through native intents.
+  },
   async startMonitoring() {
     // TODO: Start foreground monitoring service or compliant polling strategy.
   },
