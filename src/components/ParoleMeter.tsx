@@ -1,7 +1,5 @@
-import { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { colors, radius } from '@/src/constants/theme';
 
 type ParoleMeterProps = {
@@ -11,15 +9,6 @@ type ParoleMeterProps = {
 
 export function ParoleMeter({ value, label = 'Parole chance' }: ParoleMeterProps) {
   const clamped = Math.max(0, Math.min(100, value));
-  const progress = useSharedValue(0);
-
-  useEffect(() => {
-    progress.value = withTiming(clamped, { duration: 700 });
-  }, [clamped, progress]);
-
-  const fillStyle = useAnimatedStyle(() => ({
-    width: `${progress.value}%`,
-  }));
 
   return (
     <View style={styles.root}>
@@ -28,9 +17,9 @@ export function ParoleMeter({ value, label = 'Parole chance' }: ParoleMeterProps
         <Text style={styles.value}>{clamped}%</Text>
       </View>
       <View style={styles.track}>
-        <Animated.View style={[styles.fillMask, fillStyle]}>
+        <View style={[styles.fillMask, { width: `${clamped}%` }]}>
           <LinearGradient colors={[colors.success, colors.gold]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.fill} />
-        </Animated.View>
+        </View>
       </View>
     </View>
   );

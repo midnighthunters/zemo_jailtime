@@ -1,7 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import type { ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeInUp, LinearTransition, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { colors, radius, shadows } from '@/src/constants/theme';
 
 type ButtonVariant = 'gold' | 'danger' | 'success' | 'purple' | 'wood' | 'ghost';
@@ -26,8 +25,6 @@ const palette: Record<ButtonVariant, { backgroundColor: string; borderColor: str
 };
 
 export function CourtButton({ title, onPress, variant = 'gold', disabled, loading, small, icon }: CourtButtonProps) {
-  const scale = useSharedValue(1);
-  const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   const colorSet = palette[variant];
 
   const handlePress = () => {
@@ -40,28 +37,16 @@ export function CourtButton({ title, onPress, variant = 'gold', disabled, loadin
     <Pressable
       disabled={disabled || loading}
       onPress={handlePress}
-      onPressIn={() => {
-        scale.value = withSpring(0.96, { damping: 12, stiffness: 240 });
-      }}
-      onPressOut={() => {
-        scale.value = withSpring(1, { damping: 12, stiffness: 240 });
-      }}
+      style={[
+        styles.button,
+        small && styles.small,
+        { backgroundColor: colorSet.backgroundColor, borderColor: colorSet.borderColor },
+        disabled && styles.disabled,
+      ]}
     >
-      <Animated.View
-        entering={FadeInUp.duration(240).springify().damping(17)}
-        layout={LinearTransition.springify().damping(18)}
-        style={[
-          styles.button,
-          small && styles.small,
-          { backgroundColor: colorSet.backgroundColor, borderColor: colorSet.borderColor },
-          disabled && styles.disabled,
-          animatedStyle,
-        ]}
-      >
-        {loading ? <ActivityIndicator color={colorSet.color} /> : null}
-        {!loading && icon ? <View style={styles.icon}>{icon}</View> : null}
-        {!loading ? <Text style={[styles.title, small && styles.smallTitle, { color: colorSet.color }]}>{title}</Text> : null}
-      </Animated.View>
+      {loading ? <ActivityIndicator color={colorSet.color} /> : null}
+      {!loading && icon ? <View style={styles.icon}>{icon}</View> : null}
+      {!loading ? <Text style={[styles.title, small && styles.smallTitle, { color: colorSet.color }]}>{title}</Text> : null}
     </Pressable>
   );
 }
