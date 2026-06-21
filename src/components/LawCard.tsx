@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
-import Animated, { FadeInRight, LinearTransition, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+
 import type { FocusLaw } from '@/src/types/court';
 import { AssetImage } from '@/src/components/AssetImage';
 import { StampBadge } from '@/src/components/StampBadge';
@@ -15,10 +15,6 @@ type LawCardProps = {
 };
 
 export function LawCard({ law, locked, onToggle, delay = 0 }: LawCardProps) {
-  const scale = useSharedValue(1);
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
   const enforcementMode = law.enforcementMode ?? 'softBlock';
   const trigger = law.trigger ?? 'appLaunch';
   const permissionLabels = (law.requiredPermissionIds ?? [])
@@ -29,14 +25,8 @@ export function LawCard({ law, locked, onToggle, delay = 0 }: LawCardProps) {
   return (
     <Pressable
       onPress={onToggle}
-      onPressIn={() => {
-        scale.value = withSpring(0.98, { damping: 14, stiffness: 260 });
-      }}
-      onPressOut={() => {
-        scale.value = withSpring(1, { damping: 14, stiffness: 260 });
-      }}
     >
-      <Animated.View entering={FadeInRight.duration(300).delay(delay).springify().damping(18)} layout={LinearTransition.springify().damping(18)} style={[styles.card, law.isEnabled && styles.enabled, animatedStyle]}>
+      <View style={[styles.card, law.isEnabled && styles.enabled]}>
         <AssetImage assetKey={law.assetKey} width={82} height={82} />
         <View style={styles.body}>
           <View style={styles.topRow}>
@@ -57,7 +47,7 @@ export function LawCard({ law, locked, onToggle, delay = 0 }: LawCardProps) {
             ))}
           </View>
         </View>
-      </Animated.View>
+      </View>
     </Pressable>
   );
 }

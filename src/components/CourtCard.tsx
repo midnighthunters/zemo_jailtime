@@ -2,7 +2,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import type { ReactNode } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { StyleSheet, View } from 'react-native';
-import Animated, { FadeInUp, LinearTransition } from 'react-native-reanimated';
 import type { FocusCourtAssetKey } from '@/src/constants/assets';
 import { colors, radius, shadows } from '@/src/constants/theme';
 import { AssetImage } from '@/src/components/AssetImage';
@@ -24,12 +23,12 @@ const variants = {
 
 export function CourtCard({ children, variant = 'wood', style, assetKey, delay = 0 }: CourtCardProps) {
   return (
-    <Animated.View entering={FadeInUp.duration(320).delay(delay).springify().damping(18)} layout={LinearTransition.springify().damping(18)}>
+    <View>
       <LinearGradient colors={variants[variant]} style={[styles.card, style]}>
         {assetKey ? <AssetImage assetKey={assetKey} width={92} height={92} absolute right={-8} bottom={-12} opacity={0.24} /> : null}
         <View style={styles.inner}>{children}</View>
       </LinearGradient>
-    </Animated.View>
+    </View>
   );
 }
 

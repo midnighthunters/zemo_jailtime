@@ -192,7 +192,23 @@ async function cropAndClean(inputPath: string, extract: sharp.Region) {
   return cleaned;
 }
 
+async function allAssetsExist() {
+  for (let i = 1; i <= expectedBatches * assetsPerBatch; i += 1) {
+    try {
+      await fs.access(path.join(outputDir, outputName(i)));
+    } catch {
+      return false;
+    }
+  }
+  return true;
+}
+
 async function main() {
+  if (await allAssetsExist()) {
+    console.log('[assets:extract] All assets already present, skipping extraction.');
+    return;
+  }
+
   await ensureOutputDir();
 
   let files: string[];

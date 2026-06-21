@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeInUp, LinearTransition, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+
 import type { AppSuspect } from '@/src/types/court';
 import { colors, radius, shadows } from '@/src/constants/theme';
 import { StampBadge } from '@/src/components/StampBadge';
@@ -12,22 +12,9 @@ type SuspectAppCardProps = {
 };
 
 export function SuspectAppCard({ suspect, onPress, compact, delay = 0 }: SuspectAppCardProps) {
-  const scale = useSharedValue(1);
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
   return (
-    <Pressable
-      onPress={onPress}
-      onPressIn={() => {
-        scale.value = withSpring(0.97, { damping: 14, stiffness: 260 });
-      }}
-      onPressOut={() => {
-        scale.value = withSpring(1, { damping: 14, stiffness: 260 });
-      }}
-    >
-      <Animated.View entering={FadeInUp.duration(260).delay(delay).springify().damping(18)} layout={LinearTransition.springify().damping(18)} style={[styles.card, compact && styles.compact, suspect.isSelected && styles.selected, animatedStyle]}>
+    <Pressable onPress={onPress}>
+      <View style={[styles.card, compact && styles.compact, suspect.isSelected && styles.selected]}>
         <View style={[styles.icon, { backgroundColor: suspect.iconColor }]}>
           <Text style={styles.iconText}>{suspect.displayName.slice(0, 1)}</Text>
         </View>
@@ -39,7 +26,7 @@ export function SuspectAppCard({ suspect, onPress, compact, delay = 0 }: Suspect
           ) : null}
         </View>
         {suspect.isPremium ? <StampBadge label="Pro" tone="purple" /> : null}
-      </Animated.View>
+      </View>
     </Pressable>
   );
 }

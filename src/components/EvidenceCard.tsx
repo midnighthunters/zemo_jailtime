@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeInLeft, LinearTransition } from 'react-native-reanimated';
+
 import type { FocusCourtAssetKey } from '@/src/constants/assets';
 import { AssetImage } from '@/src/components/AssetImage';
 import { colors, radius, shadows } from '@/src/constants/theme';
@@ -15,13 +15,13 @@ type EvidenceCardProps = {
 export function EvidenceCard({ exhibit, text, severity = 3, assetKey, delay = 0 }: EvidenceCardProps) {
   const color = severity >= 4 ? colors.danger : severity >= 3 ? colors.deepGold : colors.successDark;
   return (
-    <Animated.View entering={FadeInLeft.duration(300).delay(delay).springify().damping(18)} layout={LinearTransition.springify().damping(18)} style={styles.card}>
+    <View style={styles.card}>
       <AssetImage assetKey={assetKey} width={74} height={74} />
       <View style={styles.body}>
         <Text style={[styles.exhibit, { color }]}>{exhibit}</Text>
         <Text style={styles.text}>{text}</Text>
       </View>
-    </Animated.View>
+    </View>
   );
 }
 

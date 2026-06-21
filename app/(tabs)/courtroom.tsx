@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { G, Rect, Text as SvgText } from 'react-native-svg';
-import Animated, { FadeInDown, FadeInUp, LinearTransition } from 'react-native-reanimated';
+
 import { AssetImage } from '@/src/components/AssetImage';
 import { CharacterBubble } from '@/src/components/CharacterBubble';
 import { CourtBackground } from '@/src/components/CourtBackground';
@@ -162,7 +162,7 @@ export default function CourtroomTab() {
         <SectionToggle title="⚖️  Focus Laws" expanded={lawsExpanded} onToggle={() => setLawsExpanded((v) => !v)} />
 
         {lawsExpanded && (
-          <Animated.View entering={FadeInDown.duration(280).springify().damping(18)} style={styles.sectionBody}>
+          <View style={styles.sectionBody}>
             <CourtCard variant="purple" delay={0}>
               <View style={styles.heroRow}>
                 <View style={styles.heroText}>
@@ -205,7 +205,7 @@ export default function CourtroomTab() {
                 />
               ))}
             </View>
-          </Animated.View>
+          </View>
         )}
 
         {/* ════════════════════════════════════════════════════════════
@@ -214,7 +214,7 @@ export default function CourtroomTab() {
         <SectionToggle title="🔍  Trial Evidence" expanded={evidenceExpanded} onToggle={() => setEvidenceExpanded((v) => !v)} />
 
         {evidenceExpanded && (
-          <Animated.View entering={FadeInDown.duration(280).springify().damping(18)} style={styles.sectionBody}>
+          <View style={styles.sectionBody}>
             <CourtCard variant="dark" delay={0}>
               <View style={styles.boardTop}>
                 <View style={styles.boardText}>
@@ -245,7 +245,7 @@ export default function CourtroomTab() {
                 </View>
               </View>
             </CourtCard>
-          </Animated.View>
+          </View>
         )}
 
         {/* ════════════════════════════════════════════════════════════
@@ -254,7 +254,7 @@ export default function CourtroomTab() {
         <SectionToggle title="🏅  Parole & Rewards" expanded={paroleExpanded} onToggle={() => setParoleExpanded((v) => !v)} />
 
         {paroleExpanded && (
-          <Animated.View entering={FadeInDown.duration(280).springify().damping(18)} style={styles.sectionBody}>
+          <View style={styles.sectionBody}>
             <CourtCard variant="dark" delay={0}>
               <View style={styles.paroleHero}>
                 <View style={styles.heroText}>
@@ -302,13 +302,13 @@ export default function CourtroomTab() {
             <View style={styles.history}>
               <Text style={styles.sectionTitle}>Recent Parole History</Text>
               {paroleRecords.slice(0, 5).map((record, index) => (
-                <Animated.View key={record.id} entering={FadeInUp.duration(260).delay(index * 45).springify().damping(18)} layout={LinearTransition.springify().damping(18)} style={styles.historyItem}>
+                <View key={record.id} style={styles.historyItem}>
                   <AssetImage assetKey="ASSET_BROKEN_CHAIN_FREEDOM" width={44} height={44} />
                   <View style={styles.historyText}>
                     <Text style={styles.historyMessage}>{record.message}</Text>
                     <Text style={styles.historyPoints}>+{record.pointsEarned} parole points</Text>
                   </View>
-                </Animated.View>
+                </View>
               ))}
             </View>
           </Animated.View>
