@@ -13,19 +13,29 @@ export default function BlockedAppScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ appId: string }>();
   const activeCase = useCourtStore((state) => state.activeCase);
-  const suspect = useCourtStore((state) => state.suspects.find((item) => item.id === params.appId));
+  const suspect = useCourtStore((state) =>
+    state.suspects.find((item) => item.id === params.appId),
+  );
 
   return (
     <CourtBackground>
       <View style={styles.content}>
-        <CourtCard variant="dark">
+        <CourtCard variant="red" style={styles.card}>
           <View style={styles.center}>
-            <AssetImage assetKey="ASSET_STRICT_MODE_LOCK" width={150} height={150} />
+            <AssetImage assetKey="ASSET_STRICT_MODE_LOCK" width={130} height={130} />
             <StampBadge label="App Shielded" tone="danger" />
-            <Text style={styles.title}>{suspect?.displayName ?? 'Distracting App'} is in custody.</Text>
-            <Text style={styles.copy}>Step away from the app icon. The jail timer is watching.</Text>
+            <Text style={styles.title}>
+              {suspect?.displayName ?? 'Distracting App'} is in custody.
+            </Text>
+            <Text style={styles.copy}>
+              Step away from the app icon. The jail timer is watching.
+            </Text>
             <SentenceTimer seconds={activeCase.remainingSentenceSeconds || 600} />
-            <CourtButton title="Return to Jail" variant="danger" onPress={() => router.replace('/(tabs)/jail')} />
+            <CourtButton
+              title="Return to Jail"
+              variant="destructive"
+              onPress={() => router.replace('/(tabs)/jail')}
+            />
           </View>
         </CourtCard>
       </View>
@@ -37,23 +47,27 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     justifyContent: 'center',
+    padding: 4,
   },
+  card: {},
   center: {
     alignItems: 'center',
-    gap: 12,
+    gap: 14,
+    paddingVertical: 8,
   },
   title: {
-    color: colors.cream,
-    fontSize: 28,
-    lineHeight: 32,
-    fontWeight: '900',
+    color: colors.label,
+    fontSize: 24,
+    lineHeight: 30,
+    fontWeight: '700',
     textAlign: 'center',
+    letterSpacing: 0.35,
   },
   copy: {
-    color: colors.parchment,
+    color: colors.labelSecondary,
     fontSize: 15,
     lineHeight: 21,
-    fontWeight: '800',
+    fontWeight: '400',
     textAlign: 'center',
   },
 });

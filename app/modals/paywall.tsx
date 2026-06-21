@@ -1,22 +1,23 @@
 import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { AssetImage } from '@/src/components/AssetImage';
 import { CourtBackground } from '@/src/components/CourtBackground';
 import { CourtButton } from '@/src/components/CourtButton';
 import { CourtCard } from '@/src/components/CourtCard';
 import { StampBadge } from '@/src/components/StampBadge';
-import { colors } from '@/src/constants/theme';
+import { colors, radius, shadows } from '@/src/constants/theme';
 import { usePremiumStore } from '@/src/store/usePremiumStore';
 
 const benefits = [
-  'Unlimited suspect apps',
-  'Unlimited Focus Laws',
-  'Supreme Strict Mode',
-  'Advanced evidence reports',
-  'Custom law names',
-  'Mercy Passes',
-  'Courtroom upgrades',
-  'Future real blocking features',
+  { icon: '∞', text: 'Unlimited suspect apps' },
+  { icon: '⚖️', text: 'Unlimited Focus Laws' },
+  { icon: '🔒', text: 'Supreme Strict Mode' },
+  { icon: '📊', text: 'Advanced evidence reports' },
+  { icon: '✏️', text: 'Custom law names' },
+  { icon: '🎟️', text: 'Mercy Passes' },
+  { icon: '🏛️', text: 'Courtroom upgrades' },
+  { icon: '📱', text: 'Real iOS blocking (coming)' },
 ];
 
 export default function PaywallModal() {
@@ -25,48 +26,89 @@ export default function PaywallModal() {
 
   return (
     <CourtBackground>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        <CourtCard variant="purple">
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.content}
+      >
+        {/* ── Hero ─────────────────────────────────────────────────── */}
+        <LinearGradient
+          colors={['rgba(88,86,214,0.14)', 'rgba(175,82,222,0.1)']}
+          style={styles.heroGradient}
+        >
           <View style={styles.hero}>
             <View style={styles.heroText}>
-              <StampBadge label="Supreme Court Required" tone="gold" />
-              <Text style={styles.title}>Upgrade to Supreme Court Mode</Text>
-              <Text style={styles.copy}>Unlimited laws. Stronger punishments. Cleaner record.</Text>
+              <StampBadge label="Pro Required" tone="purple" />
+              <Text style={styles.title}>Supreme Court Mode</Text>
+              <Text style={styles.copy}>
+                Unlimited laws. Stronger punishments. Cleaner record.
+              </Text>
             </View>
-            <AssetImage assetKey="ASSET_SUPREME_COURT_MODE_PAYWALL" width={142} height={142} />
+            <AssetImage
+              assetKey="ASSET_SUPREME_COURT_MODE_PAYWALL"
+              width={130}
+              height={130}
+            />
           </View>
-        </CourtCard>
+        </LinearGradient>
 
-        <View style={styles.benefits}>
+        {/* ── Benefits ─────────────────────────────────────────────── */}
+        <View style={styles.benefitGrid}>
           {benefits.map((benefit) => (
-            <View key={benefit} style={styles.benefit}>
-              <Text style={styles.benefitText}>{benefit}</Text>
+            <View key={benefit.text} style={styles.benefit}>
+              <Text style={styles.benefitIcon}>{benefit.icon}</Text>
+              <Text style={styles.benefitText}>{benefit.text}</Text>
             </View>
           ))}
         </View>
 
+        {/* ── Packages ─────────────────────────────────────────────── */}
         <View style={styles.packages}>
           {packages.map((pkg) => (
-            <CourtCard key={pkg.identifier} variant={pkg.period === 'annual' ? 'wood' : 'dark'}>
+            <CourtCard
+              key={pkg.identifier}
+              variant={pkg.period === 'annual' ? 'blue' : 'glass'}
+            >
               <View style={styles.packageRow}>
                 <View style={styles.packageText}>
                   {pkg.badge ? <StampBadge label={pkg.badge} tone="success" /> : null}
                   <Text style={styles.packageTitle}>{pkg.title}</Text>
                   <Text style={styles.packagePrice}>{pkg.price}</Text>
                 </View>
-                <CourtButton title="Choose" variant="gold" small loading={isLoading} onPress={() => purchase(pkg.identifier)} />
+                <CourtButton
+                  title="Choose"
+                  variant="primary"
+                  small
+                  loading={isLoading}
+                  onPress={() => purchase(pkg.identifier)}
+                />
               </View>
             </CourtCard>
           ))}
         </View>
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-        {isPro ? <Text style={styles.pro}>Supreme Court Mode active.</Text> : null}
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+        {isPro ? (
+          <Text style={styles.proText}>✓ Supreme Court Mode active</Text>
+        ) : null}
 
-        <CourtButton title="Restore Purchase" variant="ghost" onPress={restore} loading={isLoading} />
-        {__DEV__ ? <CourtButton title="Dev: Toggle Pro" variant="wood" onPress={() => setMockPro(!isPro)} /> : null}
+        <CourtButton
+          title="Restore Purchase"
+          variant="ghost"
+          onPress={restore}
+          loading={isLoading}
+        />
+        {__DEV__ ? (
+          <CourtButton
+            title="Dev: Toggle Pro"
+            variant="secondary"
+            onPress={() => setMockPro(!isPro)}
+          />
+        ) : null}
         <CourtButton title="Close" variant="ghost" onPress={() => router.back()} />
-        <Text style={styles.legal}>Terms and Privacy placeholders are ready for production links.</Text>
+
+        <Text style={styles.legal}>
+          Terms and Privacy placeholders are ready for production links.
+        </Text>
       </ScrollView>
     </CourtBackground>
   );
@@ -74,86 +116,87 @@ export default function PaywallModal() {
 
 const styles = StyleSheet.create({
   content: {
-    gap: 14,
-    paddingBottom: 28,
+    gap: 16,
+    paddingBottom: 32,
+  },
+
+  // ── hero ──
+  heroGradient: {
+    borderRadius: radius.xl,
+    borderWidth: 1.5,
+    borderColor: 'rgba(88,86,214,0.28)',
+    ...shadows.card,
   },
   hero: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
+    padding: 20,
   },
   heroText: {
     flex: 1,
-    gap: 8,
-  },
-  title: {
-    color: colors.cream,
-    fontSize: 28,
-    lineHeight: 32,
-    fontWeight: '900',
-  },
-  copy: {
-    color: colors.parchment,
-    fontSize: 15,
-    lineHeight: 21,
-    fontWeight: '800',
-  },
-  benefits: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  benefit: {
-    paddingHorizontal: 11,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255, 242, 210, 0.1)',
-  },
-  benefitText: {
-    color: colors.cream,
-    fontSize: 12,
-    fontWeight: '900',
-  },
-  packages: {
     gap: 10,
   },
-  packageRow: {
+  title: {
+    color: colors.label,
+    fontSize: 26,
+    lineHeight: 32,
+    fontWeight: '700',
+    letterSpacing: 0.35,
+  },
+  copy: {
+    color: colors.labelSecondary,
+    fontSize: 15,
+    lineHeight: 21,
+    fontWeight: '400',
+  },
+
+  // ── benefits ──
+  benefitGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  benefit: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: radius.pill,
+    backgroundColor: 'rgba(255,255,255,0.72)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.9)',
   },
-  packageText: {
-    flex: 1,
-    gap: 5,
-  },
-  packageTitle: {
-    color: colors.cream,
-    fontSize: 18,
-    fontWeight: '900',
-  },
-  packagePrice: {
-    color: colors.gold,
-    fontSize: 16,
-    fontWeight: '900',
-  },
-  error: {
-    color: colors.gold,
+  benefitIcon: { fontSize: 15 },
+  benefitText: { color: colors.label, fontSize: 13, fontWeight: '500' },
+
+  // ── packages ──
+  packages: { gap: 10 },
+  packageRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  packageText: { flex: 1, gap: 6 },
+  packageTitle: { color: colors.label, fontSize: 18, fontWeight: '700', letterSpacing: -0.3 },
+  packagePrice: { color: colors.blue, fontSize: 16, fontWeight: '700' },
+
+  // ── misc ──
+  errorText: {
+    color: colors.red,
     fontSize: 13,
     lineHeight: 18,
-    fontWeight: '800',
     textAlign: 'center',
+    fontWeight: '500',
   },
-  pro: {
-    color: colors.success,
+  proText: {
+    color: colors.greenDark,
     fontSize: 14,
-    fontWeight: '900',
+    fontWeight: '600',
     textAlign: 'center',
   },
   legal: {
-    color: colors.muted,
+    color: colors.labelTertiary,
     fontSize: 11,
     lineHeight: 16,
     textAlign: 'center',
-    fontWeight: '700',
+    fontWeight: '400',
   },
 });

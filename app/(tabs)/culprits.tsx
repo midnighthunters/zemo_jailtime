@@ -1,12 +1,15 @@
-/**
- * Culprits Tab
- * – Manage distracting apps (suspects) with per-app daily time limits
- * – Quick-add preset custom laws: 9-5 Work Lock, Weekend Focus, Morning Sacred Hour, etc.
- * – Full control stays in existing useCourtStore / FocusLaw data model
- */
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import Animated, { FadeInDown, FadeInUp, LinearTransition } from 'react-native-reanimated';
 import { AssetImage } from '@/src/components/AssetImage';
 import { CourtBackground } from '@/src/components/CourtBackground';
@@ -25,74 +28,25 @@ type LawPreset = {
   emoji: string;
   title: string;
   description: string;
-  lawId: string;        // maps to an existing law in DEFAULT_LAWS
+  lawId: string;
   isPremium?: boolean;
 };
 
 const LAW_PRESETS: LawPreset[] = [
-  {
-    id: 'preset-9to5',
-    emoji: '💼',
-    title: '9–5 Work Lock',
-    description: 'Hard-block all distracting apps Monday–Friday 9 AM – 5 PM.',
-    lawId: 'workday-focus-injunction',
-    isPremium: true,
-  },
-  {
-    id: 'preset-weekend-morning',
-    emoji: '🌅',
-    title: 'Weekend Focus 9–12',
-    description: 'Protect Saturday & Sunday mornings 9 AM – 12 PM from scrolling.',
-    lawId: 'weekend-binge-restraining',
-    isPremium: true,
-  },
-  {
-    id: 'preset-morning-sacred',
-    emoji: '🌄',
-    title: 'Morning Sacred Hour',
-    description: 'Keep 6–8 AM free from all apps to start your day with intention.',
-    lawId: 'morning-mind-protection',
-  },
-  {
-    id: 'preset-deep-work',
-    emoji: '🔒',
-    title: 'Deep Work Block 10–12',
-    description: 'Zero tolerance during deep work hours, weekdays only.',
-    lawId: 'deep-work-contempt-order',
-    isPremium: true,
-  },
-  {
-    id: 'preset-bedtime',
-    emoji: '🌙',
-    title: 'Midnight Swipe Ban',
-    description: 'Hard-block after 11 PM until 6 AM every night.',
-    lawId: 'midnight-swipe-ban',
-  },
-  {
-    id: 'preset-dinner',
-    emoji: '🍽️',
-    title: 'Family Table Peace',
-    description: 'No phones 7–9 PM during family / dinner time.',
-    lawId: 'family-table-peace',
-  },
-  {
-    id: 'preset-sunday-reset',
-    emoji: '🔄',
-    title: 'Sunday Reset 6–9 PM',
-    description: 'Protect Sunday evening for planning, journaling, and rest.',
-    lawId: 'sunday-reset-statute',
-  },
-  {
-    id: 'preset-pomodoro',
-    emoji: '⏱️',
-    title: 'Pomodoro Protection',
-    description: 'Block suspects during every 25-min focus timer session.',
-    lawId: 'pomodoro-protection-rule',
-  },
+  { id: 'preset-9to5',           emoji: '💼', title: '9–5 Work Lock',          description: 'Hard-block all distracting apps Monday–Friday 9 AM – 5 PM.',     lawId: 'workday-focus-injunction',  isPremium: true },
+  { id: 'preset-weekend-morning',emoji: '🌅', title: 'Weekend Focus 9–12',      description: 'Protect Saturday & Sunday mornings from scrolling.',              lawId: 'weekend-binge-restraining', isPremium: true },
+  { id: 'preset-morning-sacred', emoji: '🌄', title: 'Morning Sacred Hour',     description: 'Keep 6–8 AM free from all apps to start with intention.',         lawId: 'morning-mind-protection' },
+  { id: 'preset-deep-work',      emoji: '🔒', title: 'Deep Work Block 10–12',   description: 'Zero tolerance during deep work hours, weekdays only.',           lawId: 'deep-work-contempt-order',  isPremium: true },
+  { id: 'preset-bedtime',        emoji: '🌙', title: 'Midnight Swipe Ban',       description: 'Hard-block after 11 PM until 6 AM every night.',                 lawId: 'midnight-swipe-ban' },
+  { id: 'preset-dinner',         emoji: '🍽️', title: 'Family Table Peace',      description: 'No phones 7–9 PM during family / dinner time.',                  lawId: 'family-table-peace' },
+  { id: 'preset-sunday-reset',   emoji: '🔄', title: 'Sunday Reset 6–9 PM',     description: 'Protect Sunday evening for planning, journaling, and rest.',      lawId: 'sunday-reset-statute' },
+  { id: 'preset-pomodoro',       emoji: '⏱️', title: 'Pomodoro Protection',     description: 'Block suspects during every 25-min focus timer session.',         lawId: 'pomodoro-protection-rule' },
 ];
 
-// ─── Suspect row with inline timer input ─────────────────────────────────────
-function SuspectRow({ suspect, onToggle, onTimerChange, isPro }: {
+// ─── Suspect row ──────────────────────────────────────────────────────────────
+function SuspectRow({
+  suspect, onToggle, onTimerChange, isPro,
+}: {
   suspect: AppSuspect;
   onToggle: () => void;
   onTimerChange: (minutes: number) => void;
@@ -109,12 +63,14 @@ function SuspectRow({ suspect, onToggle, onTimerChange, isPro }: {
   };
 
   return (
-    <Animated.View entering={FadeInUp.duration(260).springify().damping(18)} layout={LinearTransition.springify().damping(18)} style={[styles.suspectRow, suspect.isSelected && styles.suspectRowSelected]}>
-      {/* icon */}
+    <Animated.View
+      entering={FadeInUp.duration(260).springify().damping(18)}
+      layout={LinearTransition.springify().damping(18)}
+      style={[styles.suspectRow, suspect.isSelected && styles.suspectRowSelected]}
+    >
       <View style={[styles.suspectIcon, { backgroundColor: suspect.iconColor }]}>
         <Text style={styles.suspectIconText}>{suspect.displayName.slice(0, 1)}</Text>
       </View>
-      {/* info */}
       <View style={styles.suspectInfo}>
         <Text style={styles.suspectName}>{suspect.displayName}</Text>
         <Text style={styles.suspectVillain}>{suspect.villainName}</Text>
@@ -134,7 +90,10 @@ function SuspectRow({ suspect, onToggle, onTimerChange, isPro }: {
                 maxLength={4}
               />
             ) : (
-              <Pressable onPress={() => { if (!locked) setEditing(true); }} style={styles.timerPill}>
+              <Pressable
+                onPress={() => { if (!locked) setEditing(true); }}
+                style={styles.timerPill}
+              >
                 <Text style={styles.timerPillText}>{draftMinutes} min</Text>
                 {!locked && <Text style={styles.timerEditIcon}> ✎</Text>}
               </Pressable>
@@ -142,22 +101,24 @@ function SuspectRow({ suspect, onToggle, onTimerChange, isPro }: {
           </View>
         )}
       </View>
-      {/* badges + toggle */}
       <View style={styles.suspectActions}>
         {locked ? <StampBadge label="Pro" tone="purple" /> : null}
         <Switch
           value={suspect.isSelected}
           onValueChange={onToggle}
-          thumbColor={suspect.isSelected ? colors.gold : colors.muted}
-          trackColor={{ true: colors.deepGold, false: colors.woodDark }}
+          thumbColor={colors.white}
+          trackColor={{ true: colors.blue, false: 'rgba(120,120,128,0.22)' }}
+          ios_backgroundColor="rgba(120,120,128,0.22)"
         />
       </View>
     </Animated.View>
   );
 }
 
-// ─── Preset law card ──────────────────────────────────────────────────────────
-function PresetCard({ preset, law, onActivate, isPro }: {
+// ─── Preset card ─────────────────────────────────────────────────────────────
+function PresetCard({
+  preset, law, onActivate, isPro,
+}: {
   preset: LawPreset;
   law?: FocusLaw;
   onActivate: () => void;
@@ -167,7 +128,11 @@ function PresetCard({ preset, law, onActivate, isPro }: {
   const active = law?.isEnabled ?? false;
 
   return (
-    <Animated.View entering={FadeInDown.duration(260).springify().damping(18)} layout={LinearTransition.springify().damping(18)} style={[styles.presetCard, active && styles.presetCardActive]}>
+    <Animated.View
+      entering={FadeInDown.duration(260).springify().damping(18)}
+      layout={LinearTransition.springify().damping(18)}
+      style={[styles.presetCard, active && styles.presetCardActive]}
+    >
       <Text style={styles.presetEmoji}>{preset.emoji}</Text>
       <View style={styles.presetBody}>
         <View style={styles.presetTopRow}>
@@ -177,7 +142,10 @@ function PresetCard({ preset, law, onActivate, isPro }: {
         </View>
         <Text style={styles.presetDesc}>{preset.description}</Text>
       </View>
-      <Pressable onPress={onActivate} style={[styles.presetToggle, active && styles.presetToggleActive]}>
+      <Pressable
+        onPress={onActivate}
+        style={[styles.presetToggle, active && styles.presetToggleActive]}
+      >
         <Text style={[styles.presetToggleText, active && styles.presetToggleTextActive]}>
           {active ? 'ON' : 'OFF'}
         </Text>
@@ -201,25 +169,27 @@ export default function CulpritsTab() {
   const handleToggleSuspect = (id: string) => {
     const result = toggleSuspect(id, isPro);
     if (!result.allowed) {
-      Alert.alert('Supreme Court Required', result.reason ?? 'Upgrade to add more suspects.', [
-        { text: 'Upgrade', onPress: () => router.push('/modals/paywall') },
-        { text: 'Cancel', style: 'cancel' },
-      ]);
+      Alert.alert(
+        'Pro Required',
+        result.reason ?? 'Upgrade to add more suspects.',
+        [
+          { text: 'Upgrade', onPress: () => router.push('/modals/paywall') },
+          { text: 'Cancel', style: 'cancel' },
+        ],
+      );
     }
   };
 
   const handleTimerChange = (suspect: AppSuspect, minutes: number) => {
-    // update the matching law that targets this category with a new dailyLimitMinutes
-    // we use updateLaw for any existing law tied to this category
-    const matchingLaw = laws.find((l) => l.category === suspect.category && l.trigger === 'dailyLimit');
-    if (matchingLaw) {
-      updateLaw(matchingLaw.id, { dailyLimitMinutes: minutes }, isPro);
-    }
+    const matchingLaw = laws.find(
+      (l) => l.category === suspect.category && l.trigger === 'dailyLimit',
+    );
+    if (matchingLaw) updateLaw(matchingLaw.id, { dailyLimitMinutes: minutes }, isPro);
   };
 
   const handlePresetToggle = (preset: LawPreset) => {
     if (preset.isPremium && !isPro) {
-      Alert.alert('Supreme Court Required', 'This law requires Supreme Court Mode.', [
+      Alert.alert('Pro Required', 'This law requires Supreme Court Mode.', [
         { text: 'Upgrade', onPress: () => router.push('/modals/paywall') },
         { text: 'Cancel', style: 'cancel' },
       ]);
@@ -236,7 +206,10 @@ export default function CulpritsTab() {
 
   return (
     <CourtBackground>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.content}
+      >
         <ScreenHeader
           eyebrow="SUSPECT LINEUP"
           title="Culprits"
@@ -244,18 +217,21 @@ export default function CulpritsTab() {
           assetKey="ASSET_SELECT_SUSPECTS_LINEUP"
         />
 
-        {/* ── Suspects Section ─────────────────────────────────────── */}
-        <CourtCard variant="dark" delay={80}>
-          <View style={styles.suspectHeaderRow}>
-            <View style={styles.suspectHeaderText}>
-              <StampBadge label={`${selectedCount} / ${isPro ? '∞' : '3'} selected`} tone={selectedCount >= 3 && !isPro ? 'danger' : 'gold'} />
+        {/* ── Distracting Apps ──────────────────────────────────────── */}
+        <CourtCard variant="glass">
+          <View style={styles.cardHeaderRow}>
+            <View style={styles.cardHeaderText}>
+              <StampBadge
+                label={`${selectedCount} / ${isPro ? '∞' : '3'} selected`}
+                tone={selectedCount >= 3 && !isPro ? 'danger' : 'blue'}
+              />
               <Text style={styles.cardTitle}>Distracting Apps</Text>
               <Text style={styles.cardCopy}>
-                Select the apps you want the court to monitor. Tap the timer to set a daily limit.
-                {!isPro ? ' Free plan allows 3 apps.' : ''}
+                Select apps for the court to monitor. Tap the timer to set a daily limit.
+                {!isPro ? ' Free plan: 3 apps.' : ''}
               </Text>
             </View>
-            <AssetImage assetKey="ASSET_REPEAT_OFFENDER_APP" width={88} height={88} />
+            <AssetImage assetKey="ASSET_REPEAT_OFFENDER_APP" width={80} height={80} />
           </View>
         </CourtCard>
 
@@ -273,22 +249,23 @@ export default function CulpritsTab() {
 
         <CourtButton
           title="+ Add Custom App"
-          variant="wood"
+          variant="secondary"
           onPress={() => router.push('/modals/law-editor')}
         />
 
-        {/* ── iOS Real Blocking CTA ────────────────────────────────── */}
-        <CourtCard variant="wood" delay={120}>
+        {/* ── Real iOS Blocking ─────────────────────────────────────── */}
+        <CourtCard variant="blue">
           <View style={styles.blockingRow}>
-            <AssetImage assetKey="ASSET_STRICT_MODE_LOCK" width={72} height={72} />
+            <AssetImage assetKey="ASSET_STRICT_MODE_LOCK" width={64} height={64} />
             <View style={styles.blockingText}>
               <Text style={styles.blockingTitle}>Real iOS Blocking</Text>
               <Text style={styles.blockingCopy}>
-                Select your actual installed apps. When your daily limit is hit, iOS locks them with a jail screen — even when JailTime is closed.
+                Select installed apps. When your daily limit hits, iOS locks them with a jail
+                screen — even when JailTime is closed.
               </Text>
               <CourtButton
                 title="⚖️  Select Apps to Block"
-                variant="gold"
+                variant="primary"
                 small
                 onPress={() => router.push('/modals/select-apps')}
               />
@@ -296,12 +273,14 @@ export default function CulpritsTab() {
           </View>
         </CourtCard>
 
-        {/* ── Custom Law Presets Section ───────────────────────────── */}
-        <View style={styles.presetSectionHeader}>
-          <AssetImage assetKey="ASSET_LAW_BOOK_LIBRARY" width={40} height={40} />
-          <View style={styles.presetSectionText}>
-            <Text style={styles.presetSectionTitle}>Quick-Add Laws</Text>
-            <Text style={styles.presetSectionCopy}>Tap a preset to instantly activate it. Pro laws need Supreme Court Mode.</Text>
+        {/* ── Quick-Add Laws ───────────────────────────────────────── */}
+        <View style={styles.sectionHeader}>
+          <View style={styles.sectionHeaderLeft}>
+            <AssetImage assetKey="ASSET_LAW_BOOK_LIBRARY" width={36} height={36} />
+            <View>
+              <Text style={styles.sectionTitle}>Quick-Add Laws</Text>
+              <Text style={styles.sectionCopy}>Tap a preset to instantly activate it.</Text>
+            </View>
           </View>
         </View>
 
@@ -320,115 +299,160 @@ export default function CulpritsTab() {
           })}
         </View>
 
-        {/* ── Custom Law Builder CTA ───────────────────────────────── */}
-        <CourtCard variant="purple" delay={320}>
+        {/* ── Custom Law Builder ───────────────────────────────────── */}
+        <CourtCard variant="purple">
           <View style={styles.customLawRow}>
-            <AssetImage assetKey="ASSET_STRICT_MODE_LOCK" width={80} height={80} />
+            <AssetImage assetKey="ASSET_STRICT_MODE_LOCK" width={72} height={72} />
             <View style={styles.customLawText}>
               <Text style={styles.customLawTitle}>Build Your Own Law</Text>
               <Text style={styles.customLawCopy}>
-                Create fully custom time windows, daily limits, and enforcement modes tailored to your schedule.
+                Create custom time windows, daily limits, and enforcement modes tailored to your schedule.
               </Text>
               <View style={styles.customLawButtons}>
-                <CourtButton title="Create Custom Law" variant="gold" small onPress={() => router.push('/modals/law-editor')} />
-                {!isPro && <CourtButton title="Upgrade to Pro" variant="ghost" small onPress={() => router.push('/modals/paywall')} />}
+                <CourtButton
+                  title="Create Custom Law"
+                  variant="primary"
+                  small
+                  onPress={() => router.push('/modals/law-editor')}
+                />
+                {!isPro && (
+                  <CourtButton
+                    title="Upgrade to Pro"
+                    variant="ghost"
+                    small
+                    onPress={() => router.push('/modals/paywall')}
+                  />
+                )}
               </View>
             </View>
           </View>
         </CourtCard>
-
       </ScrollView>
     </CourtBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { gap: 16, paddingBottom: 112 },
+  content: {
+    gap: 14,
+    paddingBottom: 110,
+  },
+
+  // ── header card ──
+  cardHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  cardHeaderText: { flex: 1, gap: 8 },
+  cardTitle: { color: colors.label, fontSize: 20, fontWeight: '700', letterSpacing: -0.3 },
+  cardCopy: { color: colors.labelSecondary, fontSize: 13, lineHeight: 18, fontWeight: '400' },
 
   // ── suspect rows ──
-  suspectHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  suspectHeaderText: { flex: 1, gap: 8 },
-  cardTitle: { color: colors.cream, fontSize: 22, fontWeight: '900' },
-  cardCopy: { color: colors.parchment, fontSize: 13, lineHeight: 18, fontWeight: '700' },
   suspectList: { gap: 10 },
   suspectRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    padding: 14, borderRadius: radius.lg,
-    backgroundColor: 'rgba(58, 29, 17, 0.9)',
-    borderWidth: 1, borderColor: 'rgba(255,242,210,0.16)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 14,
+    borderRadius: radius.xl,
+    backgroundColor: 'rgba(255,255,255,0.72)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.9)',
     ...shadows.soft,
   },
-  suspectRowSelected: { borderColor: colors.gold, backgroundColor: 'rgba(255,200,61,0.1)' },
-  suspectIcon: {
-    width: 46, height: 46, borderRadius: 14,
-    alignItems: 'center', justifyContent: 'center',
-    borderWidth: 2, borderColor: 'rgba(255,255,255,0.28)',
+  suspectRowSelected: {
+    backgroundColor: 'rgba(0,122,255,0.07)',
+    borderColor: 'rgba(0,122,255,0.28)',
   },
-  suspectIconText: { color: colors.white, fontSize: 20, fontWeight: '900' },
+  suspectIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  suspectIconText: { color: colors.white, fontSize: 20, fontWeight: '700' },
   suspectInfo: { flex: 1, gap: 3 },
-  suspectName: { color: colors.cream, fontSize: 15, fontWeight: '900' },
-  suspectVillain: { color: colors.gold, fontSize: 12, fontWeight: '800' },
+  suspectName: { color: colors.label, fontSize: 15, fontWeight: '600', letterSpacing: -0.2 },
+  suspectVillain: { color: colors.blue, fontSize: 12, fontWeight: '500' },
   suspectActions: { alignItems: 'center', gap: 6 },
 
   // ── timer ──
   timerRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
-  timerLabel: { color: colors.parchment, fontSize: 11, fontWeight: '800' },
+  timerLabel: { color: colors.labelSecondary, fontSize: 11, fontWeight: '500' },
   timerPill: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 10, paddingVertical: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: radius.pill,
-    backgroundColor: 'rgba(255,200,61,0.18)',
-    borderWidth: 1, borderColor: colors.deepGold,
+    backgroundColor: 'rgba(0,122,255,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(0,122,255,0.22)',
   },
-  timerPillText: { color: colors.gold, fontSize: 12, fontWeight: '900' },
-  timerEditIcon: { color: colors.gold, fontSize: 11 },
+  timerPillText: { color: colors.blue, fontSize: 12, fontWeight: '600' },
+  timerEditIcon: { color: colors.blue, fontSize: 11 },
   timerInput: {
-    width: 64, paddingHorizontal: 10, paddingVertical: 4,
+    width: 72,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: radius.pill,
-    backgroundColor: 'rgba(255,200,61,0.22)',
-    borderWidth: 1, borderColor: colors.gold,
-    color: colors.cream, fontSize: 13, fontWeight: '900',
+    backgroundColor: 'rgba(0,122,255,0.08)',
+    borderWidth: 1,
+    borderColor: colors.blue,
+    color: colors.label,
+    fontSize: 13,
+    fontWeight: '600',
     textAlign: 'center',
   },
 
-  // ── presets ──
-  presetSectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 4 },
-  presetSectionText: { flex: 1, gap: 4 },
-  presetSectionTitle: { color: colors.cream, fontSize: 19, fontWeight: '900' },
-  presetSectionCopy: { color: colors.parchment, fontSize: 13, lineHeight: 18, fontWeight: '700' },
+  // ── section header ──
+  sectionHeader: { paddingHorizontal: 2 },
+  sectionHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  sectionTitle: { color: colors.label, fontSize: 18, fontWeight: '700', letterSpacing: -0.3 },
+  sectionCopy: { color: colors.labelSecondary, fontSize: 13, fontWeight: '400' },
+
+  // ── preset cards ──
   presetList: { gap: 10 },
   presetCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    padding: 14, borderRadius: radius.lg,
-    backgroundColor: 'rgba(42,18,12,0.9)',
-    borderWidth: 1, borderColor: 'rgba(255,242,210,0.16)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 14,
+    borderRadius: radius.xl,
+    backgroundColor: 'rgba(255,255,255,0.68)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.88)',
     ...shadows.soft,
   },
-  presetCardActive: { borderColor: colors.gold, backgroundColor: 'rgba(255,200,61,0.1)' },
-  presetEmoji: { fontSize: 28, width: 40, textAlign: 'center' },
-  presetBody: { flex: 1, gap: 5 },
-  presetTopRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
-  presetTitle: { color: colors.cream, fontSize: 15, fontWeight: '900', flex: 1 },
-  presetDesc: { color: colors.parchment, fontSize: 12, lineHeight: 17, fontWeight: '700' },
-  presetToggle: {
-    paddingHorizontal: 14, paddingVertical: 8,
-    borderRadius: radius.pill,
-    backgroundColor: 'rgba(255,242,210,0.1)',
-    borderWidth: 1, borderColor: 'rgba(255,242,210,0.2)',
+  presetCardActive: {
+    backgroundColor: 'rgba(0,122,255,0.07)',
+    borderColor: 'rgba(0,122,255,0.28)',
   },
-  presetToggleActive: { backgroundColor: colors.gold, borderColor: colors.gold },
-  presetToggleText: { color: colors.muted, fontSize: 12, fontWeight: '900' },
-  presetToggleTextActive: { color: colors.ink },
+  presetEmoji: { fontSize: 26, width: 36, textAlign: 'center' },
+  presetBody: { flex: 1, gap: 4 },
+  presetTopRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  presetTitle: { color: colors.label, fontSize: 15, fontWeight: '600', flex: 1, letterSpacing: -0.2 },
+  presetDesc: { color: colors.labelSecondary, fontSize: 12, lineHeight: 17, fontWeight: '400' },
+  presetToggle: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+    backgroundColor: 'rgba(120,120,128,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(120,120,128,0.18)',
+  },
+  presetToggleActive: { backgroundColor: colors.blue, borderColor: colors.blue },
+  presetToggleText: { color: colors.labelSecondary, fontSize: 12, fontWeight: '600' },
+  presetToggleTextActive: { color: colors.white },
 
-  // ── custom law CTA ──
-  customLawRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  customLawText: { flex: 1, gap: 8 },
-  customLawTitle: { color: colors.cream, fontSize: 18, fontWeight: '900' },
-  customLawCopy: { color: colors.parchment, fontSize: 13, lineHeight: 18, fontWeight: '700' },
-  customLawButtons: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  // ── real blocking CTA ──
+  // ── blocking CTA ──
   blockingRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   blockingText: { flex: 1, gap: 8 },
-  blockingTitle: { color: colors.cream, fontSize: 18, fontWeight: '900' },
-  blockingCopy: { color: colors.parchment, fontSize: 13, lineHeight: 18, fontWeight: '700' },
+  blockingTitle: { color: colors.label, fontSize: 17, fontWeight: '700', letterSpacing: -0.3 },
+  blockingCopy: { color: colors.labelSecondary, fontSize: 13, lineHeight: 18, fontWeight: '400' },
+
+  // ── custom law ──
+  customLawRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  customLawText: { flex: 1, gap: 8 },
+  customLawTitle: { color: colors.label, fontSize: 17, fontWeight: '700', letterSpacing: -0.3 },
+  customLawCopy: { color: colors.labelSecondary, fontSize: 13, lineHeight: 18, fontWeight: '400' },
+  customLawButtons: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
 });

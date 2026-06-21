@@ -1,5 +1,4 @@
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
-
 import type { FocusLaw } from '@/src/types/court';
 import { AssetImage } from '@/src/components/AssetImage';
 import { StampBadge } from '@/src/components/StampBadge';
@@ -23,31 +22,51 @@ export function LawCard({ law, locked, onToggle, delay = 0 }: LawCardProps) {
     .slice(0, 3);
 
   return (
-    <Pressable
-      onPress={onToggle}
-    >
-      <View style={[styles.card, law.isEnabled && styles.enabled]}>
-        <AssetImage assetKey={law.assetKey} width={82} height={82} />
-        <View style={styles.body}>
-          <View style={styles.topRow}>
-            <Text style={styles.title}>{law.name}</Text>
-            <Switch value={law.isEnabled} onValueChange={onToggle} thumbColor={law.isEnabled ? colors.gold : colors.muted} trackColor={{ true: colors.deepGold, false: colors.woodDark }} />
-          </View>
-          <Text style={styles.description}>{law.description}</Text>
-          <View style={styles.meta}>
-            <StampBadge label={locked ? 'Supreme Court' : law.category} tone={locked ? 'purple' : law.isEnabled ? 'success' : 'gold'} />
-            <StampBadge label={enforcementMode} tone={enforcementMode === 'hardBlock' ? 'purple' : 'gold'} />
-            <Text style={styles.sentence}>{law.firstPunishmentMinutes}-{law.maxSentenceMinutes} min sentence</Text>
-          </View>
-          <View style={styles.details}>
-            <Text style={styles.detail}>{trigger}</Text>
-            <Text style={styles.detail}>{describesSchedule(law)}</Text>
-            {permissionLabels.map((label) => (
-              <Text key={label} style={styles.detail}>{label}</Text>
-            ))}
+    <Pressable onPress={onToggle}>
+      {({ pressed }) => (
+        <View
+          style={[
+            styles.card,
+            law.isEnabled && styles.enabled,
+            pressed && styles.pressed,
+          ]}
+        >
+          <AssetImage assetKey={law.assetKey} width={72} height={72} />
+          <View style={styles.body}>
+            <View style={styles.topRow}>
+              <Text style={styles.title} numberOfLines={1}>{law.name}</Text>
+              <Switch
+                value={law.isEnabled}
+                onValueChange={onToggle}
+                thumbColor={colors.white}
+                trackColor={{ true: colors.blue, false: 'rgba(120,120,128,0.22)' }}
+                ios_backgroundColor="rgba(120,120,128,0.22)"
+              />
+            </View>
+            <Text style={styles.description} numberOfLines={2}>{law.description}</Text>
+            <View style={styles.meta}>
+              <StampBadge
+                label={locked ? 'Pro' : law.category}
+                tone={locked ? 'purple' : law.isEnabled ? 'success' : 'blue'}
+              />
+              <StampBadge
+                label={enforcementMode}
+                tone={enforcementMode === 'hardBlock' ? 'danger' : 'orange'}
+              />
+            </View>
+            <View style={styles.details}>
+              <Text style={styles.detail}>{trigger}</Text>
+              <Text style={styles.detail}>{describesSchedule(law)}</Text>
+              {permissionLabels.map((label) => (
+                <Text key={label} style={styles.detail}>{label}</Text>
+              ))}
+              <Text style={styles.sentenceTag}>
+                {law.firstPunishmentMinutes}–{law.maxSentenceMinutes} min
+              </Text>
+            </View>
           </View>
         </View>
-      </View>
+      )}
     </Pressable>
   );
 }
@@ -57,19 +76,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    padding: 12,
-    borderRadius: radius.lg,
-    backgroundColor: 'rgba(58, 29, 17, 0.9)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 242, 210, 0.16)',
+    padding: 14,
+    borderRadius: radius.xl,
+    backgroundColor: 'rgba(255,255,255,0.72)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.9)',
     ...shadows.soft,
   },
   enabled: {
-    borderColor: colors.gold,
+    backgroundColor: 'rgba(0,122,255,0.07)',
+    borderColor: 'rgba(0,122,255,0.28)',
+  },
+  pressed: {
+    opacity: 0.82,
   },
   body: {
     flex: 1,
-    gap: 8,
+    gap: 7,
   },
   topRow: {
     flexDirection: 'row',
@@ -78,42 +101,47 @@ const styles = StyleSheet.create({
   },
   title: {
     flex: 1,
-    color: colors.cream,
-    fontSize: 16,
+    color: colors.label,
+    fontSize: 15,
     lineHeight: 20,
-    fontWeight: '900',
+    fontWeight: '600',
+    letterSpacing: -0.2,
   },
   description: {
-    color: colors.parchment,
+    color: colors.labelSecondary,
     fontSize: 13,
-    lineHeight: 18,
-    fontWeight: '700',
+    lineHeight: 17,
+    fontWeight: '400',
   },
   meta: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
     flexWrap: 'wrap',
-  },
-  sentence: {
-    color: colors.gold,
-    fontSize: 11,
-    fontWeight: '900',
   },
   details: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
+    gap: 5,
   },
   detail: {
     maxWidth: '100%',
     overflow: 'hidden',
     paddingHorizontal: 8,
-    paddingVertical: 5,
+    paddingVertical: 3,
     borderRadius: radius.sm,
-    backgroundColor: 'rgba(255, 242, 210, 0.08)',
-    color: colors.parchment,
-    fontSize: 10,
-    fontWeight: '900',
+    backgroundColor: 'rgba(120,120,128,0.1)',
+    color: colors.labelSecondary,
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  sentenceTag: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.sm,
+    backgroundColor: 'rgba(255,149,0,0.1)',
+    color: colors.orangeDark,
+    fontSize: 11,
+    fontWeight: '600',
   },
 });

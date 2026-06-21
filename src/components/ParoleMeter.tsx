@@ -18,7 +18,12 @@ export function ParoleMeter({ value, label = 'Parole chance' }: ParoleMeterProps
       </View>
       <View style={styles.track}>
         <View style={[styles.fillMask, { width: `${clamped}%` }]}>
-          <LinearGradient colors={[colors.success, colors.gold]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.fill} />
+          <LinearGradient
+            colors={[colors.blue, colors.teal]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.fill}
+          />
         </View>
       </View>
     </View>
@@ -27,7 +32,7 @@ export function ParoleMeter({ value, label = 'Parole chance' }: ParoleMeterProps
 
 const styles = StyleSheet.create({
   root: {
-    gap: 7,
+    gap: 8,
   },
   row: {
     flexDirection: 'row',
@@ -35,19 +40,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   label: {
-    color: colors.cream,
-    fontSize: 12,
-    fontWeight: '900',
+    color: colors.label,
+    fontSize: 13,
+    fontWeight: '500',
+    letterSpacing: -0.08,
   },
   value: {
-    color: colors.gold,
-    fontSize: 12,
-    fontWeight: '900',
+    color: colors.blue,
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: -0.2,
   },
   track: {
-    height: 13,
+    height: 8,
     borderRadius: radius.pill,
-    backgroundColor: 'rgba(255, 242, 210, 0.16)',
+    backgroundColor: 'rgba(0,122,255,0.12)',
     overflow: 'hidden',
   },
   fillMask: {

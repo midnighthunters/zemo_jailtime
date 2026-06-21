@@ -84,7 +84,8 @@ export default function RootLayout() {
   return (
     <StartupErrorBoundary>
       <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
-        <StatusBar style="light" />
+
+        <StatusBar style="dark" />
         <Stack
           screenOptions={{
             headerShown: false,
@@ -116,16 +117,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
-    backgroundColor: '#180B08',
+    backgroundColor: colors.background,
   },
   errorTitle: {
-    color: '#FFFFFF',
+    color: colors.label,
     fontSize: 20,
     fontWeight: '700',
     marginBottom: 12,
   },
   errorMessage: {
-    color: '#FCA5A5',
+    color: colors.red,
     fontSize: 14,
     textAlign: 'center',
   },
