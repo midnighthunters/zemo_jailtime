@@ -12,9 +12,11 @@ import { useCourtStore } from '@/src/store/useCourtStore';
 type OnboardingSceneProps = {
   step: OnboardingStep;
   children?: ReactNode;
+  /** Provide a custom CTA block to replace the default single CourtButton. */
+  overrideCta?: ReactNode;
 };
 
-export function OnboardingScene({ step, children }: OnboardingSceneProps) {
+export function OnboardingScene({ step, children, overrideCta }: OnboardingSceneProps) {
   const router = useRouter();
   const completeOnboarding = useCourtStore((state) => state.completeOnboarding);
   const index = ONBOARDING_STEPS.findIndex((item) => item.id === step.id);
@@ -49,7 +51,7 @@ export function OnboardingScene({ step, children }: OnboardingSceneProps) {
               {children}
             </View>
           ) : null}
-          <CourtButton title={step.cta} onPress={goNext} />
+          {overrideCta ?? <CourtButton title={step.cta} onPress={goNext} />}
         </ScrollView>
       </LinearGradient>
     </View>

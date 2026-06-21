@@ -44,10 +44,12 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen name="courtroom" options={{ title: 'Court', tabBarIcon: ({ focused }) => <TabGlyph label="C" focused={focused} /> }} />
-      <Tabs.Screen name="laws" options={{ title: 'Laws', tabBarIcon: ({ focused }) => <TabGlyph label="L" focused={focused} /> }} />
+      <Tabs.Screen name="culprits" options={{ title: 'Culprits', tabBarIcon: ({ focused }) => <TabGlyph label="🔍" focused={focused} /> }} />
       <Tabs.Screen name="jail" options={{ title: 'Jail', tabBarIcon: ({ focused }) => <TabGlyph label="J" focused={focused} /> }} />
-      <Tabs.Screen name="evidence" options={{ title: 'Evidence', tabBarIcon: ({ focused }) => <TabGlyph label="E" focused={focused} /> }} />
-      <Tabs.Screen name="parole" options={{ title: 'Parole', tabBarIcon: ({ focused }) => <TabGlyph label="P" focused={focused} /> }} />
+      {/* Laws, Evidence and Parole are now sections inside the Court tab — kept here as hidden routes so existing deep-links still work */}
+      <Tabs.Screen name="laws" options={{ href: null }} />
+      <Tabs.Screen name="evidence" options={{ href: null }} />
+      <Tabs.Screen name="parole" options={{ href: null }} />
     </Tabs>
   );
 }
