@@ -48,7 +48,6 @@ function ReasonPill({
             tint={selected ? 'systemThinMaterial' : 'systemUltraThinMaterial'}
             intensity={16}
             style={StyleSheet.absoluteFillObject}
-            reducedTransparencyFallbackColor={selected ? colors.blue : 'rgba(255,255,255,0.72)'}
           />
         ) : null}
         <View style={[StyleSheet.absoluteFillObject, selected ? styles.reasonTintSelected : styles.reasonTint]} />

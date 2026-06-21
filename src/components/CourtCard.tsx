@@ -1,4 +1,4 @@
-import { BlurView } from 'expo-blur';
+import { BlurView, type BlurTint } from 'expo-blur';
 import type { ReactNode } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { Platform, StyleSheet, View } from 'react-native';
@@ -22,14 +22,14 @@ type CourtCardProps = {
   onPress?: () => void;
 };
 
-// Tint colors to layer over the blur for each variant
+// expo-blur tint values + intensity (1–100) for each glass variant
 type VariantConfig = {
-  tintColor: string;
+  tintColor: string;   // transparent color overlay on top of blur
   borderColor: string;
   borderWidth: number;
-  highlightColor: string; // specular top-edge highlight
-  blurType: 'chromeMaterial' | 'systemThinMaterial' | 'systemMaterial' | 'systemUltraThinMaterial';
-  blurAmount: number;
+  highlightColor: string; // specular top-edge
+  blurTint: BlurTint;
+  blurIntensity: number;  // 1–100
   fallbackBg: string;
 };
 
@@ -39,8 +39,8 @@ const variantMap: Record<NonNullable<CourtCardProps['variant']>, VariantConfig> 
     borderColor: 'rgba(255,255,255,0.14)',
     borderWidth: 1,
     highlightColor: 'rgba(255,255,255,0.28)',
-    blurType: 'systemUltraThinMaterial',
-    blurAmount: 20,
+    blurTint: 'systemUltraThinMaterial',
+    blurIntensity: 80,
     fallbackBg: 'rgba(255,255,255,0.72)',
   },
   blue: {
@@ -48,8 +48,8 @@ const variantMap: Record<NonNullable<CourtCardProps['variant']>, VariantConfig> 
     borderColor: 'rgba(0,122,255,0.22)',
     borderWidth: 1,
     highlightColor: 'rgba(255,255,255,0.22)',
-    blurType: 'systemUltraThinMaterial',
-    blurAmount: 20,
+    blurTint: 'systemUltraThinMaterial',
+    blurIntensity: 80,
     fallbackBg: 'rgba(0,122,255,0.1)',
   },
   purple: {
@@ -57,8 +57,8 @@ const variantMap: Record<NonNullable<CourtCardProps['variant']>, VariantConfig> 
     borderColor: 'rgba(175,82,222,0.26)',
     borderWidth: 1,
     highlightColor: 'rgba(255,255,255,0.2)',
-    blurType: 'systemUltraThinMaterial',
-    blurAmount: 20,
+    blurTint: 'systemUltraThinMaterial',
+    blurIntensity: 80,
     fallbackBg: 'rgba(88,86,214,0.1)',
   },
   orange: {
@@ -66,8 +66,8 @@ const variantMap: Record<NonNullable<CourtCardProps['variant']>, VariantConfig> 
     borderColor: 'rgba(255,149,0,0.24)',
     borderWidth: 1,
     highlightColor: 'rgba(255,220,130,0.22)',
-    blurType: 'systemThinMaterial',
-    blurAmount: 18,
+    blurTint: 'systemThinMaterial',
+    blurIntensity: 70,
     fallbackBg: 'rgba(255,149,0,0.1)',
   },
   red: {
@@ -75,8 +75,8 @@ const variantMap: Record<NonNullable<CourtCardProps['variant']>, VariantConfig> 
     borderColor: 'rgba(255,59,48,0.2)',
     borderWidth: 1,
     highlightColor: 'rgba(255,150,140,0.2)',
-    blurType: 'systemThinMaterial',
-    blurAmount: 18,
+    blurTint: 'systemThinMaterial',
+    blurIntensity: 70,
     fallbackBg: 'rgba(255,59,48,0.08)',
   },
   green: {
@@ -84,8 +84,8 @@ const variantMap: Record<NonNullable<CourtCardProps['variant']>, VariantConfig> 
     borderColor: 'rgba(52,199,89,0.22)',
     borderWidth: 1,
     highlightColor: 'rgba(140,255,180,0.2)',
-    blurType: 'systemUltraThinMaterial',
-    blurAmount: 20,
+    blurTint: 'systemUltraThinMaterial',
+    blurIntensity: 80,
     fallbackBg: 'rgba(52,199,89,0.08)',
   },
   dark: {
@@ -93,8 +93,8 @@ const variantMap: Record<NonNullable<CourtCardProps['variant']>, VariantConfig> 
     borderColor: 'rgba(255,255,255,0.1)',
     borderWidth: 1,
     highlightColor: 'rgba(255,255,255,0.15)',
-    blurType: 'systemMaterial',
-    blurAmount: 24,
+    blurTint: 'systemMaterial',
+    blurIntensity: 90,
     fallbackBg: 'rgba(255,255,255,0.72)',
   },
   parchment: {
@@ -102,8 +102,8 @@ const variantMap: Record<NonNullable<CourtCardProps['variant']>, VariantConfig> 
     borderColor: 'rgba(255,255,255,0.22)',
     borderWidth: 1,
     highlightColor: 'rgba(255,255,255,0.3)',
-    blurType: 'chromeMaterial',
-    blurAmount: 22,
+    blurTint: 'systemChromeMaterial',
+    blurIntensity: 90,
     fallbackBg: 'rgba(255,255,255,0.82)',
   },
   wood: {
@@ -111,8 +111,8 @@ const variantMap: Record<NonNullable<CourtCardProps['variant']>, VariantConfig> 
     borderColor: 'rgba(255,149,0,0.2)',
     borderWidth: 1,
     highlightColor: 'rgba(255,220,130,0.18)',
-    blurType: 'systemThinMaterial',
-    blurAmount: 18,
+    blurTint: 'systemThinMaterial',
+    blurIntensity: 70,
     fallbackBg: 'rgba(255,149,0,0.08)',
   },
 };
@@ -144,7 +144,6 @@ export function CourtCard({
 
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
-    // Brightness simulation via opacity inverse
     opacity: 2 - brightness.value,
   }));
 
@@ -170,10 +169,9 @@ export function CourtCard({
         {/* Native blur base — the core of the glass effect */}
         {Platform.OS !== 'web' ? (
           <BlurView
-            tint={cfg.blurType}
-            blurAmount={cfg.blurAmount}
+            tint={cfg.blurTint}
+            intensity={cfg.blurIntensity}
             style={StyleSheet.absoluteFillObject}
-            reducedTransparencyFallbackColor={cfg.fallbackBg}
           />
         ) : (
           <View style={[StyleSheet.absoluteFillObject, { backgroundColor: cfg.fallbackBg }]} />
@@ -203,7 +201,7 @@ const styles = StyleSheet.create({
   inner: {
     padding: 16,
   },
-  // Top-edge specular highlight — simulates light reflecting off the glass surface
+  // Top-edge specular highlight — simulates light reflecting off glass
   highlight: {
     position: 'absolute',
     top: 0,
@@ -213,7 +211,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
   },
-  // Bottom inner shadow — adds depth and dimensionality
+  // Bottom inner shadow — adds depth
   innerShadow: {
     position: 'absolute',
     bottom: 0,

@@ -140,18 +140,23 @@ export function CourtButton({
       scale.value = withSpring(0.955, { damping: 16, stiffness: 400 });
       opacity.value = withSpring(0.88, { damping: 16, stiffness: 400 });
     })
-    .onFinalize((e) => {
+    .onEnd(() => {
       scale.value = withSpring(1, { damping: 13, stiffness: 260 });
       opacity.value = withSpring(1, { damping: 13, stiffness: 260 });
-      if (e.state === 4 /* ENDED */ && !disabled && !loading) {
-        // Haptic feedback
+      if (!disabled && !loading) {
         Haptics.impactAsync(
           variant === 'destructive' || variant === 'danger'
             ? Haptics.ImpactFeedbackStyle.Heavy
             : Haptics.ImpactFeedbackStyle.Light,
         ).catch(() => {});
-        onPress?.();
+        if (onPress) {
+          onPress();
+        }
       }
+    })
+    .onTouchesUp(() => {
+      scale.value = withSpring(1, { damping: 13, stiffness: 260 });
+      opacity.value = withSpring(1, { damping: 13, stiffness: 260 });
     });
 
   const animStyle = useAnimatedStyle(() => ({

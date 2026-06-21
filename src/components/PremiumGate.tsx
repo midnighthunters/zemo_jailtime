@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { usePremiumStore } from '@/src/store/usePremiumStore';
-import { colors, radius } from '@/src/constants/theme';
+import { colors, radius, shadows } from '@/src/constants/theme';
 
 type PremiumGateProps = {
   reason: string;
@@ -18,8 +18,15 @@ export function PremiumGate({ reason, children }: PremiumGateProps) {
   return (
     <Pressable onPress={() => router.push('/modals/paywall')} style={styles.root}>
       {children}
-      <BlurView intensity={26} tint="dark" style={styles.overlay}>
-        <View style={styles.lock}>
+      {/* Strong blur overlay — dims content behind it */}
+      <BlurView intensity={60} tint="systemThickMaterial" style={styles.overlay}>
+        {/* Glass lock card */}
+        <View style={styles.lockCard}>
+          <BlurView intensity={80} tint="systemUltraThinMaterial" style={StyleSheet.absoluteFillObject} />
+          <View style={styles.lockTint} />
+          <View style={styles.lockHighlight} />
+          <View style={styles.lockBorder} />
+          <Text style={styles.lockIcon}>🏛️</Text>
           <Text style={styles.lockTitle}>SUPREME COURT MODE</Text>
           <Text style={styles.lockCopy}>{reason}</Text>
         </View>
@@ -31,31 +38,57 @@ export function PremiumGate({ reason, children }: PremiumGateProps) {
 const styles = StyleSheet.create({
   root: {
     overflow: 'hidden',
-    borderRadius: radius.lg,
+    borderRadius: radius.xl,
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 16,
+    padding: 20,
   },
-  lock: {
-    padding: 12,
-    borderRadius: radius.md,
-    backgroundColor: 'rgba(36, 22, 71, 0.86)',
-    borderWidth: 1,
-    borderColor: colors.gold,
+  lockCard: {
+    borderRadius: radius.xl,
+    overflow: 'hidden',
+    padding: 18,
     alignItems: 'center',
+    gap: 6,
+    ...shadows.strong,
+  },
+  lockTint: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(88,86,214,0.1)',
+    borderRadius: radius.xl,
+  },
+  lockHighlight: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.5)',
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+  },
+  lockBorder: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(88,86,214,0.3)',
+  },
+  lockIcon: {
+    fontSize: 28,
   },
   lockTitle: {
-    color: colors.gold,
+    color: colors.indigo,
     fontSize: 12,
-    fontWeight: '900',
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textAlign: 'center',
   },
   lockCopy: {
-    color: colors.cream,
-    fontSize: 12,
-    fontWeight: '800',
+    color: colors.label,
+    fontSize: 13,
+    fontWeight: '400',
     textAlign: 'center',
+    lineHeight: 18,
   },
 });
