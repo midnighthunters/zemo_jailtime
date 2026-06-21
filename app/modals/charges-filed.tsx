@@ -1,13 +1,42 @@
-import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
-import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, FlatList, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AssetImage } from '@/src/components/AssetImage';
 import { CourtBackground } from '@/src/components/CourtBackground';
 import { CourtButton } from '@/src/components/CourtButton';
 import { CourtCard } from '@/src/components/CourtCard';
 import { StampBadge } from '@/src/components/StampBadge';
-import { colors, radius, shadows } from '@/src/constants/theme';
+import { colors } from '@/src/constants/theme';
 import { useCourtStore } from '@/src/store/useCourtStore';
+import type { FocusLaw } from '@/src/types/court';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const CARD_WIDTH = SCREEN_WIDTH * 0.72;
+const CARD_GAP = 12;
+
+// IDs of the 5 laws to feature in the carousel
+const FEATURED_LAW_IDS = [
+  'anti-doomscroll-act',
+  'midnight-swipe-ban',
+  'productivity-protection-code',
+  'reels-containment-order',
+  'gaming-probation-law',
+];
+
+function LawCarouselItem({ item, isActive }: { item: FocusLaw; isActive: boolean }) {
+  return (
+    <View style={[styles.carouselCard, isActive && styles.carouselCardActive]}>
+      <View style={styles.carouselTop}>
+        <AssetImage assetKey={item.assetKey as any} width={52} height={52} />
+        <View style={styles.carouselBadgeRow}>
+          {isActive && <StampBadge label="VIOLATED" tone="danger" />}
+        </View>
+      </View>
+      <Text style={styles.carouselTitle} numberOfLines={2}>{item.name}</Text>
+      <Text style={styles.carouselDesc} numberOfLines={3}>{item.description}</Text>
+      <Text style={styles.carouselJudge} numberOfLines={2}>"{item.judgeLine}"</Text>
+    </View>
+  );
+}
 
 export default function ChargesFiledModal() {
   const router = useRouter();
@@ -19,6 +48,15 @@ export default function ChargesFiledModal() {
   const requestMercy = useCourtStore((state) => state.requestMercy);
   const law = laws.find((item) => item.id === charge?.lawId);
   const suspect = suspects.find((item) => item.id === charge?.appId);
+
+  // Build carousel: active violated law first, then up to 4 others from featured list
+  const featuredLaws = FEATURED_LAW_IDS
+    .map((id) => laws.find((l) => l.id === id))
+    .filter((l): l is FocusLaw => !!l);
+
+  const carouselLaws: FocusLaw[] = law
+    ? [law, ...featuredLaws.filter((l) => l.id !== law.id)].slice(0, 5)
+    : featuredLaws.slice(0, 5);
 
   return (
     <CourtBackground>
@@ -36,23 +74,22 @@ export default function ChargesFiledModal() {
           </View>
         </CourtCard>
 
-        {/* ── Violated law card ─────────────────────────────────────── */}
-        <CourtCard variant="glass">
-          <View style={styles.evidence}>
-            <AssetImage assetKey="ASSET_PROSECUTOR_FOX_POINT" width={96} height={96} />
-            <View style={styles.evidenceText}>
-              <Text style={styles.evidenceLabel}>VIOLATED LAW</Text>
-              <Text style={styles.evidenceTitle}>{law?.name ?? 'Focus Law'}</Text>
-              <Text style={styles.evidenceCopy}>{charge?.evidenceLine ?? 'The data does not lie.'}</Text>
-              <View style={styles.sentenceRow}>
-                <StampBadge
-                  label={`Sentence: ${charge?.punishmentMinutes ?? 8} min`}
-                  tone="danger"
-                />
-              </View>
-            </View>
-          </View>
-        </CourtCard>
+        {/* ── Laws carousel ─────────────────────────────────────────── */}
+        <View>
+          <Text style={styles.carouselHeading}>VIOLATED LAWS</Text>
+          <FlatList
+            data={carouselLaws}
+            keyExtractor={(item) => item.id}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            snapToInterval={CARD_WIDTH + CARD_GAP}
+            decelerationRate="fast"
+            contentContainerStyle={styles.carouselList}
+            renderItem={({ item }) => (
+              <LawCarouselItem item={item} isActive={item.id === law?.id} />
+            )}
+          />
+        </View>
 
         {/* ── Prosecutor line ───────────────────────────────────────── */}
         <CourtCard variant="orange">
@@ -117,36 +154,60 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     fontWeight: '400',
   },
-  evidence: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  evidenceText: {
-    flex: 1,
-    gap: 6,
-  },
-  evidenceLabel: {
+  // ── Carousel ──────────────────────────────────────────────────────
+  carouselHeading: {
     color: colors.red,
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 0.5,
+    marginBottom: 10,
+    paddingHorizontal: 2,
   },
-  evidenceTitle: {
+  carouselList: {
+    gap: CARD_GAP,
+    paddingRight: 20,
+  },
+  carouselCard: {
+    width: CARD_WIDTH,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
+    padding: 16,
+    gap: 8,
+  },
+  carouselCardActive: {
+    borderColor: colors.red,
+    backgroundColor: 'rgba(220,50,50,0.10)',
+  },
+  carouselTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  carouselBadgeRow: {
+    alignItems: 'flex-end',
+  },
+  carouselTitle: {
     color: colors.label,
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: '700',
-    letterSpacing: -0.3,
+    letterSpacing: -0.2,
   },
-  evidenceCopy: {
+  carouselDesc: {
     color: colors.labelSecondary,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 18,
     fontWeight: '400',
   },
-  sentenceRow: {
-    marginTop: 4,
+  carouselJudge: {
+    color: colors.orangeDark,
+    fontSize: 12,
+    fontStyle: 'italic',
+    lineHeight: 17,
+    marginTop: 2,
   },
+  // ── Prosecutor ────────────────────────────────────────────────────
   row: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import {
   Alert,
   Dimensions,
+  FlatList,
   Modal,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   Platform,
   Pressable,
   ScrollView,
@@ -30,6 +33,35 @@ import type { AppSuspect, FocusLaw } from '@/src/types/court';
 const SCREEN_WIDTH = Dimensions.get('window').width;
 // Two cards per row with padding and gap
 const LAW_CARD_WIDTH = (SCREEN_WIDTH - 32 - 10) / 2;
+
+// ─── Carousel constants ───────────────────────────────────────────────────────
+const CAROUSEL_H_PAD = 20;
+const CAROUSEL_CARD_WIDTH = SCREEN_WIDTH - CAROUSEL_H_PAD * 2;
+const MAX_CAROUSEL_LAWS = 5;
+
+const categoryAccent: Record<string, string> = {
+  shortVideo: colors.red,
+  social:     colors.blue,
+  video:      colors.purple,
+  game:       colors.green,
+  shopping:   colors.orange,
+  dating:     colors.pink,
+  news:       colors.teal,
+  custom:     colors.indigo,
+  all:        colors.blue,
+};
+
+const categoryTint: Record<string, string> = {
+  shortVideo: 'rgba(255,59,48,0.08)',
+  social:     'rgba(0,122,255,0.08)',
+  video:      'rgba(175,82,222,0.08)',
+  game:       'rgba(52,199,89,0.08)',
+  shopping:   'rgba(255,149,0,0.08)',
+  dating:     'rgba(255,45,85,0.08)',
+  news:       'rgba(48,176,199,0.08)',
+  custom:     'rgba(88,86,214,0.08)',
+  all:        'rgba(0,122,255,0.08)',
+};
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function getEnforcementColor(mode?: string) {
@@ -290,6 +322,177 @@ const addCardStyles = StyleSheet.create({
   plus: { color: colors.blue, fontSize: 24, fontWeight: '300', lineHeight: 28 },
   label: { color: colors.blue, fontSize: 13, fontWeight: '700', letterSpacing: -0.2 },
   sub: { color: colors.labelSecondary, fontSize: 11, fontWeight: '500' },
+});
+
+
+// ─── Carousel Law Card ────────────────────────────────────────────────────────
+function CarouselLawCard({
+  law,
+  locked,
+  onToggle,
+  onPress,
+}: {
+  law: FocusLaw;
+  locked: boolean;
+  onToggle: () => void;
+  onPress: () => void;
+}) {
+  const accent = categoryAccent[law.category] ?? colors.blue;
+  const tint   = categoryTint[law.category]   ?? 'rgba(0,122,255,0.08)';
+
+  return (
+    <Pressable onPress={onPress} style={carouselStyles.cardWrap}>
+      <View style={[carouselStyles.card, { backgroundColor: tint }]}>
+        {/* Accent top bar */}
+        <View style={[carouselStyles.accentBar, { backgroundColor: accent }]} />
+
+        {/* Header: icon + badges + toggle */}
+        <View style={carouselStyles.cardHeader}>
+          <AssetImage assetKey={law.assetKey} width={60} height={60} />
+          <View style={carouselStyles.cardHeaderRight}>
+            <View style={carouselStyles.badges}>
+              <StampBadge
+                label={locked ? 'Pro' : law.category}
+                tone={locked ? 'purple' : law.isEnabled ? 'success' : 'blue'}
+              />
+              <StampBadge
+                label={law.isEnabled ? 'Active' : 'Off'}
+                tone={law.isEnabled ? 'success' : 'orange'}
+              />
+            </View>
+            <Pressable
+              onPress={onToggle}
+              style={[carouselStyles.togglePill, law.isEnabled && { backgroundColor: accent }]}
+            >
+              <View style={[carouselStyles.toggleDot, law.isEnabled && carouselStyles.toggleDotOn]} />
+              <Text style={[carouselStyles.toggleText, law.isEnabled && carouselStyles.toggleTextOn]}>
+                {law.isEnabled ? 'ON' : 'OFF'}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+
+        {/* Divider */}
+        <View style={[carouselStyles.divider, { backgroundColor: accent + '40' }]} />
+
+        {/* Name + description */}
+        <Text style={carouselStyles.lawName}>{law.name}</Text>
+        <Text style={carouselStyles.lawDesc} numberOfLines={2}>{law.description}</Text>
+
+        {/* Judge quote */}
+        <View style={[carouselStyles.quoteBox, { borderLeftColor: accent }]}>
+          <Text style={carouselStyles.quoteText} numberOfLines={2}>"{law.judgeLine}"</Text>
+        </View>
+
+        {/* Footer */}
+        <View style={carouselStyles.footer}>
+          <Text style={carouselStyles.footerLabel}>SENTENCE</Text>
+          <Text style={[carouselStyles.footerValue, { color: accent }]}>
+            {law.firstPunishmentMinutes}–{law.maxSentenceMinutes ?? 45} min
+          </Text>
+          <View style={carouselStyles.footerSpacer} />
+          <Text style={carouselStyles.footerLabel}>TRIGGER</Text>
+          <Text style={[carouselStyles.footerValue, { color: accent }]}>
+            {law.trigger ?? 'appLaunch'}
+          </Text>
+        </View>
+      </View>
+    </Pressable>
+  );
+}
+
+const carouselStyles = StyleSheet.create({
+  cardWrap: {
+    width: CAROUSEL_CARD_WIDTH,
+  },
+  card: {
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+    overflow: 'hidden',
+    padding: 18,
+    gap: 12,
+    ...shadows.card,
+  },
+  accentBar: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0,
+    height: 3,
+    opacity: 0.85,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 14,
+    paddingTop: 6,
+  },
+  cardHeaderRight: {
+    flex: 1,
+    gap: 10,
+  },
+  badges: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  togglePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+    backgroundColor: 'rgba(120,120,128,0.18)',
+  },
+  toggleDot: {
+    width: 8, height: 8, borderRadius: 4,
+    backgroundColor: colors.labelTertiary,
+  },
+  toggleDotOn: { backgroundColor: colors.white },
+  toggleText: {
+    fontSize: 12, fontWeight: '700', letterSpacing: 0.4,
+    color: colors.labelSecondary,
+  },
+  toggleTextOn: { color: colors.white },
+  divider: { height: 1, borderRadius: 1 },
+  lawName: {
+    color: colors.label,
+    fontSize: 20,
+    fontWeight: '700',
+    letterSpacing: -0.4,
+    lineHeight: 25,
+  },
+  lawDesc: {
+    color: colors.labelSecondary,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  quoteBox: {
+    borderLeftWidth: 3,
+    paddingLeft: 10,
+    paddingVertical: 2,
+  },
+  quoteText: {
+    color: colors.labelSecondary,
+    fontSize: 13,
+    fontStyle: 'italic',
+    lineHeight: 18,
+  },
+  footer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingTop: 2,
+  },
+  footerSpacer: { flex: 1 },
+  footerLabel: {
+    color: colors.labelTertiary,
+    fontSize: 10, fontWeight: '700', letterSpacing: 0.6,
+  },
+  footerValue: {
+    fontSize: 12, fontWeight: '700', letterSpacing: -0.1,
+  },
 });
 
 
@@ -671,8 +874,18 @@ export default function CulpritsTab() {
   const [selectedLaw, setSelectedLaw] = useState<FocusLaw | null>(null);
   const [sheetVisible, setSheetVisible] = useState(false);
 
+  // Carousel state
+  const flatRef = useRef<FlatList<FocusLaw>>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+
   const selectedCount = suspects.filter((s) => s.isSelected).length;
   const enabledLawsCount = laws.filter((l) => l.isEnabled).length;
+
+  // Enabled laws first, then disabled, max 5
+  const carouselLaws = [
+    ...laws.filter((l) => l.isEnabled),
+    ...laws.filter((l) => !l.isEnabled),
+  ].slice(0, MAX_CAROUSEL_LAWS);
 
   const handleToggleSuspect = (id: string) => {
     const result = toggleSuspect(id, isPro);
@@ -738,27 +951,55 @@ export default function CulpritsTab() {
             <AssetImage assetKey="ASSET_LAW_BOOK_LIBRARY" width={32} height={32} />
             <View>
               <Text style={styles.sectionTitle}>Focus Laws</Text>
-              <Text style={styles.sectionCopy}>{enabledLawsCount} active · Tap a law to edit</Text>
+              <Text style={styles.sectionCopy}>{enabledLawsCount} active · Tap to edit</Text>
             </View>
           </View>
-          <Pressable onPress={() => router.push('/(tabs)/laws')} style={styles.seeAllBtn}>
-            <Text style={styles.seeAllText}>See All</Text>
-          </Pressable>
+          <View style={styles.sectionHeaderRight}>
+            <Text style={styles.carouselCounter}>{activeIndex + 1} / {carouselLaws.length}</Text>
+            <Pressable onPress={() => router.push('/(tabs)/laws')} style={styles.seeAllBtn}>
+              <Text style={styles.seeAllText}>See All</Text>
+            </Pressable>
+          </View>
         </View>
 
-        {/* 2-column law grid */}
-        <View style={styles.lawGrid}>
-          {laws.map((law) => (
-            <FocusLawCard
-              key={law.id}
-              law={law}
-              suspects={suspects}
-              locked={!!law.isPremium && !isPro}
-              onToggle={() => handleLawToggle(law.id, law.isPremium)}
-              onPress={() => handleOpenSheet(law)}
+        {/* Horizontal law carousel */}
+        <FlatList
+          ref={flatRef}
+          data={carouselLaws}
+          keyExtractor={(item) => item.id}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          snapToInterval={CAROUSEL_CARD_WIDTH}
+          decelerationRate="fast"
+          onMomentumScrollEnd={(e: NativeSyntheticEvent<NativeScrollEvent>) => {
+            const idx = Math.round(e.nativeEvent.contentOffset.x / CAROUSEL_CARD_WIDTH);
+            setActiveIndex(Math.max(0, Math.min(idx, carouselLaws.length - 1)));
+          }}
+          renderItem={({ item }) => (
+            <CarouselLawCard
+              law={item}
+              locked={!!item.isPremium && !isPro}
+              onToggle={() => handleLawToggle(item.id, item.isPremium)}
+              onPress={() => handleOpenSheet(item)}
             />
+          )}
+        />
+
+        {/* Dot indicators */}
+        <View style={styles.dots}>
+          {carouselLaws.map((_, i) => (
+            <Pressable
+              key={i}
+              hitSlop={8}
+              onPress={() => {
+                flatRef.current?.scrollToIndex({ index: i, animated: true });
+                setActiveIndex(i);
+              }}
+            >
+              <View style={[styles.dot, i === activeIndex && styles.dotActive]} />
+            </Pressable>
           ))}
-          <AddLawCard onPress={() => router.push('/modals/law-editor')} />
         </View>
 
         {/* ── Distractions (Distracting / Always Allowed / Never Allowed) ── */}
@@ -814,8 +1055,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
   },
   sectionHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  sectionHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   sectionTitle: { color: colors.label, fontSize: 18, fontWeight: '700', letterSpacing: -0.3 },
   sectionCopy: { color: colors.labelSecondary, fontSize: 12, fontWeight: '500' },
+  carouselCounter: {
+    color: colors.labelTertiary,
+    fontSize: 11,
+    fontWeight: '600',
+  },
   seeAllBtn: {
     paddingHorizontal: 12,
     paddingVertical: 5,
@@ -826,7 +1073,23 @@ const styles = StyleSheet.create({
   },
   seeAllText: { color: colors.blue, fontSize: 12, fontWeight: '600' },
 
-  // ── law grid ──
+  // ── carousel dots ──
+  dots: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+  },
+  dot: {
+    width: 6, height: 6, borderRadius: 3,
+    backgroundColor: 'rgba(120,120,128,0.28)',
+  },
+  dotActive: {
+    width: 20, height: 6, borderRadius: 3,
+    backgroundColor: colors.blue,
+  },
+
+  // ── law grid (kept for reference, no longer rendered) ──
   lawGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
