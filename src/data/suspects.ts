@@ -11,6 +11,7 @@ export const DEFAULT_SUSPECTS: AppSuspect[] = [
     dangerLevel: 5,
     iconColor: '#F04B8A',
     isSelected: true,
+    blockCategory: 'distracting',
   },
   {
     id: 'chatty-crow',
@@ -22,6 +23,7 @@ export const DEFAULT_SUSPECTS: AppSuspect[] = [
     dangerLevel: 4,
     iconColor: '#2D7FF9',
     isSelected: true,
+    blockCategory: 'distracting',
   },
   {
     id: 'video-vulture',
@@ -33,6 +35,7 @@ export const DEFAULT_SUSPECTS: AppSuspect[] = [
     dangerLevel: 4,
     iconColor: '#E53935',
     isSelected: true,
+    blockCategory: 'distracting',
   },
   {
     id: 'console-crook',
@@ -44,6 +47,7 @@ export const DEFAULT_SUSPECTS: AppSuspect[] = [
     dangerLevel: 3,
     iconColor: '#6B4EFF',
     isSelected: false,
+    blockCategory: 'distracting',
   },
   {
     id: 'shopping-shark',
@@ -56,6 +60,7 @@ export const DEFAULT_SUSPECTS: AppSuspect[] = [
     iconColor: '#FF9F1C',
     isSelected: false,
     isPremium: true,
+    blockCategory: 'distracting',
   },
   {
     id: 'news-hyena',
@@ -68,6 +73,7 @@ export const DEFAULT_SUSPECTS: AppSuspect[] = [
     iconColor: '#222222',
     isSelected: false,
     isPremium: true,
+    blockCategory: 'distracting',
   },
   {
     id: 'dating-dragon',
@@ -80,6 +86,7 @@ export const DEFAULT_SUSPECTS: AppSuspect[] = [
     iconColor: '#E64980',
     isSelected: false,
     isPremium: true,
+    blockCategory: 'distracting',
   },
   {
     id: 'custom-culprit',
@@ -92,5 +99,6 @@ export const DEFAULT_SUSPECTS: AppSuspect[] = [
     iconColor: '#40B96E',
     isSelected: false,
     isPremium: true,
+    blockCategory: 'distracting',
   },
 ];

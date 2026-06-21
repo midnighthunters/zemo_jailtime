@@ -18,6 +18,7 @@ import { AssetImage } from '@/src/components/AssetImage';
 import { CourtBackground } from '@/src/components/CourtBackground';
 import { CourtButton } from '@/src/components/CourtButton';
 import { CourtCard } from '@/src/components/CourtCard';
+import { DistractionsSection } from '@/src/components/DistractionsSection';
 import { ScreenHeader } from '@/src/components/ScreenHeader';
 import { StampBadge } from '@/src/components/StampBadge';
 import { colors, radius, shadows } from '@/src/constants/theme';
@@ -760,41 +761,8 @@ export default function CulpritsTab() {
           <AddLawCard onPress={() => router.push('/modals/law-editor')} />
         </View>
 
-        {/* ── Distracting Apps ──────────────────────────────────────── */}
-        <CourtCard variant="glass">
-          <View style={styles.cardHeaderRow}>
-            <View style={styles.cardHeaderText}>
-              <StampBadge
-                label={`${selectedCount} / ${isPro ? '∞' : '3'} selected`}
-                tone={selectedCount >= 3 && !isPro ? 'danger' : 'blue'}
-              />
-              <Text style={styles.cardTitle}>Distracting Apps</Text>
-              <Text style={styles.cardCopy}>
-                Select apps for the court to monitor. Tap the timer to set a daily limit.
-                {!isPro ? ' Free plan: 3 apps.' : ''}
-              </Text>
-            </View>
-            <AssetImage assetKey="ASSET_REPEAT_OFFENDER_APP" width={80} height={80} />
-          </View>
-        </CourtCard>
-
-        <View style={styles.suspectList}>
-          {suspects.map((suspect) => (
-            <SuspectRow
-              key={suspect.id}
-              suspect={suspect}
-              isPro={isPro}
-              onToggle={() => handleToggleSuspect(suspect.id)}
-              onTimerChange={(minutes) => handleTimerChange(suspect, minutes)}
-            />
-          ))}
-        </View>
-
-        <CourtButton
-          title="+ Add Custom App"
-          variant="secondary"
-          onPress={() => router.push('/modals/law-editor')}
-        />
+        {/* ── Distractions (Distracting / Always Allowed / Never Allowed) ── */}
+        <DistractionsSection />
 
         {/* ── Real iOS Blocking ─────────────────────────────────────── */}
         <CourtCard variant="blue">

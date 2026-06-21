@@ -47,6 +47,12 @@ export type AppCategory =
   | 'news'
   | 'custom';
 
+// How the court treats an app:
+//  - distracting   → monitored & jailed when limits are broken (the default offenders)
+//  - alwaysAllowed → whitelisted, never blocked (e.g. phone, maps, messages)
+//  - neverAllowed  → hard-locked at all times (no parole, shows a lock overlay)
+export type BlockCategory = 'distracting' | 'alwaysAllowed' | 'neverAllowed';
+
 export type AppSuspect = {
   id: string;
   displayName: string;
@@ -60,6 +66,22 @@ export type AppSuspect = {
   iconColor: string;
   isSelected: boolean;
   isPremium?: boolean;
+  // ── Distraction management ──
+  blockCategory?: BlockCategory;
+  isWebsite?: boolean;
+  url?: string;
+  isCustom?: boolean;
+  // Temporary unblock granted via the breathing flow — ISO timestamp.
+  unblockedUntil?: string;
+};
+
+// A running focus timer. When it ends it can reduce an active jail sentence.
+export type FocusSession = {
+  id: string;
+  startedAt: string;
+  endsAt: string;
+  durationMinutes: number;
+  reducesJail: boolean;
 };
 
 export type FocusLaw = {

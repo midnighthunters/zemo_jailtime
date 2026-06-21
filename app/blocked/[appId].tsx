@@ -32,8 +32,13 @@ export default function BlockedAppScreen() {
             </Text>
             <SentenceTimer seconds={activeCase.remainingSentenceSeconds || 600} />
             <CourtButton
+              title="🫧  Breathe to Unblock"
+              variant="primary"
+              onPress={() => router.push({ pathname: '/modals/unblock', params: { appId: params.appId } })}
+            />
+            <CourtButton
               title="Return to Jail"
-              variant="destructive"
+              variant="ghost"
               onPress={() => router.replace('/(tabs)/jail')}
             />
           </View>

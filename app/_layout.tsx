@@ -77,6 +77,7 @@ export default function RootLayout() {
   useEffect(() => {
     const timer = setInterval(() => {
       useCourtStore.getState().tickSentence();
+      useCourtStore.getState().tickFocusSession();
     }, 1000);
     return () => clearInterval(timer);
   }, []);
@@ -104,6 +105,9 @@ export default function RootLayout() {
           <Stack.Screen name="modals/screen-time-settings" options={{ presentation: 'modal' }} />
           <Stack.Screen name="modals/paywall" options={{ presentation: 'modal' }} />
           <Stack.Screen name="modals/select-apps" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="modals/add-app" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="modals/unblock" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="modals/focus-timer" options={{ presentation: 'modal' }} />
           <Stack.Screen name="modals/weekly-report" options={{ presentation: 'modal' }} />
         </Stack>
       </GestureHandlerRootView>

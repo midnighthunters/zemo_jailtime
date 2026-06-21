@@ -4,11 +4,13 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { DEFAULT_LAWS } from '@/src/data/laws';
 import { DEFAULT_PERMISSION_STATUSES } from '@/src/data/permissions';
 import { DEFAULT_SUSPECTS } from '@/src/data/suspects';
-import type { AgeRange, AppSuspect, Charge, CourtCase, DailyScreenTime, DreamType, FocusGoal, FocusLaw, PermissionId, PermissionStatus, StrictnessLevel, UserProfile, UserRole } from '@/src/types/court';
+import type { AgeRange, AppCategory, AppSuspect, BlockCategory, Charge, CourtCase, DailyScreenTime, DreamType, FocusGoal, FocusLaw, FocusSession, PermissionId, PermissionStatus, StrictnessLevel, UserProfile, UserRole } from '@/src/types/court';
 import { nowIso, todayKey } from '@/src/utils/date';
 
 const freeSuspectLimit = 3;
 const freeLawLimit = 3;
+// The court will never grant more than 15 minutes of temporary access.
+export const MAX_UNBLOCK_MINUTES = 15;
 
 const initialProfile: UserProfile = {
   whyFocus: 'sleep_better',
@@ -40,7 +42,11 @@ const initialProfile: UserProfile = {
 };
 
 function mergeById<T extends { id: string }>(defaults: T[], saved?: T[]) {
-  return defaults.map((item) => ({ ...item, ...(saved?.find((savedItem) => savedItem.id === item.id) ?? {}) }));
+  const merged = defaults.map((item) => ({ ...item, ...(saved?.find((savedItem) => savedItem.id === item.id) ?? {}) }));
+  // Preserve user-added items (e.g. custom apps) that aren't in the defaults.
+  const defaultIds = new Set(defaults.map((item) => item.id));
+  const extras = (saved ?? []).filter((item) => !defaultIds.has(item.id));
+  return [...merged, ...extras];
 }
 
 function mergeProfile(saved?: Partial<UserProfile>): UserProfile {
@@ -72,6 +78,19 @@ function createCase(): CourtCase {
 
 type ToggleResult = { allowed: boolean; reason?: string };
 
+type AddSuspectInput = {
+  displayName: string;
+  category: AppCategory;
+  villainName?: string;
+  iconColor?: string;
+  dangerLevel?: 1 | 2 | 3 | 4 | 5;
+  blockCategory?: BlockCategory;
+  isWebsite?: boolean;
+  url?: string;
+};
+
+type AddSuspectResult = ToggleResult & { id?: string };
+
 type CourtState = {
   profile: UserProfile;
   suspects: AppSuspect[];
@@ -79,6 +98,7 @@ type CourtState = {
   activeCase: CourtCase;
   charges: Charge[];
   activeChargeId?: string;
+  focusSession: FocusSession | null;
   paroleRecords: {
     id: string;
     type: 'focus' | 'sleep' | 'limit' | 'streak' | 'miniAction' | 'manual' | 'purchase';
@@ -96,6 +116,13 @@ type CourtState = {
   setUserRole: (role: UserRole) => void;
   setDailyScreenTime: (screenTime: DailyScreenTime) => void;
   toggleSuspect: (id: string, isPro?: boolean) => ToggleResult;
+  setBlockCategory: (id: string, blockCategory: BlockCategory) => void;
+  addSuspect: (input: AddSuspectInput, isPro?: boolean) => AddSuspectResult;
+  removeSuspect: (id: string) => void;
+  unblockApp: (id: string, minutes: number) => void;
+  startFocusSession: (minutes: number, reducesJail?: boolean) => void;
+  cancelFocusSession: () => void;
+  tickFocusSession: () => void;
   toggleLaw: (id: string, isPro?: boolean) => ToggleResult;
   updateLaw: (id: string, law: Partial<FocusLaw>, isPro?: boolean) => ToggleResult;
   setStrictness: (strictness: StrictnessLevel, isPro?: boolean) => ToggleResult;
@@ -117,6 +144,7 @@ export const useCourtStore = create<CourtState>()(
       laws: DEFAULT_LAWS,
       activeCase: createCase(),
       charges: [],
+      focusSession: null,
       paroleRecords: [
         {
           id: 'welcome-parole',
@@ -203,6 +231,128 @@ export const useCourtStore = create<CourtState>()(
           suspects: current.suspects.map((item) => (item.id === id ? { ...item, isSelected: !item.isSelected } : item)),
         }));
         return { allowed: true };
+      },
+
+      setBlockCategory(id, blockCategory) {
+        set((current) => ({
+          suspects: current.suspects.map((item) =>
+            item.id === id
+              ? {
+                  ...item,
+                  blockCategory,
+                  // Always-allowed apps are never monitored; the other two are.
+                  isSelected: blockCategory === 'alwaysAllowed' ? false : true,
+                  // Re-categorising clears any temporary unblock.
+                  unblockedUntil: undefined,
+                }
+              : item,
+          ),
+        }));
+      },
+
+      addSuspect(input, isPro = false) {
+        const state = get();
+        if (!isPro) {
+          const customCount = state.suspects.filter((item) => item.isCustom).length;
+          if (customCount >= freeSuspectLimit) {
+            return { allowed: false, reason: 'Free court authority covers 3 custom apps or sites.' };
+          }
+        }
+        const slug = input.displayName
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)/g, '');
+        const id = `custom-${slug || 'app'}-${Date.now().toString(36)}`;
+        const suspect: AppSuspect = {
+          id,
+          displayName: input.displayName,
+          category: input.category,
+          villainName: input.villainName ?? 'Mystery Culprit',
+          dailyUsageMinutes: 0,
+          dailyOpenCount: 0,
+          dangerLevel: input.dangerLevel ?? 3,
+          iconColor: input.iconColor ?? '#40B96E',
+          isSelected: input.blockCategory !== 'alwaysAllowed',
+          isCustom: true,
+          blockCategory: input.blockCategory ?? 'distracting',
+          isWebsite: input.isWebsite,
+          url: input.url,
+        };
+        set((current) => ({ suspects: [...current.suspects, suspect] }));
+        return { allowed: true, id };
+      },
+
+      removeSuspect(id) {
+        set((current) => ({ suspects: current.suspects.filter((item) => item.id !== id) }));
+      },
+
+      unblockApp(id, minutes) {
+        const capped = Math.min(MAX_UNBLOCK_MINUTES, Math.max(1, Math.round(minutes)));
+        const until = new Date(Date.now() + capped * 60 * 1000).toISOString();
+        set((current) => ({
+          suspects: current.suspects.map((item) => (item.id === id ? { ...item, unblockedUntil: until } : item)),
+          paroleRecords: [
+            {
+              id: `unblock-${Date.now()}`,
+              type: 'manual',
+              pointsEarned: 0,
+              message: `Temporary access granted for ${capped} min after a breathing check-in.`,
+              createdAt: nowIso(),
+            },
+            ...current.paroleRecords,
+          ],
+        }));
+      },
+
+      startFocusSession(minutes, reducesJail = true) {
+        const duration = Math.min(120, Math.max(1, Math.round(minutes)));
+        const now = Date.now();
+        set(() => ({
+          focusSession: {
+            id: `focus-${now}`,
+            startedAt: new Date(now).toISOString(),
+            endsAt: new Date(now + duration * 60 * 1000).toISOString(),
+            durationMinutes: duration,
+            reducesJail,
+          },
+        }));
+      },
+
+      cancelFocusSession() {
+        set(() => ({ focusSession: null }));
+      },
+
+      tickFocusSession() {
+        const session = get().focusSession;
+        if (!session) return;
+        if (Date.now() < new Date(session.endsAt).getTime()) return;
+        // Session complete — reward focus and reduce the sentence if asked.
+        if (session.reducesJail) {
+          get().reduceSentence(
+            session.durationMinutes,
+            `Focus session complete — ${session.durationMinutes} min served.`,
+            session.durationMinutes * 3,
+          );
+        } else {
+          set((current) => ({
+            profile: {
+              ...current.profile,
+              parolePoints: current.profile.parolePoints + session.durationMinutes * 2,
+              focusCoins: current.profile.focusCoins + session.durationMinutes,
+            },
+            paroleRecords: [
+              {
+                id: `focus-done-${Date.now()}`,
+                type: 'focus',
+                pointsEarned: session.durationMinutes * 2,
+                message: `Focus session complete — ${session.durationMinutes} min of deep work.`,
+                createdAt: nowIso(),
+              },
+              ...current.paroleRecords,
+            ],
+          }));
+        }
+        set(() => ({ focusSession: null }));
       },
 
       toggleLaw(id, isPro = false) {
@@ -394,6 +544,7 @@ export const useCourtStore = create<CourtState>()(
           suspects: mergeById(DEFAULT_SUSPECTS, saved?.suspects),
           activeCase: saved?.activeCase ?? current.activeCase,
           charges: saved?.charges ?? current.charges,
+          focusSession: saved?.focusSession ?? null,
           paroleRecords: saved?.paroleRecords ?? current.paroleRecords,
         };
       },
