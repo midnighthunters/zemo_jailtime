@@ -45,8 +45,8 @@ function ReasonPill({
       <Animated.View style={[styles.reasonOuter, selected && styles.reasonSelected, animStyle]}>
         {Platform.OS !== 'web' ? (
           <BlurView
-            blurType={selected ? 'systemThinMaterial' : 'systemUltraThinMaterial'}
-            blurAmount={16}
+            tint={selected ? 'systemThinMaterial' : 'systemUltraThinMaterial'}
+            intensity={16}
             style={StyleSheet.absoluteFillObject}
             reducedTransparencyFallbackColor={selected ? colors.blue : 'rgba(255,255,255,0.72)'}
           />

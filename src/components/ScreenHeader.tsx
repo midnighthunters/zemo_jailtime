@@ -59,10 +59,9 @@ export function ScreenHeader({ eyebrow, title, subtitle, assetKey }: ScreenHeade
       {/* Floating glass header surface — Layer 3 */}
       {Platform.OS !== 'web' ? (
         <BlurView
-          blurType="systemUltraThinMaterial"
-          blurAmount={22}
+          tint="systemUltraThinMaterial"
+          intensity={22}
           style={StyleSheet.absoluteFillObject}
-          reducedTransparencyFallbackColor="rgba(255,255,255,0.82)"
         />
       ) : (
         <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(255,255,255,0.82)' }]} />

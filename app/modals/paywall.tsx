@@ -39,10 +39,9 @@ export default function PaywallModal() {
         >
           {Platform.OS !== 'web' ? (
             <BlurView
-              blurType="systemUltraThinMaterial"
-              blurAmount={24}
+              tint="systemUltraThinMaterial"
+              intensity={24}
               style={StyleSheet.absoluteFillObject}
-              reducedTransparencyFallbackColor="rgba(255,255,255,0.82)"
             />
           ) : null}
           {/* Gradient tint — purple/indigo premium hue */}
@@ -78,10 +77,9 @@ export default function PaywallModal() {
             >
               {Platform.OS !== 'web' ? (
                 <BlurView
-                  blurType="systemUltraThinMaterial"
-                  blurAmount={14}
+                  tint="systemUltraThinMaterial"
+                  intensity={14}
                   style={StyleSheet.absoluteFillObject}
-                  reducedTransparencyFallbackColor="rgba(255,255,255,0.72)"
                 />
               ) : null}
               <View style={[StyleSheet.absoluteFillObject, styles.benefitTint]} />

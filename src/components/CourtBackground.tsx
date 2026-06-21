@@ -117,10 +117,9 @@ export function CourtBackground({ children, padded = true }: CourtBackgroundProp
 
       {/* Subtle overall blur to unify ambient light — creates "fogged glass" depth */}
       <BlurView
-        blurType="systemUltraThinMaterial"
-        blurAmount={8}
+        tint="systemUltraThinMaterial"
+        intensity={8}
         style={StyleSheet.absoluteFillObject}
-        reducedTransparencyFallbackColor="rgba(242,242,247,0.92)"
       />
 
       {/* Content layer — Layer 1 */}

@@ -92,10 +92,9 @@ export default function TabsLayout() {
             {/* Native glass blur — the real iOS tab bar material */}
             {Platform.OS !== 'web' ? (
               <BlurView
-                blurType="systemChromeMaterial"
-                blurAmount={24}
+                tint="systemChromeMaterial"
+                intensity={24}
                 style={StyleSheet.absoluteFillObject}
-                reducedTransparencyFallbackColor="rgba(255,255,255,0.88)"
               />
             ) : (
               <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(255,255,255,0.88)' }]} />

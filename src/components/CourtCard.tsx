@@ -170,7 +170,7 @@ export function CourtCard({
         {/* Native blur base — the core of the glass effect */}
         {Platform.OS !== 'web' ? (
           <BlurView
-            blurType={cfg.blurType}
+            tint={cfg.blurType}
             blurAmount={cfg.blurAmount}
             style={StyleSheet.absoluteFillObject}
             reducedTransparencyFallbackColor={cfg.fallbackBg}

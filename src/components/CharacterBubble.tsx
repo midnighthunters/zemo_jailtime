@@ -58,10 +58,9 @@ export function CharacterBubble({ assetKey, name, line }: CharacterBubbleProps) 
         {/* Native glass blur */}
         {Platform.OS !== 'web' ? (
           <BlurView
-            blurType="systemUltraThinMaterial"
-            blurAmount={18}
+            tint="systemUltraThinMaterial"
+            intensity={18}
             style={StyleSheet.absoluteFillObject}
-            reducedTransparencyFallbackColor="rgba(255,255,255,0.82)"
           />
         ) : (
           <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(255,255,255,0.82)' }]} />

@@ -66,10 +66,9 @@ export function StampBadge({ label, tone = 'blue' }: StampBadgeProps) {
     >
       {Platform.OS !== 'web' ? (
         <BlurView
-          blurType="systemUltraThinMaterial"
-          blurAmount={12}
+          tint="systemUltraThinMaterial"
+          intensity={12}
           style={StyleSheet.absoluteFillObject}
-          reducedTransparencyFallbackColor="rgba(255,255,255,0.72)"
         />
       ) : null}
       {/* Color tint overlay */}

@@ -202,10 +202,9 @@ export function CourtButton({
         {/* Native blur base for ghost/secondary variants */}
         {colorSet.useBlur && Platform.OS !== 'web' ? (
           <BlurView
-            blurType="systemUltraThinMaterial"
-            blurAmount={16}
+            tint="systemUltraThinMaterial"
+            intensity={16}
             style={[StyleSheet.absoluteFillObject, { borderRadius: radius.pill }]}
-            reducedTransparencyFallbackColor="rgba(255,255,255,0.72)"
           />
         ) : null}
         {colorSet.useBlur && (
@@ -253,8 +252,6 @@ const styles = StyleSheet.create({
   // Top specular highlight stripe on solid buttons
   specularOverlay: {
     borderRadius: radius.pill,
-    background: 'transparent',
-    // Top half only — simulates light hitting the top of a capsule
     top: 0,
     height: '48%',
     backgroundColor: 'rgba(255,255,255,0.14)',

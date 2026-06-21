@@ -63,10 +63,9 @@ export function SentenceTimer({ seconds }: SentenceTimerProps) {
       <View style={styles.pillOuter}>
         {Platform.OS !== 'web' ? (
           <BlurView
-            blurType="systemUltraThinMaterial"
-            blurAmount={12}
+            tint="systemUltraThinMaterial"
+            intensity={12}
             style={StyleSheet.absoluteFillObject}
-            reducedTransparencyFallbackColor="rgba(255,59,48,0.1)"
           />
         ) : null}
         <View style={[StyleSheet.absoluteFillObject, styles.pillTint]} />
@@ -79,10 +78,9 @@ export function SentenceTimer({ seconds }: SentenceTimerProps) {
         <View style={styles.timerRing}>
           {Platform.OS !== 'web' ? (
             <BlurView
-              blurType="systemUltraThinMaterial"
-              blurAmount={14}
+              tint="systemUltraThinMaterial"
+              intensity={14}
               style={StyleSheet.absoluteFillObject}
-              reducedTransparencyFallbackColor="rgba(255,255,255,0.8)"
             />
           ) : null}
           <View style={[StyleSheet.absoluteFillObject, styles.timerTint, low && styles.timerTintLow]} />
