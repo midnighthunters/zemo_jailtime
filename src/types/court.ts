@@ -4,6 +4,10 @@ export type StrictnessLevel = 'soft' | 'balanced' | 'brutal';
 export type HumorLevel = 'light' | 'sarcastic' | 'dramatic';
 export type FocusReason = 'sleep_better' | 'study_work' | 'be_present' | 'less_doomscrolling';
 export type DangerWindow = 'morning' | 'afternoon' | 'evening' | 'late_night';
+export type FocusGoal = 'focus_better' | 'sleep_better' | 'be_present' | 'reduce_anxiety' | 'read_more' | 'exercise_more' | 'spend_less' | 'study_better';
+export type UserRole = 'student' | 'entrepreneur' | 'remote_worker' | 'technologist' | 'creative' | 'parent' | 'executive' | 'other';
+export type AgeRange = 'under_18' | '18_24' | '25_34' | '35_44' | '45_54' | '55_plus';
+export type DailyScreenTime = 'under_2h' | '2_4h' | '4_6h' | '6_8h' | 'over_8h';
 export type EnforcementMode = 'notice' | 'softBlock' | 'hardBlock' | 'focusSession';
 export type LawTrigger = 'appLaunch' | 'dailyLimit' | 'blockedWindow' | 'pickupLoop' | 'focusSession' | 'unlockCount';
 export type PermissionStatus = 'unknown' | 'granted' | 'missing' | 'blocked' | 'notAvailable';
@@ -132,6 +136,10 @@ export type ParoleRecord = {
 export type UserProfile = {
   name?: string;
   whyFocus?: FocusReason;
+  focusGoals?: FocusGoal[];
+  userRole?: UserRole;
+  ageRange?: AgeRange;
+  dailyScreenTime?: DailyScreenTime;
   dangerWindow?: DangerWindow;
   dailyScreenGoalMinutes: number;
   dreams: DreamType[];

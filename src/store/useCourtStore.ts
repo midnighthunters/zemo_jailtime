@@ -4,7 +4,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { DEFAULT_LAWS } from '@/src/data/laws';
 import { DEFAULT_PERMISSION_STATUSES } from '@/src/data/permissions';
 import { DEFAULT_SUSPECTS } from '@/src/data/suspects';
-import type { AppSuspect, Charge, CourtCase, DreamType, FocusLaw, PermissionId, PermissionStatus, StrictnessLevel, UserProfile } from '@/src/types/court';
+import type { AgeRange, AppSuspect, Charge, CourtCase, DailyScreenTime, DreamType, FocusGoal, FocusLaw, PermissionId, PermissionStatus, StrictnessLevel, UserProfile, UserRole } from '@/src/types/court';
 import { evidenceLine, randomCaseId } from '@/src/utils/copy';
 import { nowIso, todayKey } from '@/src/utils/date';
 import { evaluateLawViolation, selectBestViolation, violationCopy } from '@/src/utils/lawPolicy';
@@ -94,6 +94,10 @@ type CourtState = {
   updateScreenTimeSettings: (settings: Partial<UserProfile['screenTimeSettings']>) => void;
   setPermissionStatus: (id: PermissionId, status: PermissionStatus) => void;
   toggleDream: (dream: DreamType) => void;
+  toggleFocusGoal: (goal: FocusGoal) => void;
+  setAgeRange: (age: AgeRange) => void;
+  setUserRole: (role: UserRole) => void;
+  setDailyScreenTime: (screenTime: DailyScreenTime) => void;
   toggleSuspect: (id: string, isPro?: boolean) => ToggleResult;
   toggleLaw: (id: string, isPro?: boolean) => ToggleResult;
   updateLaw: (id: string, law: Partial<FocusLaw>, isPro?: boolean) => ToggleResult;
@@ -166,6 +170,26 @@ export const useCourtStore = create<CourtState>()(
             : [...state.profile.dreams, dream];
           return { profile: { ...state.profile, dreams } };
         });
+      },
+
+      toggleFocusGoal(goal) {
+        set((state) => {
+          const goals = state.profile.focusGoals ?? [];
+          const updated = goals.includes(goal) ? goals.filter((g) => g !== goal) : [...goals, goal];
+          return { profile: { ...state.profile, focusGoals: updated } };
+        });
+      },
+
+      setAgeRange(ageRange) {
+        set((state) => ({ profile: { ...state.profile, ageRange } }));
+      },
+
+      setUserRole(userRole) {
+        set((state) => ({ profile: { ...state.profile, userRole } }));
+      },
+
+      setDailyScreenTime(dailyScreenTime) {
+        set((state) => ({ profile: { ...state.profile, dailyScreenTime } }));
       },
 
       toggleSuspect(id, isPro = false) {
