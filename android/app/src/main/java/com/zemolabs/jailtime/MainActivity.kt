@@ -1,4 +1,4 @@
-package com.jailtime.focuscourt
+package com.zemolabs.jailtime
 
 import android.os.Build
 import android.os.Bundle

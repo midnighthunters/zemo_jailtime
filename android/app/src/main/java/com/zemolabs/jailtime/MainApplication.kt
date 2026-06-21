@@ -1,4 +1,4 @@
-package com.jailtime.focuscourt
+package com.zemolabs.jailtime
 
 import android.app.Application
 import android.content.res.Configuration

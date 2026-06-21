@@ -13,6 +13,7 @@ import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { AssetBootstrapService } from '@/src/services/assets/AssetBootstrapService';
 import { NotificationService } from '@/src/services/notifications/NotificationService';
+import { initBlockingBridge } from '@/src/services/screenTime/BlockingBridge';
 import { useCourtStore } from '@/src/store/useCourtStore';
 import { usePremiumStore } from '@/src/store/usePremiumStore';
 import { colors } from '@/src/constants/theme';
@@ -54,6 +55,7 @@ export default function RootLayout() {
     usePremiumStore.getState().initializeRevenueCat();
     NotificationService.configure();
     AssetBootstrapService.preload().catch(() => undefined);
+    initBlockingBridge();
 
     // Hide splash screen once everything is bootstrapped.
     SplashScreen.hideAsync().catch(() => {
@@ -100,6 +102,7 @@ export default function RootLayout() {
           <Stack.Screen name="modals/law-editor" options={{ presentation: 'modal' }} />
           <Stack.Screen name="modals/screen-time-settings" options={{ presentation: 'modal' }} />
           <Stack.Screen name="modals/paywall" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="modals/select-apps" options={{ presentation: 'modal' }} />
           <Stack.Screen name="modals/weekly-report" options={{ presentation: 'modal' }} />
         </Stack>
       </GestureHandlerRootView>

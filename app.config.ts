@@ -8,7 +8,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   slug: 'jailtime-focus-court',
   version: '1.0.0',
   orientation: 'portrait',
-  scheme: 'jailtimefocuscourt',
+  scheme: 'zemolabsjailtime',
   userInterfaceStyle: 'dark',
   newArchEnabled: false,
   assetBundlePatterns: ['assets/**/*'],
@@ -23,7 +23,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   ios: {
     supportsTablet: true,
-    bundleIdentifier: 'com.jailtime.focuscourt',
+    bundleIdentifier: 'com.zemolabs.jailtime',
     requireFullScreen: true,
     infoPlist: {
       NSUserNotificationsUsageDescription:
@@ -36,11 +36,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
     entitlements: {
       'com.apple.developer.family-controls': true,
-      'com.apple.security.application-groups': ['group.com.jailtime.focuscourt'],
+      'com.apple.security.application-groups': ['group.com.zemolabs.jailtime'],
     },
   },
   android: {
-    package: 'com.jailtime.focuscourt',
+    package: 'com.zemolabs.jailtime',
     permissions: [
       'android.permission.INTERNET',
       'android.permission.POST_NOTIFICATIONS',

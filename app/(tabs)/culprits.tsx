@@ -277,6 +277,25 @@ export default function CulpritsTab() {
           onPress={() => router.push('/modals/law-editor')}
         />
 
+        {/* ── iOS Real Blocking CTA ────────────────────────────────── */}
+        <CourtCard variant="wood" delay={120}>
+          <View style={styles.blockingRow}>
+            <AssetImage assetKey="ASSET_STRICT_MODE_LOCK" width={72} height={72} />
+            <View style={styles.blockingText}>
+              <Text style={styles.blockingTitle}>Real iOS Blocking</Text>
+              <Text style={styles.blockingCopy}>
+                Select your actual installed apps. When your daily limit is hit, iOS locks them with a jail screen — even when JailTime is closed.
+              </Text>
+              <CourtButton
+                title="⚖️  Select Apps to Block"
+                variant="gold"
+                small
+                onPress={() => router.push('/modals/select-apps')}
+              />
+            </View>
+          </View>
+        </CourtCard>
+
         {/* ── Custom Law Presets Section ───────────────────────────── */}
         <View style={styles.presetSectionHeader}>
           <AssetImage assetKey="ASSET_LAW_BOOK_LIBRARY" width={40} height={40} />
@@ -407,4 +426,9 @@ const styles = StyleSheet.create({
   customLawTitle: { color: colors.cream, fontSize: 18, fontWeight: '900' },
   customLawCopy: { color: colors.parchment, fontSize: 13, lineHeight: 18, fontWeight: '700' },
   customLawButtons: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  // ── real blocking CTA ──
+  blockingRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  blockingText: { flex: 1, gap: 8 },
+  blockingTitle: { color: colors.cream, fontSize: 18, fontWeight: '900' },
+  blockingCopy: { color: colors.parchment, fontSize: 13, lineHeight: 18, fontWeight: '700' },
 });
