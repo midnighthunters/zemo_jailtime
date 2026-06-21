@@ -1,6 +1,7 @@
-// ─── Glass / iOS-inspired Design System ──────────────────────────────────────
-// Light mode with frosted glass aesthetic, inspired by iOS 16+ system UI.
-// Clean whites, translucent surfaces, subtle blurs, and vibrant accents.
+// ─── Apple Glass UI Design System ────────────────────────────────────────────
+// visionOS / iOS Liquid Glass inspired aesthetic.
+// Deep translucency, multi-layer depth, specular highlights, natural motion.
+// Every surface is glass-first. Depth over shadows. Floating components.
 
 export const colors = {
   // ── Backgrounds ──

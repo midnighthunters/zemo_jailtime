@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeInDown, FadeInUp, ZoomIn } from 'react-native-reanimated';
 import { AssetImage } from '@/src/components/AssetImage';
 import { CourtBackground } from '@/src/components/CourtBackground';
 import { CourtButton } from '@/src/components/CourtButton';
@@ -14,19 +15,39 @@ export default function ParoleGrantedModal() {
 
   return (
     <CourtBackground>
-      <ScrollView contentContainerStyle={styles.content}>
-        <CourtCard variant="dark">
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <CourtCard variant="green">
           <View style={styles.center}>
-            <AssetImage assetKey="ASSET_COURT_CELEBRATION_CONFETTI" width={160} height={110} />
-            <AssetImage assetKey="ASSET_PAROLE_GRANTED_BADGE" width={150} height={150} />
-            <StampBadge label="Parole Granted" tone="success" />
-            <Text style={styles.title}>Freedom Earned</Text>
-            <Text style={styles.copy}>{latest?.message ?? 'Parole granted. Do not waste this freedom.'}</Text>
+            <Animated.View entering={ZoomIn.duration(400).delay(80).springify().damping(14)}>
+              <AssetImage assetKey="ASSET_COURT_CELEBRATION_CONFETTI" width={160} height={110} />
+            </Animated.View>
+            <Animated.View entering={FadeInDown.duration(360).delay(160).springify().damping(16)}>
+              <AssetImage assetKey="ASSET_PAROLE_GRANTED_BADGE" width={144} height={144} />
+            </Animated.View>
+            <Animated.View entering={FadeInUp.duration(300).delay(240).springify().damping(18)}>
+              <StampBadge label="Parole Granted" tone="success" />
+            </Animated.View>
+            <Animated.Text
+              entering={FadeInUp.duration(300).delay(300).springify().damping(18)}
+              style={styles.title}
+            >
+              Freedom Earned
+            </Animated.Text>
+            <Text style={styles.copy}>
+              {latest?.message ?? 'Parole granted. Do not waste this freedom.'}
+            </Text>
             <Text style={styles.points}>+{latest?.pointsEarned ?? 20} parole points</Text>
-            <AssetImage assetKey="ASSET_DEFENDANT_FREEDOM_WALK" width={126} height={126} />
+            <Animated.View entering={FadeInUp.duration(340).delay(360).springify().damping(16)}>
+              <AssetImage assetKey="ASSET_DEFENDANT_FREEDOM_WALK" width={120} height={120} />
+            </Animated.View>
           </View>
         </CourtCard>
-        <CourtButton title="Return to Courtroom" variant="success" onPress={() => router.replace('/(tabs)/courtroom')} />
+
+        <CourtButton
+          title="Return to Courtroom"
+          variant="green"
+          onPress={() => router.replace('/(tabs)/courtroom')}
+        />
       </ScrollView>
     </CourtBackground>
   );
@@ -35,28 +56,33 @@ export default function ParoleGrantedModal() {
 const styles = StyleSheet.create({
   content: {
     gap: 16,
-    paddingBottom: 28,
+    paddingBottom: 32,
   },
   center: {
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
+    paddingVertical: 8,
   },
   title: {
-    color: colors.cream,
+    color: colors.label,
     fontSize: 32,
-    fontWeight: '900',
+    lineHeight: 38,
+    fontWeight: '700',
     textAlign: 'center',
+    letterSpacing: 0.35,
   },
   copy: {
-    color: colors.parchment,
+    color: colors.labelSecondary,
     fontSize: 15,
     lineHeight: 22,
-    fontWeight: '800',
+    fontWeight: '400',
     textAlign: 'center',
+    paddingHorizontal: 8,
   },
   points: {
-    color: colors.gold,
+    color: colors.greenDark,
     fontSize: 16,
-    fontWeight: '900',
+    fontWeight: '700',
+    letterSpacing: -0.2,
   },
 });

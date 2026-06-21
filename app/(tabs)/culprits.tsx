@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
+import { BlurView } from 'expo-blur';
 import {
   Alert,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -10,7 +12,14 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import Animated, { FadeInDown, FadeInUp, LinearTransition } from 'react-native-reanimated';
+import Animated, {
+  FadeInDown,
+  FadeInUp,
+  LinearTransition,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 import { AssetImage } from '@/src/components/AssetImage';
 import { CourtBackground } from '@/src/components/CourtBackground';
 import { CourtButton } from '@/src/components/CourtButton';
@@ -56,6 +65,9 @@ function SuspectRow({
   const [draftMinutes, setDraftMinutes] = useState(String(suspect.dailyUsageMinutes || 30));
   const locked = suspect.isPremium && !isPro;
 
+  const scale = useSharedValue(1);
+  const rowAnimStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
   const commitTimer = () => {
     const val = parseInt(draftMinutes, 10);
     if (!isNaN(val) && val > 0) onTimerChange(val);
@@ -66,8 +78,22 @@ function SuspectRow({
     <Animated.View
       entering={FadeInUp.duration(260).springify().damping(18)}
       layout={LinearTransition.springify().damping(18)}
-      style={[styles.suspectRow, suspect.isSelected && styles.suspectRowSelected]}
+      style={[styles.suspectRow, suspect.isSelected && styles.suspectRowSelected, rowAnimStyle]}
     >
+      {Platform.OS !== 'web' ? (
+        <BlurView
+          blurType="systemUltraThinMaterial"
+          blurAmount={18}
+          style={StyleSheet.absoluteFillObject}
+          reducedTransparencyFallbackColor="rgba(255,255,255,0.72)"
+        />
+      ) : (
+        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(255,255,255,0.72)' }]} />
+      )}
+      <View style={[StyleSheet.absoluteFillObject, styles.suspectRowTint, suspect.isSelected && styles.suspectRowTintSelected]} />
+      <View style={styles.suspectRowHighlight} />
+      <View style={[styles.suspectRowBorder, suspect.isSelected && styles.suspectRowBorderSelected]} />
+
       <View style={[styles.suspectIcon, { backgroundColor: suspect.iconColor }]}>
         <Text style={styles.suspectIconText}>{suspect.displayName.slice(0, 1)}</Text>
       </View>
@@ -127,12 +153,29 @@ function PresetCard({
   const locked = preset.isPremium && !isPro;
   const active = law?.isEnabled ?? false;
 
+  const scale = useSharedValue(1);
+  const cardAnimStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
   return (
     <Animated.View
       entering={FadeInDown.duration(260).springify().damping(18)}
       layout={LinearTransition.springify().damping(18)}
-      style={[styles.presetCard, active && styles.presetCardActive]}
+      style={[styles.presetCard, cardAnimStyle]}
     >
+      {Platform.OS !== 'web' ? (
+        <BlurView
+          blurType="systemUltraThinMaterial"
+          blurAmount={18}
+          style={StyleSheet.absoluteFillObject}
+          reducedTransparencyFallbackColor="rgba(255,255,255,0.72)"
+        />
+      ) : (
+        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(255,255,255,0.72)' }]} />
+      )}
+      <View style={[StyleSheet.absoluteFillObject, styles.presetTint, active && styles.presetTintActive]} />
+      <View style={styles.presetHighlight} />
+      <View style={[styles.presetBorder, active && styles.presetBorderActive]} />
+
       <Text style={styles.presetEmoji}>{preset.emoji}</Text>
       <View style={styles.presetBody}>
         <View style={styles.presetTopRow}>
@@ -144,6 +187,8 @@ function PresetCard({
       </View>
       <Pressable
         onPress={onActivate}
+        onPressIn={() => { scale.value = withSpring(0.975, { damping: 18, stiffness: 380 }); }}
+        onPressOut={() => { scale.value = withSpring(1, { damping: 13, stiffness: 260 }); }}
         style={[styles.presetToggle, active && styles.presetToggleActive]}
       >
         <Text style={[styles.presetToggleText, active && styles.presetToggleTextActive]}>
@@ -352,14 +397,37 @@ const styles = StyleSheet.create({
     gap: 12,
     padding: 14,
     borderRadius: radius.xl,
-    backgroundColor: 'rgba(255,255,255,0.72)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.9)',
+    overflow: 'hidden',
     ...shadows.soft,
   },
   suspectRowSelected: {
+    // tint change is handled by suspectRowTintSelected
+  },
+  suspectRowTint: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: radius.xl,
+  },
+  suspectRowTintSelected: {
     backgroundColor: 'rgba(0,122,255,0.07)',
-    borderColor: 'rgba(0,122,255,0.28)',
+  },
+  suspectRowHighlight: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.5)',
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+  },
+  suspectRowBorder: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  suspectRowBorderSelected: {
+    borderColor: 'rgba(0,122,255,0.26)',
   },
   suspectIcon: {
     width: 46,
@@ -417,15 +485,36 @@ const styles = StyleSheet.create({
     gap: 12,
     padding: 14,
     borderRadius: radius.xl,
-    backgroundColor: 'rgba(255,255,255,0.68)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.88)',
+    overflow: 'hidden',
     ...shadows.soft,
   },
-  presetCardActive: {
-    backgroundColor: 'rgba(0,122,255,0.07)',
-    borderColor: 'rgba(0,122,255,0.28)',
+  presetTint: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: radius.xl,
   },
+  presetTintActive: {
+    backgroundColor: 'rgba(0,122,255,0.07)',
+  },
+  presetHighlight: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.48)',
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+  },
+  presetBorder: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  presetBorderActive: {
+    borderColor: 'rgba(0,122,255,0.26)',
+  },
+  // ← removed presetCardActive (now handled by tint)
   presetEmoji: { fontSize: 26, width: 36, textAlign: 'center' },
   presetBody: { flex: 1, gap: 4 },
   presetTopRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },

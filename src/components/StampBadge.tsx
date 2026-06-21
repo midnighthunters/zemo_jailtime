@@ -1,4 +1,5 @@
-import { StyleSheet, Text } from 'react-native';
+import { BlurView } from 'expo-blur';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 import Animated, { ZoomIn } from 'react-native-reanimated';
 import { colors, radius } from '@/src/constants/theme';
 
@@ -7,54 +8,75 @@ type StampBadgeProps = {
   tone?: 'danger' | 'success' | 'gold' | 'muted' | 'purple' | 'blue' | 'orange';
 };
 
-const toneMap: Record<NonNullable<StampBadgeProps['tone']>, { bg: string; text: string; border: string }> = {
+const toneMap: Record<
+  NonNullable<StampBadgeProps['tone']>,
+  { tint: string; text: string; border: string; glow: string }
+> = {
   blue: {
-    bg: 'rgba(0,122,255,0.12)',
+    tint: 'rgba(0,122,255,0.1)',
     text: colors.blue,
-    border: 'rgba(0,122,255,0.28)',
+    border: 'rgba(0,122,255,0.26)',
+    glow: 'rgba(0,122,255,0.15)',
   },
   success: {
-    bg: 'rgba(52,199,89,0.12)',
+    tint: 'rgba(52,199,89,0.1)',
     text: colors.greenDark,
-    border: 'rgba(52,199,89,0.3)',
+    border: 'rgba(52,199,89,0.28)',
+    glow: 'rgba(52,199,89,0.14)',
   },
   gold: {
-    bg: 'rgba(255,204,0,0.14)',
-    text: '#B8860B',
-    border: 'rgba(255,204,0,0.35)',
+    tint: 'rgba(255,204,0,0.12)',
+    text: '#9E7000',
+    border: 'rgba(255,204,0,0.32)',
+    glow: 'rgba(255,204,0,0.16)',
   },
   danger: {
-    bg: 'rgba(255,59,48,0.1)',
+    tint: 'rgba(255,59,48,0.08)',
     text: colors.red,
-    border: 'rgba(255,59,48,0.28)',
+    border: 'rgba(255,59,48,0.26)',
+    glow: 'rgba(255,59,48,0.14)',
   },
   purple: {
-    bg: 'rgba(88,86,214,0.12)',
+    tint: 'rgba(88,86,214,0.1)',
     text: colors.indigo,
-    border: 'rgba(88,86,214,0.3)',
+    border: 'rgba(88,86,214,0.28)',
+    glow: 'rgba(88,86,214,0.14)',
   },
   orange: {
-    bg: 'rgba(255,149,0,0.12)',
+    tint: 'rgba(255,149,0,0.1)',
     text: colors.orangeDark,
-    border: 'rgba(255,149,0,0.3)',
+    border: 'rgba(255,149,0,0.28)',
+    glow: 'rgba(255,149,0,0.14)',
   },
   muted: {
-    bg: 'rgba(120,120,128,0.1)',
+    tint: 'rgba(120,120,128,0.08)',
     text: colors.labelSecondary,
-    border: 'rgba(120,120,128,0.2)',
+    border: 'rgba(120,120,128,0.18)',
+    glow: 'rgba(120,120,128,0.08)',
   },
 };
 
 export function StampBadge({ label, tone = 'blue' }: StampBadgeProps) {
   const t = toneMap[tone] ?? toneMap.blue;
+
   return (
     <Animated.View
-      entering={ZoomIn.duration(220).springify().damping(14)}
-      style={[
-        styles.badge,
-        { backgroundColor: t.bg, borderColor: t.border },
-      ]}
+      entering={ZoomIn.duration(240).springify().damping(14)}
+      style={[styles.badge, { borderColor: t.border }]}
     >
+      {Platform.OS !== 'web' ? (
+        <BlurView
+          blurType="systemUltraThinMaterial"
+          blurAmount={12}
+          style={StyleSheet.absoluteFillObject}
+          reducedTransparencyFallbackColor="rgba(255,255,255,0.72)"
+        />
+      ) : null}
+      {/* Color tint overlay */}
+      <View style={[StyleSheet.absoluteFillObject, styles.tintFill, { backgroundColor: t.tint }]} />
+      {/* Specular top edge */}
+      <View style={styles.highlight} />
+
       <Text style={[styles.text, { color: t.text }]}>{label.toUpperCase()}</Text>
     </Animated.View>
   );
@@ -67,10 +89,26 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: 10,
     paddingVertical: 4,
+    overflow: 'hidden',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  tintFill: {
+    borderRadius: radius.pill,
+  },
+  highlight: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.5)',
+    borderTopLeftRadius: radius.pill,
+    borderTopRightRadius: radius.pill,
   },
   text: {
     fontSize: 11,
     fontWeight: '700',
-    letterSpacing: 0.4,
+    letterSpacing: 0.5,
   },
 });

@@ -1,6 +1,8 @@
-import { useRouter } from 'expo-router';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { AssetImage } from '@/src/components/AssetImage';
 import { CourtBackground } from '@/src/components/CourtBackground';
 import { CourtButton } from '@/src/components/CourtButton';
@@ -30,38 +32,68 @@ export default function PaywallModal() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
       >
-        {/* ── Hero ─────────────────────────────────────────────────── */}
-        <LinearGradient
-          colors={['rgba(88,86,214,0.14)', 'rgba(175,82,222,0.1)']}
-          style={styles.heroGradient}
+        {/* ── Hero — deep glass with gradient overlay ────────────── */}
+        <Animated.View
+          entering={FadeInDown.duration(400).springify().damping(18)}
+          style={styles.heroOuter}
         >
+          {Platform.OS !== 'web' ? (
+            <BlurView
+              blurType="systemUltraThinMaterial"
+              blurAmount={24}
+              style={StyleSheet.absoluteFillObject}
+              reducedTransparencyFallbackColor="rgba(255,255,255,0.82)"
+            />
+          ) : null}
+          {/* Gradient tint — purple/indigo premium hue */}
+          <LinearGradient
+            colors={['rgba(88,86,214,0.12)', 'rgba(175,82,222,0.08)']}
+            style={StyleSheet.absoluteFillObject}
+          />
+          <View style={styles.heroHighlight} />
+          <View style={styles.heroBorder} />
+
           <View style={styles.hero}>
             <View style={styles.heroText}>
               <StampBadge label="Pro Required" tone="purple" />
-              <Text style={styles.title}>Supreme Court Mode</Text>
-              <Text style={styles.copy}>
+              <Text style={styles.heroTitle}>Supreme Court Mode</Text>
+              <Text style={styles.heroCopy}>
                 Unlimited laws. Stronger punishments. Cleaner record.
               </Text>
             </View>
-            <AssetImage
-              assetKey="ASSET_SUPREME_COURT_MODE_PAYWALL"
-              width={130}
-              height={130}
-            />
+            <AssetImage assetKey="ASSET_SUPREME_COURT_MODE_PAYWALL" width={128} height={128} />
           </View>
-        </LinearGradient>
+        </Animated.View>
 
-        {/* ── Benefits ─────────────────────────────────────────────── */}
-        <View style={styles.benefitGrid}>
-          {benefits.map((benefit) => (
-            <View key={benefit.text} style={styles.benefit}>
+        {/* ── Benefits grid — glass pills ───────────────────────── */}
+        <Animated.View
+          entering={FadeInUp.duration(340).delay(80).springify().damping(18)}
+          style={styles.benefitGrid}
+        >
+          {benefits.map((benefit, index) => (
+            <Animated.View
+              key={benefit.text}
+              entering={FadeInUp.duration(280).delay(100 + index * 40).springify().damping(17)}
+              style={styles.benefitOuter}
+            >
+              {Platform.OS !== 'web' ? (
+                <BlurView
+                  blurType="systemUltraThinMaterial"
+                  blurAmount={14}
+                  style={StyleSheet.absoluteFillObject}
+                  reducedTransparencyFallbackColor="rgba(255,255,255,0.72)"
+                />
+              ) : null}
+              <View style={[StyleSheet.absoluteFillObject, styles.benefitTint]} />
+              <View style={styles.benefitHighlight} />
+              <View style={styles.benefitBorder} />
               <Text style={styles.benefitIcon}>{benefit.icon}</Text>
               <Text style={styles.benefitText}>{benefit.text}</Text>
-            </View>
+            </Animated.View>
           ))}
-        </View>
+        </Animated.View>
 
-        {/* ── Packages ─────────────────────────────────────────────── */}
+        {/* ── Packages ─────────────────────────────────────────── */}
         <View style={styles.packages}>
           {packages.map((pkg) => (
             <CourtCard
@@ -120,11 +152,12 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
 
-  // ── hero ──
-  heroGradient: {
+  // ── Hero ──
+  heroOuter: {
     borderRadius: radius.xl,
-    borderWidth: 1.5,
-    borderColor: 'rgba(88,86,214,0.28)',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(88,86,214,0.22)',
     ...shadows.card,
   },
   hero: {
@@ -137,48 +170,116 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 10,
   },
-  title: {
+  heroHighlight: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.45)',
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+  },
+  heroBorder: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: radius.xl,
+    borderWidth: 0, // Already set on outer
+  },
+  heroTitle: {
     color: colors.label,
     fontSize: 26,
     lineHeight: 32,
     fontWeight: '700',
     letterSpacing: 0.35,
   },
-  copy: {
+  heroCopy: {
     color: colors.labelSecondary,
     fontSize: 15,
     lineHeight: 21,
     fontWeight: '400',
   },
 
-  // ── benefits ──
+  // ── Benefits ──
   benefitGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
   },
-  benefit: {
+  benefitOuter: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 7,
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: radius.pill,
-    backgroundColor: 'rgba(255,255,255,0.72)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.9)',
+    overflow: 'hidden',
+    ...shadows.soft,
   },
-  benefitIcon: { fontSize: 15 },
-  benefitText: { color: colors.label, fontSize: 13, fontWeight: '500' },
+  benefitTint: {
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: radius.pill,
+  },
+  benefitHighlight: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.45)',
+    borderTopLeftRadius: radius.pill,
+    borderTopRightRadius: radius.pill,
+  },
+  benefitBorder: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  benefitIcon: {
+    fontSize: 15,
+  },
+  benefitText: {
+    color: colors.label,
+    fontSize: 13,
+    fontWeight: '500',
+    letterSpacing: -0.1,
+  },
 
-  // ── packages ──
-  packages: { gap: 10 },
-  packageRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  packageText: { flex: 1, gap: 6 },
-  packageTitle: { color: colors.label, fontSize: 18, fontWeight: '700', letterSpacing: -0.3 },
-  packagePrice: { color: colors.blue, fontSize: 16, fontWeight: '700' },
+  // ── Packages ──
+  packages: {
+    gap: 10,
+  },
+  packageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  packageText: {
+    flex: 1,
+    gap: 6,
+  },
+  packageTitle: {
+    color: colors.label,
+    fontSize: 18,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+  },
+  packagePrice: {
+    color: colors.blue,
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+  },
 
-  // ── misc ──
+  // ── Misc ──
   errorText: {
     color: colors.red,
     fontSize: 13,

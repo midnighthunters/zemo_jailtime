@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { BlurView } from 'expo-blur';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 import Svg, { G, Rect, Text as SvgText } from 'react-native-svg';
 
 import { AssetImage } from '@/src/components/AssetImage';
@@ -64,20 +70,40 @@ function SectionToggle({
   onToggle: () => void;
   accentColor?: string;
 }) {
+  const scale = useSharedValue(1);
+  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
   return (
     <Pressable
       onPress={onToggle}
-      style={({ pressed }) => [styles.sectionToggle, pressed && styles.pressed]}
+      onPressIn={() => { scale.value = withSpring(0.977, { damping: 18, stiffness: 380 }); }}
+      onPressOut={() => { scale.value = withSpring(1, { damping: 13, stiffness: 260 }); }}
     >
-      <View style={styles.toggleLeft}>
-        <Text style={styles.sectionToggleTitle}>{title}</Text>
-        {subtitle ? <Text style={styles.sectionToggleSub}>{subtitle}</Text> : null}
-      </View>
-      <View style={[styles.chevronWrap, { backgroundColor: `${accentColor}15` }]}>
-        <Text style={[styles.chevron, { color: accentColor }]}>
-          {expanded ? '▲' : '▼'}
-        </Text>
-      </View>
+      <Animated.View style={[styles.sectionToggle, animStyle]}>
+        {Platform.OS !== 'web' ? (
+          <BlurView
+            blurType="systemUltraThinMaterial"
+            blurAmount={18}
+            style={StyleSheet.absoluteFillObject}
+            reducedTransparencyFallbackColor="rgba(255,255,255,0.72)"
+          />
+        ) : (
+          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(255,255,255,0.72)' }]} />
+        )}
+        <View style={[StyleSheet.absoluteFillObject, styles.sectionToggleTint]} />
+        <View style={styles.sectionToggleHighlight} />
+        <View style={styles.sectionToggleBorder} />
+
+        <View style={styles.toggleLeft}>
+          <Text style={styles.sectionToggleTitle}>{title}</Text>
+          {subtitle ? <Text style={styles.sectionToggleSub}>{subtitle}</Text> : null}
+        </View>
+        <View style={[styles.chevronWrap, { backgroundColor: `${accentColor}15` }]}>
+          <Text style={[styles.chevron, { color: accentColor }]}>
+            {expanded ? '▲' : '▼'}
+          </Text>
+        </View>
+      </Animated.View>
     </Pressable>
   );
 }
@@ -507,10 +533,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderRadius: radius.xl,
-    backgroundColor: 'rgba(255,255,255,0.72)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.9)',
+    overflow: 'hidden',
     ...shadows.soft,
+  },
+  sectionToggleTint: {
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: radius.xl,
+  },
+  sectionToggleHighlight: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.5)',
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+  },
+  sectionToggleBorder: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   pressed: { opacity: 0.82 },
   toggleLeft: { flex: 1, gap: 2 },
@@ -540,9 +585,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: radius.pill,
-    backgroundColor: 'rgba(255,255,255,0.72)',
+    backgroundColor: 'rgba(255,255,255,0.6)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.9)',
+    borderColor: 'rgba(255,255,255,0.22)',
   },
   filterChipActive: { backgroundColor: colors.blue, borderColor: colors.blue },
   filterChipText: { color: colors.labelSecondary, fontSize: 13, fontWeight: '600' },
@@ -588,9 +633,9 @@ const styles = StyleSheet.create({
     gap: 12,
     padding: 14,
     borderRadius: radius.xl,
-    backgroundColor: 'rgba(255,255,255,0.68)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.88)',
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   historyText: { flex: 1, gap: 3 },
   historyMessage: { color: colors.label, fontSize: 14, lineHeight: 19, fontWeight: '500' },

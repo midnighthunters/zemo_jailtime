@@ -1,4 +1,10 @@
-import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { BlurView } from 'expo-blur';
+import { Platform, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 import type { FocusLaw } from '@/src/types/court';
 import { AssetImage } from '@/src/components/AssetImage';
 import { StampBadge } from '@/src/components/StampBadge';
@@ -21,17 +27,58 @@ export function LawCard({ law, locked, onToggle, delay = 0 }: LawCardProps) {
     .filter((label): label is string => Boolean(label))
     .slice(0, 3);
 
+  const scale = useSharedValue(1);
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.976, { damping: 18, stiffness: 380 });
+  };
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 13, stiffness: 260 });
+  };
+
   return (
-    <Pressable onPress={onToggle}>
-      {({ pressed }) => (
+    <Pressable
+      onPress={onToggle}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+    >
+      <Animated.View
+        style={[
+          styles.card,
+          law.isEnabled && styles.enabled,
+          animStyle,
+        ]}
+      >
+        {/* Native glass blur */}
+        {Platform.OS !== 'web' ? (
+          <BlurView
+            blurType="systemUltraThinMaterial"
+            blurAmount={18}
+            style={StyleSheet.absoluteFillObject}
+            reducedTransparencyFallbackColor="rgba(255,255,255,0.72)"
+          />
+        ) : (
+          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(255,255,255,0.72)' }]} />
+        )}
+        {/* Color tint — blue when enabled */}
         <View
           style={[
-            styles.card,
-            law.isEnabled && styles.enabled,
-            pressed && styles.pressed,
+            StyleSheet.absoluteFillObject,
+            styles.tint,
+            law.isEnabled && styles.tintEnabled,
           ]}
-        >
-          <AssetImage assetKey={law.assetKey} width={72} height={72} />
+        />
+        {/* Specular highlight */}
+        <View style={styles.highlight} />
+        {/* Border */}
+        <View style={[styles.border, law.isEnabled && styles.borderEnabled]} />
+
+        {/* Content */}
+        <View style={styles.content}>
+          <AssetImage assetKey={law.assetKey} width={68} height={68} />
           <View style={styles.body}>
             <View style={styles.topRow}>
               <Text style={styles.title} numberOfLines={1}>{law.name}</Text>
@@ -66,29 +113,59 @@ export function LawCard({ law, locked, onToggle, delay = 0 }: LawCardProps) {
             </View>
           </View>
         </View>
-      )}
+      </Animated.View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
+    borderRadius: radius.xl,
+    overflow: 'hidden',
+    ...shadows.soft,
+  },
+  enabled: {
+    // slight blue shadow when active
+    shadowColor: colors.blue,
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+  },
+  content: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     padding: 14,
+  },
+  tint: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255,255,255,0.06)',
     borderRadius: radius.xl,
-    backgroundColor: 'rgba(255,255,255,0.72)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.9)',
-    ...shadows.soft,
   },
-  enabled: {
-    backgroundColor: 'rgba(0,122,255,0.07)',
-    borderColor: 'rgba(0,122,255,0.28)',
+  tintEnabled: {
+    backgroundColor: 'rgba(0,122,255,0.06)',
   },
-  pressed: {
-    opacity: 0.82,
+  highlight: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.5)',
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+  },
+  border: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  borderEnabled: {
+    borderColor: 'rgba(0,122,255,0.24)',
   },
   body: {
     flex: 1,
