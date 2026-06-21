@@ -5,10 +5,7 @@ import { DEFAULT_LAWS } from '@/src/data/laws';
 import { DEFAULT_PERMISSION_STATUSES } from '@/src/data/permissions';
 import { DEFAULT_SUSPECTS } from '@/src/data/suspects';
 import type { AgeRange, AppSuspect, Charge, CourtCase, DailyScreenTime, DreamType, FocusGoal, FocusLaw, PermissionId, PermissionStatus, StrictnessLevel, UserProfile, UserRole } from '@/src/types/court';
-import { evidenceLine, randomCaseId } from '@/src/utils/copy';
 import { nowIso, todayKey } from '@/src/utils/date';
-import { evaluateLawViolation, selectBestViolation, violationCopy } from '@/src/utils/lawPolicy';
-import { sentenceForRepeat } from '@/src/utils/sentence';
 
 const freeSuspectLimit = 3;
 const freeLawLimit = 3;
@@ -104,7 +101,6 @@ type CourtState = {
   setStrictness: (strictness: StrictnessLevel, isPro?: boolean) => ToggleResult;
   setBedtime: (bedtime: string) => void;
   setWakeTime: (wakeTime: string) => void;
-  simulateAppOpen: (appId: string) => Charge | undefined;
   acceptSentence: (chargeId?: string) => void;
   requestMercy: (chargeId?: string) => boolean;
   reduceSentence: (minutes: number, message: string, points?: number) => boolean;
@@ -253,67 +249,6 @@ export const useCourtStore = create<CourtState>()(
 
       setWakeTime(wakeTime) {
         set((state) => ({ profile: { ...state.profile, wakeTime } }));
-      },
-
-      simulateAppOpen(appId) {
-        const state = get();
-        const suspect = state.suspects.find((item) => item.id === appId);
-        if (!suspect || !suspect.isSelected) return undefined;
-
-        const nextOpenCount = suspect.dailyOpenCount + 1;
-        const nextUsage = suspect.dailyUsageMinutes + Math.ceil(4 + suspect.dangerLevel * 2);
-        const updatedSuspect = { ...suspect, dailyOpenCount: nextOpenCount, dailyUsageMinutes: nextUsage };
-        const violation = selectBestViolation(
-          state.laws.map((law) => evaluateLawViolation(law, suspect, nextOpenCount, nextUsage)),
-        );
-
-        let charge: Charge | undefined;
-        if (violation) {
-          const matchingLaw = violation.law;
-          const punishmentMinutes = sentenceForRepeat(matchingLaw, state.charges);
-          charge = {
-            id: `${matchingLaw.id}-${Date.now()}`,
-            lawId: matchingLaw.id,
-            appId: suspect.id,
-            title: 'Charges Filed',
-            description: `${matchingLaw.shortName} was violated by ${suspect.displayName}: ${violationCopy(violation.reason)}.`,
-            evidenceLine: evidenceLine(suspect.displayName, nextOpenCount),
-            severity: suspect.dangerLevel,
-            punishmentMinutes,
-            createdAt: nowIso(),
-            status: 'filed',
-          };
-        }
-
-        set((current) => {
-          const updatedSuspects = current.suspects.map((item) => (item.id === appId ? updatedSuspect : item));
-          if (!charge) {
-            return {
-              suspects: updatedSuspects,
-              activeCase: {
-                ...current.activeCase,
-                status: current.activeCase.status === 'clean' ? 'warning' : current.activeCase.status,
-              },
-            };
-          }
-
-          const charges = [charge, ...current.charges];
-          const caseCharges = [charge, ...current.activeCase.charges];
-          return {
-            suspects: updatedSuspects,
-            charges,
-            activeChargeId: charge.id,
-            activeCase: {
-              ...current.activeCase,
-              title: `${randomCaseId()}: The People vs. ${suspect.displayName}`,
-              charges: caseCharges,
-              totalSentenceMinutes: current.activeCase.totalSentenceMinutes + charge.punishmentMinutes,
-              status: 'charged',
-            },
-          };
-        });
-
-        return charge;
       },
 
       acceptSentence(chargeId) {

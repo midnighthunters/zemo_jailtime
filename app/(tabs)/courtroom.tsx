@@ -10,12 +10,10 @@ import { CourtBackground } from '@/src/components/CourtBackground';
 import { CourtButton } from '@/src/components/CourtButton';
 import { CourtCard } from '@/src/components/CourtCard';
 import { EvidenceCard } from '@/src/components/EvidenceCard';
-import { LawCard } from '@/src/components/LawCard';
 import { ParoleMeter } from '@/src/components/ParoleMeter';
 import { ProgressDocket } from '@/src/components/ProgressDocket';
 import { ScreenHeader } from '@/src/components/ScreenHeader';
 import { StampBadge } from '@/src/components/StampBadge';
-import { SuspectAppCard } from '@/src/components/SuspectAppCard';
 import { colors, radius, shadows } from '@/src/constants/theme';
 import { Dialogues } from '@/src/data/dialogues';
 import { COURT_RANKS, rankForPoints } from '@/src/data/ranks';
@@ -23,7 +21,6 @@ import { REWARD_CARDS } from '@/src/data/rewards';
 import { useCourtStore } from '@/src/store/useCourtStore';
 import { usePremiumStore } from '@/src/store/usePremiumStore';
 import { statusLabel } from '@/src/utils/sentence';
-import type { AppCategory } from '@/src/types/court';
 
 // ─── Chart ───────────────────────────────────────────────────────────────────
 function CrimeDistributionChart() {
@@ -97,10 +94,6 @@ function SectionToggle({
   );
 }
 
-const lawFilters: Array<AppCategory | 'all'> = [
-  'all', 'shortVideo', 'social', 'video', 'game', 'shopping', 'dating', 'news', 'custom',
-];
-
 export default function CourtroomTab() {
   const router = useRouter();
 
@@ -109,21 +102,15 @@ export default function CourtroomTab() {
   const profile = useCourtStore((state) => state.profile);
   const suspects = useCourtStore((state) => state.suspects);
   const charges = useCourtStore((state) => state.charges);
-  const laws = useCourtStore((state) => state.laws);
   const paroleRecords = useCourtStore((state) => state.paroleRecords);
-  const simulateAppOpen = useCourtStore((state) => state.simulateAppOpen);
   const resetCourtDay = useCourtStore((state) => state.resetCourtDay);
-  const toggleLaw = useCourtStore((state) => state.toggleLaw);
   const isPro = usePremiumStore((state) => state.isPro);
 
   // ── local state ────────────────────────────────────────────────────────────
-  const [lawsExpanded, setLawsExpanded] = useState(false);
   const [evidenceExpanded, setEvidenceExpanded] = useState(false);
   const [paroleExpanded, setParoleExpanded] = useState(false);
-  const [lawFilter, setLawFilter] = useState<AppCategory | 'all'>('all');
 
   // ── derived ────────────────────────────────────────────────────────────────
-  const selectedSuspects = suspects.filter((s) => s.isSelected);
   const worst = [...suspects].sort((a, b) => b.dailyUsageMinutes - a.dailyUsageMinutes)[0];
   const paroleChance = Math.min(96, 34 + profile.parolePoints + profile.cleanRecordStreak * 6);
   const statusTone =
@@ -132,8 +119,6 @@ export default function CourtroomTab() {
       : activeCase.status === 'parole'
       ? 'success'
       : 'blue';
-  const visibleLaws =
-    lawFilter === 'all' ? laws : laws.filter((l) => l.category === lawFilter || l.category === 'all');
   const rank = rankForPoints(profile.parolePoints);
   const nextRank = COURT_RANKS.find((item) => item.minPoints > profile.parolePoints);
   const rankProgress = nextRank
@@ -200,26 +185,6 @@ export default function CourtroomTab() {
           line={Dialogues.owlJustice[1]}
         />
 
-        {/* ── Simulate / Reset ─────────────────────────────────────── */}
-        <View style={styles.section}>
-          <View style={styles.sectionRow}>
-            <Text style={styles.sectionTitle}>Simulate App Open</Text>
-            <CourtButton title="Reset Day" variant="ghost" small onPress={resetCourtDay} />
-          </View>
-          <View style={styles.suspects}>
-            {selectedSuspects.map((suspect) => (
-              <SuspectAppCard
-                key={suspect.id}
-                suspect={suspect}
-                onPress={() => {
-                  const charge = simulateAppOpen(suspect.id);
-                  if (charge) router.push('/modals/charges-filed');
-                }}
-              />
-            ))}
-          </View>
-        </View>
-
         {/* ── Worst offender preview ───────────────────────────────── */}
         <CourtCard variant="red">
           <Text style={styles.worstLabel}>WORST OFFENDER</Text>
@@ -229,93 +194,6 @@ export default function CourtroomTab() {
             {worst.displayName.toLowerCase()}.
           </Text>
         </CourtCard>
-
-        {/* ════════════════════════════════════════════════════════════
-            ── LAWS SECTION ─────────────────────────────────────────
-            ════════════════════════════════════════════════════════════ */}
-        <SectionToggle
-          title="⚖️  Focus Laws"
-          subtitle={`${laws.filter((l) => l.isEnabled).length} active`}
-          expanded={lawsExpanded}
-          onToggle={() => setLawsExpanded((v) => !v)}
-          accentColor={colors.blue}
-        />
-
-        {lawsExpanded && (
-          <View style={styles.sectionBody}>
-            <CourtCard variant="purple">
-              <View style={styles.infoRow}>
-                <View style={styles.infoText}>
-                  <StampBadge label="Free limit: 3 laws" tone="purple" />
-                  <Text style={styles.infoTitle}>
-                    {laws.filter((l) => l.isEnabled).length} active laws
-                  </Text>
-                  <Text style={styles.infoCopy}>
-                    {laws.filter((l) => l.isEnabled && l.enforcementMode === 'hardBlock').length} hard
-                    blocks. Pro unlocks unlimited laws.
-                  </Text>
-                </View>
-                <AssetImage assetKey="ASSET_STRICT_MODE_LOCK" width={88} height={88} />
-              </View>
-            </CourtCard>
-
-            {/* Filter chips */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.filterRow}
-            >
-              {lawFilters.map((item) => (
-                <Pressable
-                  key={item}
-                  onPress={() => setLawFilter(item)}
-                  style={[styles.filterChip, lawFilter === item && styles.filterChipActive]}
-                >
-                  <Text
-                    style={[styles.filterChipText, lawFilter === item && styles.filterChipTextActive]}
-                  >
-                    {item}
-                  </Text>
-                </Pressable>
-              ))}
-            </ScrollView>
-
-            <View style={styles.quickRow}>
-              <CourtButton
-                title="Screen Time Setup"
-                variant="secondary"
-                small
-                onPress={() => router.push('/modals/screen-time-settings')}
-              />
-              <CourtButton
-                title="Custom Law"
-                variant="secondary"
-                small
-                onPress={() => router.push('/modals/law-editor')}
-              />
-              <CourtButton
-                title="Upgrade"
-                variant="primary"
-                small
-                onPress={() => router.push('/modals/paywall')}
-              />
-            </View>
-
-            <View style={styles.list}>
-              {visibleLaws.map((law) => (
-                <LawCard
-                  key={law.id}
-                  law={law}
-                  locked={law.isPremium && !isPro}
-                  onToggle={() => {
-                    const result = toggleLaw(law.id, isPro);
-                    if (!result.allowed) router.push('/modals/paywall');
-                  }}
-                />
-              ))}
-            </View>
-          </View>
-        )}
 
         {/* ════════════════════════════════════════════════════════════
             ── EVIDENCE SECTION ─────────────────────────────────────
@@ -504,10 +382,7 @@ const styles = StyleSheet.create({
   bench: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-around', marginTop: 8 },
 
   // ── section ──
-  section: { gap: 10 },
-  sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   sectionTitle: { color: colors.label, fontSize: 18, fontWeight: '700', letterSpacing: -0.3 },
-  suspects: { gap: 10 },
 
   // ── worst offender ──
   worstLabel: { color: colors.red, fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },

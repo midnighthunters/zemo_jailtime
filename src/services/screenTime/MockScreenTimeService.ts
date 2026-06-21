@@ -1,11 +1,8 @@
 import { DEFAULT_SUSPECTS } from '@/src/data/suspects';
 import { useCourtStore } from '@/src/store/useCourtStore';
 import type { ScreenTimeService, ScreenTimeUsageEvent } from '@/src/services/screenTime/ScreenTimeService';
-import type { Charge } from '@/src/types/court';
 
-export const MockScreenTimeService: ScreenTimeService & {
-  simulateAppOpen: (appId: string) => Charge | undefined;
-} = {
+export const MockScreenTimeService: ScreenTimeService = {
   async requestPermissions() {
     return { granted: true };
   },
@@ -44,9 +41,5 @@ export const MockScreenTimeService: ScreenTimeService & {
 
   async stopMonitoring() {
     return undefined;
-  },
-
-  simulateAppOpen(appId: string) {
-    return useCourtStore.getState().simulateAppOpen(appId);
   },
 };
