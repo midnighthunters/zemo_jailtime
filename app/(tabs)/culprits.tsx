@@ -12,14 +12,6 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import Animated, {
-  FadeInDown,
-  FadeInUp,
-  LinearTransition,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from 'react-native-reanimated';
 import { AssetImage } from '@/src/components/AssetImage';
 import { CourtBackground } from '@/src/components/CourtBackground';
 import { CourtButton } from '@/src/components/CourtButton';
@@ -65,9 +57,6 @@ function SuspectRow({
   const [draftMinutes, setDraftMinutes] = useState(String(suspect.dailyUsageMinutes || 30));
   const locked = suspect.isPremium && !isPro;
 
-  const scale = useSharedValue(1);
-  const rowAnimStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
-
   const commitTimer = () => {
     const val = parseInt(draftMinutes, 10);
     if (!isNaN(val) && val > 0) onTimerChange(val);
@@ -75,10 +64,8 @@ function SuspectRow({
   };
 
   return (
-    <Animated.View
-      entering={FadeInUp.duration(260).springify().damping(18)}
-      layout={LinearTransition.springify().damping(18)}
-      style={[styles.suspectRow, suspect.isSelected && styles.suspectRowSelected, rowAnimStyle]}
+    <View
+      style={[styles.suspectRow, suspect.isSelected && styles.suspectRowSelected]}
     >
       {Platform.OS !== 'web' ? (
         <BlurView
@@ -136,7 +123,7 @@ function SuspectRow({
           ios_backgroundColor="rgba(120,120,128,0.22)"
         />
       </View>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -152,14 +139,9 @@ function PresetCard({
   const locked = preset.isPremium && !isPro;
   const active = law?.isEnabled ?? false;
 
-  const scale = useSharedValue(1);
-  const cardAnimStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
-
   return (
-    <Animated.View
-      entering={FadeInDown.duration(260).springify().damping(18)}
-      layout={LinearTransition.springify().damping(18)}
-      style={[styles.presetCard, cardAnimStyle]}
+    <View
+      style={[styles.presetCard]}
     >
       {Platform.OS !== 'web' ? (
         <BlurView
@@ -185,15 +167,13 @@ function PresetCard({
       </View>
       <Pressable
         onPress={onActivate}
-        onPressIn={() => { scale.value = withSpring(0.975, { damping: 18, stiffness: 380 }); }}
-        onPressOut={() => { scale.value = withSpring(1, { damping: 13, stiffness: 260 }); }}
         style={[styles.presetToggle, active && styles.presetToggleActive]}
       >
         <Text style={[styles.presetToggleText, active && styles.presetToggleTextActive]}>
           {active ? 'ON' : 'OFF'}
         </Text>
       </Pressable>
-    </Animated.View>
+    </View>
   );
 }
 

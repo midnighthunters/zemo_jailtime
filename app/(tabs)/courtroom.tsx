@@ -2,11 +2,6 @@ import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from 'react-native-reanimated';
 import Svg, { G, Rect, Text as SvgText } from 'react-native-svg';
 
 import { AssetImage } from '@/src/components/AssetImage';
@@ -70,16 +65,11 @@ function SectionToggle({
   onToggle: () => void;
   accentColor?: string;
 }) {
-  const scale = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
-
   return (
     <Pressable
       onPress={onToggle}
-      onPressIn={() => { scale.value = withSpring(0.977, { damping: 18, stiffness: 380 }); }}
-      onPressOut={() => { scale.value = withSpring(1, { damping: 13, stiffness: 260 }); }}
     >
-      <Animated.View style={[styles.sectionToggle, animStyle]}>
+      <View style={styles.sectionToggle}>
         {Platform.OS !== 'web' ? (
           <BlurView
             tint="systemUltraThinMaterial"
@@ -102,7 +92,7 @@ function SectionToggle({
             {expanded ? '▲' : '▼'}
           </Text>
         </View>
-      </Animated.View>
+      </View>
     </Pressable>
   );
 }

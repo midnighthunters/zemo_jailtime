@@ -1,10 +1,5 @@
 import { BlurView } from 'expo-blur';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from 'react-native-reanimated';
 import type { AppSuspect } from '@/src/types/court';
 import { colors, radius, shadows } from '@/src/constants/theme';
 import { StampBadge } from '@/src/components/StampBadge';
@@ -17,23 +12,14 @@ type SuspectAppCardProps = {
 };
 
 export function SuspectAppCard({ suspect, onPress, compact, delay = 0 }: SuspectAppCardProps) {
-  const scale = useSharedValue(1);
-
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
   return (
     <Pressable
       onPress={onPress}
-      onPressIn={() => { scale.value = withSpring(0.972, { damping: 18, stiffness: 380 }); }}
-      onPressOut={() => { scale.value = withSpring(1, { damping: 13, stiffness: 260 }); }}
     >
-      <Animated.View
+      <View
         style={[
           styles.card,
           compact && styles.compact,
-          animStyle,
         ]}
       >
         {/* Native glass blur */}
@@ -75,7 +61,7 @@ export function SuspectAppCard({ suspect, onPress, compact, delay = 0 }: Suspect
           </View>
           {suspect.isPremium ? <StampBadge label="Pro" tone="purple" /> : null}
         </View>
-      </Animated.View>
+      </View>
     </Pressable>
   );
 }

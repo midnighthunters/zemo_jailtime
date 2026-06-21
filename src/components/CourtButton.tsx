@@ -2,12 +2,6 @@ import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import type { ReactNode } from 'react';
 import { ActivityIndicator, Platform, StyleSheet, Text, View } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from 'react-native-reanimated';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { colors, radius, shadows } from '@/src/constants/theme';
 
 type ButtonVariant =
@@ -131,39 +125,6 @@ export function CourtButton({
 }: CourtButtonProps) {
   const colorSet = palette[variant];
 
-  const scale = useSharedValue(1);
-  const opacity = useSharedValue(1);
-
-  const gesture = Gesture.Tap()
-    .enabled(!disabled && !loading)
-    .onBegin(() => {
-      scale.value = withSpring(0.955, { damping: 16, stiffness: 400 });
-      opacity.value = withSpring(0.88, { damping: 16, stiffness: 400 });
-    })
-    .onEnd(() => {
-      scale.value = withSpring(1, { damping: 13, stiffness: 260 });
-      opacity.value = withSpring(1, { damping: 13, stiffness: 260 });
-      if (!disabled && !loading) {
-        Haptics.impactAsync(
-          variant === 'destructive' || variant === 'danger'
-            ? Haptics.ImpactFeedbackStyle.Heavy
-            : Haptics.ImpactFeedbackStyle.Light,
-        ).catch(() => {});
-        if (onPress) {
-          onPress();
-        }
-      }
-    })
-    .onTouchesUp(() => {
-      scale.value = withSpring(1, { damping: 13, stiffness: 260 });
-      opacity.value = withSpring(1, { damping: 13, stiffness: 260 });
-    });
-
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    opacity: (disabled || loading) ? 0.44 : opacity.value,
-  }));
-
   const inner = (
     <>
       {/* Specular top highlight on solid-colored buttons */}
@@ -189,21 +150,32 @@ export function CourtButton({
   );
 
   return (
-    <GestureDetector gesture={gesture}>
-      <Animated.View
-        style={[
-          styles.button,
-          small && styles.small,
-          {
-            backgroundColor: colorSet.useBlur ? 'transparent' : colorSet.backgroundColor,
-            borderColor: colorSet.borderColor,
-          },
-          colorSet.glowColor && !disabled && !loading
-            ? (shadows.glow(colorSet.glowColor))
-            : shadows.soft,
-          animStyle,
-        ]}
-      >
+    <View
+      onTouchEnd={() => {
+        if (!disabled && !loading) {
+          Haptics.impactAsync(
+            variant === 'destructive' || variant === 'danger'
+              ? Haptics.ImpactFeedbackStyle.Heavy
+              : Haptics.ImpactFeedbackStyle.Light,
+          ).catch(() => {});
+          if (onPress) {
+            onPress();
+          }
+        }
+      }}
+      style={[
+        styles.button,
+        small && styles.small,
+        {
+          backgroundColor: colorSet.useBlur ? 'transparent' : colorSet.backgroundColor,
+          borderColor: colorSet.borderColor,
+          opacity: (disabled || loading) ? 0.44 : 1,
+        },
+        colorSet.glowColor && !disabled && !loading
+          ? (shadows.glow(colorSet.glowColor))
+          : shadows.soft,
+      ]}
+    >
         {/* Native blur base for ghost/secondary variants */}
         {colorSet.useBlur && Platform.OS !== 'web' ? (
           <BlurView
@@ -218,10 +190,9 @@ export function CourtButton({
           />
         )}
         {inner}
-      </Animated.View>
-    </GestureDetector>
-  );
-}
+      </View>
+    );
+  }
 
 const styles = StyleSheet.create({
   button: {

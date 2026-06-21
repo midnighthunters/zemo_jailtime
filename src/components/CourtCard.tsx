@@ -2,11 +2,6 @@ import { BlurView, type BlurTint } from 'expo-blur';
 import type { ReactNode } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { Platform, StyleSheet, View } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import type { FocusCourtAssetKey } from '@/src/constants/assets';
 import { radius, shadows } from '@/src/constants/theme';
@@ -127,25 +122,11 @@ export function CourtCard({
   onPress,
 }: CourtCardProps) {
   const cfg = variantMap[variant];
-  const scale = useSharedValue(1);
-  const brightness = useSharedValue(1);
 
   const gesture = Gesture.Tap()
-    .onBegin(() => {
-      if (!pressable && !onPress) return;
-      scale.value = withSpring(0.978, { damping: 18, stiffness: 380 });
-      brightness.value = withSpring(1.04, { damping: 18, stiffness: 380 });
-    })
     .onFinalize(() => {
-      scale.value = withSpring(1, { damping: 14, stiffness: 280 });
-      brightness.value = withSpring(1, { damping: 14, stiffness: 280 });
       if (onPress) onPress();
     });
-
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    opacity: 2 - brightness.value,
-  }));
 
   const cardContent = (
     <View style={styles.inner}>
@@ -158,12 +139,11 @@ export function CourtCard({
 
   return (
     <GestureDetector gesture={gesture}>
-      <Animated.View
+      <View
         style={[
           styles.card,
           { borderColor: cfg.borderColor, borderWidth: cfg.borderWidth },
           style,
-          (pressable || onPress) ? animStyle : undefined,
         ]}
       >
         {/* Native blur base — the core of the glass effect */}
@@ -187,7 +167,7 @@ export function CourtCard({
         <View style={styles.innerShadow} />
 
         {cardContent}
-      </Animated.View>
+      </View>
     </GestureDetector>
   );
 }
