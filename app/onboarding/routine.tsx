@@ -109,9 +109,9 @@ const styles = StyleSheet.create({
     gap: 7,
   },
   timeLabel: {
-    color: colors.parchment,
+    color: colors.labelSecondary,
     fontSize: 12,
-    fontWeight: '900',
+    fontWeight: '600',
     textTransform: 'uppercase',
   },
   chips: {
@@ -124,23 +124,23 @@ const styles = StyleSheet.create({
     minWidth: 74,
     paddingHorizontal: 12,
     borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 242, 210, 0.2)',
-    backgroundColor: 'rgba(255, 242, 210, 0.09)',
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   chipSelected: {
-    backgroundColor: colors.gold,
-    borderColor: colors.deepGold,
+    backgroundColor: colors.blueLight,
+    borderColor: colors.blue,
   },
   chipText: {
-    color: colors.cream,
+    color: colors.label,
     fontSize: 13,
-    fontWeight: '900',
+    fontWeight: '600',
   },
   chipTextSelected: {
-    color: colors.ink,
+    color: colors.blueDark,
   },
   options: {
     gap: 8,

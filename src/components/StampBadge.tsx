@@ -1,6 +1,4 @@
-import { BlurView } from 'expo-blur';
-import { Platform, StyleSheet, Text, View } from 'react-native';
-import Animated, { ZoomIn } from 'react-native-reanimated';
+import { StyleSheet, Text, View } from 'react-native';
 import { colors, radius } from '@/src/constants/theme';
 
 type StampBadgeProps = {
@@ -10,104 +8,39 @@ type StampBadgeProps = {
 
 const toneMap: Record<
   NonNullable<StampBadgeProps['tone']>,
-  { tint: string; text: string; border: string; glow: string }
+  { fill: string; text: string; border: string }
 > = {
-  blue: {
-    tint: 'rgba(0,122,255,0.1)',
-    text: colors.blue,
-    border: 'rgba(0,122,255,0.26)',
-    glow: 'rgba(0,122,255,0.15)',
-  },
-  success: {
-    tint: 'rgba(52,199,89,0.1)',
-    text: colors.greenDark,
-    border: 'rgba(52,199,89,0.28)',
-    glow: 'rgba(52,199,89,0.14)',
-  },
-  gold: {
-    tint: 'rgba(255,204,0,0.12)',
-    text: '#9E7000',
-    border: 'rgba(255,204,0,0.32)',
-    glow: 'rgba(255,204,0,0.16)',
-  },
-  danger: {
-    tint: 'rgba(255,59,48,0.08)',
-    text: colors.red,
-    border: 'rgba(255,59,48,0.26)',
-    glow: 'rgba(255,59,48,0.14)',
-  },
-  purple: {
-    tint: 'rgba(88,86,214,0.1)',
-    text: colors.indigo,
-    border: 'rgba(88,86,214,0.28)',
-    glow: 'rgba(88,86,214,0.14)',
-  },
-  orange: {
-    tint: 'rgba(255,149,0,0.1)',
-    text: colors.orangeDark,
-    border: 'rgba(255,149,0,0.28)',
-    glow: 'rgba(255,149,0,0.14)',
-  },
-  muted: {
-    tint: 'rgba(120,120,128,0.08)',
-    text: colors.labelSecondary,
-    border: 'rgba(120,120,128,0.18)',
-    glow: 'rgba(120,120,128,0.08)',
-  },
+  blue: { fill: colors.blueLight, text: colors.blueDark, border: '#D2DEF7' },
+  success: { fill: colors.greenLight, text: colors.greenDark, border: '#CEE7D8' },
+  gold: { fill: colors.yellowLight, text: colors.yellowDark, border: '#EDDFAD' },
+  danger: { fill: colors.redLight, text: colors.redDark, border: '#EECFD2' },
+  purple: { fill: colors.purpleLight, text: colors.purpleDeep, border: '#DED6F1' },
+  orange: { fill: colors.orangeLight, text: colors.orangeDark, border: '#F0D9C1' },
+  muted: { fill: colors.surfaceMuted, text: colors.labelSecondary, border: colors.border },
 };
 
 export function StampBadge({ label, tone = 'blue' }: StampBadgeProps) {
-  const t = toneMap[tone] ?? toneMap.blue;
+  const palette = toneMap[tone] ?? toneMap.blue;
 
   return (
-    <Animated.View
-      entering={ZoomIn.duration(240).springify().damping(14)}
-      style={[styles.badge, { borderColor: t.border }]}
-    >
-      {Platform.OS !== 'web' ? (
-        <BlurView
-          tint="systemUltraThinMaterial"
-          intensity={12}
-          style={StyleSheet.absoluteFillObject}
-        />
-      ) : null}
-      {/* Color tint overlay */}
-      <View style={[StyleSheet.absoluteFillObject, styles.tintFill, { backgroundColor: t.tint }]} />
-      {/* Specular top edge */}
-      <View style={styles.highlight} />
-
-      <Text style={[styles.text, { color: t.text }]}>{label.toUpperCase()}</Text>
-    </Animated.View>
+    <View style={[styles.badge, { backgroundColor: palette.fill, borderColor: palette.border }]}>
+      <Text style={[styles.text, { color: palette.text }]}>{label.toUpperCase()}</Text>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   badge: {
     alignSelf: 'flex-start',
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     borderWidth: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    overflow: 'hidden',
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  tintFill: {
-    borderRadius: radius.pill,
-  },
-  highlight: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.5)',
-    borderTopLeftRadius: radius.pill,
-    borderTopRightRadius: radius.pill,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
   },
   text: {
-    fontSize: 11,
+    fontSize: 10,
+    lineHeight: 13,
     fontWeight: '700',
-    letterSpacing: 0.5,
+    letterSpacing: 0.55,
   },
 });

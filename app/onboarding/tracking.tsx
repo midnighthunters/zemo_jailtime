@@ -3,12 +3,11 @@
  *
  * Shown before the profile + evidence screens so the user consents to
  * cross-app activity tracking before we collect any personal data.
- * On Android (or simulator) this screen is a no-op — it just advances.
  */
 import { requestTrackingPermissionsAsync, getTrackingPermissionsAsync } from 'expo-tracking-transparency';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Platform, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { CourtButton } from '@/src/components/CourtButton';
 import { AssetImage } from '@/src/components/AssetImage';
 import { OnboardingScene } from '@/src/components/OnboardingScene';
@@ -36,10 +35,6 @@ export default function TrackingOnboarding() {
   };
 
   const handleAllow = async () => {
-    if (Platform.OS !== 'ios') {
-      advance();
-      return;
-    }
     setLoading(true);
     try {
       const { status } = await requestTrackingPermissionsAsync();
@@ -143,6 +138,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     paddingTop: 4,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 242, 210, 0.12)',
+    borderTopColor: colors.border,
   },
 });

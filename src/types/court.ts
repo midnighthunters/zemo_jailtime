@@ -14,13 +14,9 @@ export type PermissionStatus = 'unknown' | 'granted' | 'missing' | 'blocked' | '
 export type PermissionId =
   | 'notifications'
   | 'screenTimeAuthorization'
-  | 'usageAccess'
   | 'installedApps'
   | 'appShielding'
-  | 'overlayBlocker'
-  | 'accessibilityBlocker'
-  | 'backgroundMonitoring'
-  | 'bootRecovery';
+  | 'backgroundMonitoring';
 export type ShieldIntensity = 'gentle' | 'standard' | 'lockdown';
 
 export type DreamType =
@@ -118,7 +114,7 @@ export type PermissionRequirement = {
   id: PermissionId;
   title: string;
   description: string;
-  platform: 'all' | 'ios' | 'android';
+  platform: 'all' | 'ios';
   requiredForProduction: boolean;
   settingsPath: string;
   status: PermissionStatus;

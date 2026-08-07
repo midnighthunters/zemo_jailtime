@@ -1,7 +1,6 @@
-import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import type { ReactNode } from 'react';
-import { ActivityIndicator, Platform, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, radius, shadows } from '@/src/constants/theme';
 
 type ButtonVariant =
@@ -11,7 +10,6 @@ type ButtonVariant =
   | 'green'
   | 'purple'
   | 'orange'
-  // legacy aliases
   | 'gold'
   | 'danger'
   | 'success'
@@ -31,86 +29,73 @@ type CourtButtonProps = {
 type PaletteEntry = {
   backgroundColor: string;
   borderColor: string;
-  color: string;
-  useBlur: boolean;
-  glowColor?: string;
+  depthColor: string;
+  textColor: string;
+};
+
+const primary = {
+  backgroundColor: colors.blue,
+  borderColor: colors.blue,
+  depthColor: colors.blueDark,
+  textColor: colors.white,
 };
 
 const palette: Record<ButtonVariant, PaletteEntry> = {
-  primary: {
-    backgroundColor: colors.blue,
-    borderColor: 'rgba(255,255,255,0.28)',
-    color: colors.white,
-    useBlur: false,
-    glowColor: 'rgba(0,122,255,0.35)',
-  },
+  primary,
+  gold: primary,
   secondary: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderColor: 'rgba(255,255,255,0.16)',
-    color: colors.blue,
-    useBlur: true,
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    depthColor: colors.depthEdge,
+    textColor: colors.label,
+  },
+  wood: {
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    depthColor: colors.depthEdge,
+    textColor: colors.label,
+  },
+  ghost: {
+    backgroundColor: colors.surfaceMuted,
+    borderColor: colors.border,
+    depthColor: colors.depthEdge,
+    textColor: colors.labelSecondary,
   },
   destructive: {
     backgroundColor: colors.red,
-    borderColor: 'rgba(255,255,255,0.22)',
-    color: colors.white,
-    useBlur: false,
-    glowColor: 'rgba(255,59,48,0.3)',
-  },
-  green: {
-    backgroundColor: colors.green,
-    borderColor: 'rgba(255,255,255,0.22)',
-    color: colors.white,
-    useBlur: false,
-    glowColor: 'rgba(52,199,89,0.3)',
-  },
-  purple: {
-    backgroundColor: colors.indigo,
-    borderColor: 'rgba(255,255,255,0.2)',
-    color: colors.white,
-    useBlur: false,
-    glowColor: 'rgba(88,86,214,0.3)',
-  },
-  orange: {
-    backgroundColor: colors.orange,
-    borderColor: 'rgba(255,255,255,0.2)',
-    color: colors.white,
-    useBlur: false,
-    glowColor: 'rgba(255,149,0,0.3)',
-  },
-  // Legacy aliases
-  gold: {
-    backgroundColor: colors.blue,
-    borderColor: 'rgba(255,255,255,0.28)',
-    color: colors.white,
-    useBlur: false,
-    glowColor: 'rgba(0,122,255,0.35)',
+    borderColor: colors.red,
+    depthColor: colors.redDark,
+    textColor: colors.white,
   },
   danger: {
     backgroundColor: colors.red,
-    borderColor: 'rgba(255,255,255,0.22)',
-    color: colors.white,
-    useBlur: false,
-    glowColor: 'rgba(255,59,48,0.3)',
+    borderColor: colors.red,
+    depthColor: colors.redDark,
+    textColor: colors.white,
+  },
+  green: {
+    backgroundColor: colors.green,
+    borderColor: colors.green,
+    depthColor: colors.greenDark,
+    textColor: colors.white,
   },
   success: {
     backgroundColor: colors.green,
-    borderColor: 'rgba(255,255,255,0.22)',
-    color: colors.white,
-    useBlur: false,
-    glowColor: 'rgba(52,199,89,0.3)',
+    borderColor: colors.green,
+    depthColor: colors.greenDark,
+    textColor: colors.white,
   },
-  wood: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderColor: 'rgba(255,255,255,0.16)',
-    color: colors.blue,
-    useBlur: true,
+  purple: {
+    backgroundColor: colors.indigo,
+    borderColor: colors.indigo,
+    depthColor: colors.purpleDeep,
+    textColor: colors.white,
   },
-  ghost: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderColor: 'rgba(255,255,255,0.12)',
-    color: colors.labelSecondary,
-    useBlur: true,
+  orange: {
+    backgroundColor: colors.orange,
+    borderColor: colors.orange,
+    depthColor: colors.orangeDark,
+    textColor: colors.white,
   },
 };
 
@@ -118,129 +103,103 @@ export function CourtButton({
   title,
   onPress,
   variant = 'primary',
-  disabled,
-  loading,
-  small,
+  disabled = false,
+  loading = false,
+  small = false,
   icon,
 }: CourtButtonProps) {
   const colorSet = palette[variant];
+  const inactive = disabled || loading || !onPress;
 
-  const inner = (
-    <>
-      {/* Specular top highlight on solid-colored buttons */}
-      {!colorSet.useBlur && (
-        <View style={[StyleSheet.absoluteFillObject, styles.specularOverlay]} pointerEvents="none" />
-      )}
-      {/* Glow halo for solid buttons */}
-      {colorSet.glowColor && !disabled && (
-        <View
-          style={[styles.glowHalo, { shadowColor: colorSet.glowColor, backgroundColor: colorSet.backgroundColor }]}
-          pointerEvents="none"
-        />
-      )}
-
-      {loading ? <ActivityIndicator color={colorSet.color} size="small" /> : null}
-      {!loading && icon ? <View style={styles.icon}>{icon}</View> : null}
-      {!loading ? (
-        <Text style={[styles.title, small && styles.smallTitle, { color: colorSet.color }]}>
-          {title}
-        </Text>
-      ) : null}
-    </>
-  );
+  const handlePressIn = () => {
+    if (inactive) return;
+    Haptics.impactAsync(
+      variant === 'destructive' || variant === 'danger'
+        ? Haptics.ImpactFeedbackStyle.Medium
+        : Haptics.ImpactFeedbackStyle.Light,
+    ).catch(() => undefined);
+  };
 
   return (
-    <View
-      onTouchEnd={() => {
-        if (!disabled && !loading) {
-          Haptics.impactAsync(
-            variant === 'destructive' || variant === 'danger'
-              ? Haptics.ImpactFeedbackStyle.Heavy
-              : Haptics.ImpactFeedbackStyle.Light,
-          ).catch(() => {});
-          if (onPress) {
-            onPress();
-          }
-        }
-      }}
-      style={[
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      disabled={inactive}
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      style={({ pressed }) => [
         styles.button,
         small && styles.small,
         {
-          backgroundColor: colorSet.useBlur ? 'transparent' : colorSet.backgroundColor,
+          backgroundColor: colorSet.backgroundColor,
           borderColor: colorSet.borderColor,
-          opacity: (disabled || loading) ? 0.44 : 1,
+          borderBottomColor: colorSet.depthColor,
+          opacity: inactive ? 0.48 : 1,
         },
-        colorSet.glowColor && !disabled && !loading
-          ? (shadows.glow(colorSet.glowColor))
-          : shadows.soft,
+        pressed && styles.pressed,
       ]}
     >
-        {/* Native blur base for ghost/secondary variants */}
-        {colorSet.useBlur && Platform.OS !== 'web' ? (
-          <BlurView
-            tint="systemUltraThinMaterial"
-            intensity={16}
-            style={[StyleSheet.absoluteFillObject, { borderRadius: radius.pill }]}
-          />
-        ) : null}
-        {colorSet.useBlur && (
-          <View
-            style={[StyleSheet.absoluteFillObject, { backgroundColor: colorSet.backgroundColor, borderRadius: radius.pill }]}
-          />
-        )}
-        {inner}
-      </View>
-    );
-  }
+      <View style={styles.topHighlight} pointerEvents="none" />
+      {loading ? <ActivityIndicator color={colorSet.textColor} size="small" /> : null}
+      {!loading && icon ? <View style={styles.icon}>{icon}</View> : null}
+      {!loading ? (
+        <Text style={[styles.title, small && styles.smallTitle, { color: colorSet.textColor }]}>
+          {title}
+        </Text>
+      ) : null}
+    </Pressable>
+  );
+}
 
 const styles = StyleSheet.create({
   button: {
-    minHeight: 50,
-    paddingHorizontal: 22,
-    borderRadius: radius.pill,
-    borderWidth: 1,
+    minHeight: 52,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: radius.lg,
+    borderCurve: 'continuous',
+    borderWidth: 1.5,
+    borderBottomWidth: 4,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
     gap: 8,
     overflow: 'hidden',
+    ...shadows.soft,
   },
   small: {
-    minHeight: 36,
-    paddingHorizontal: 16,
+    minHeight: 40,
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: radius.md,
+  },
+  pressed: {
+    transform: [{ translateY: 3 }],
+    borderBottomWidth: 1,
+    shadowOpacity: 0.02,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  topHighlight: {
+    position: 'absolute',
+    top: 0,
+    left: 12,
+    right: 12,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.55)',
   },
   title: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     textAlign: 'center',
-    letterSpacing: -0.3,
+    letterSpacing: -0.2,
   },
   smallTitle: {
     fontSize: 13,
-    fontWeight: '600',
-    letterSpacing: -0.2,
+    fontWeight: '700',
   },
   icon: {
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  // Top specular highlight stripe on solid buttons
-  specularOverlay: {
-    borderRadius: radius.pill,
-    top: 0,
-    height: '48%',
-    backgroundColor: 'rgba(255,255,255,0.14)',
-  },
-  glowHalo: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderRadius: radius.pill,
-    shadowOpacity: 0.4,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 4 },
   },
 });

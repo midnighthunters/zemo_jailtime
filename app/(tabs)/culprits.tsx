@@ -1,6 +1,5 @@
 import { useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { BlurView } from 'expo-blur';
 import {
   Alert,
   Dimensions,
@@ -8,7 +7,6 @@ import {
   Modal,
   NativeScrollEvent,
   NativeSyntheticEvent,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -49,18 +47,6 @@ const categoryAccent: Record<string, string> = {
   news:       colors.teal,
   custom:     colors.indigo,
   all:        colors.blue,
-};
-
-const categoryTint: Record<string, string> = {
-  shortVideo: 'rgba(255,59,48,0.08)',
-  social:     'rgba(0,122,255,0.08)',
-  video:      'rgba(175,82,222,0.08)',
-  game:       'rgba(52,199,89,0.08)',
-  shopping:   'rgba(255,149,0,0.08)',
-  dating:     'rgba(255,45,85,0.08)',
-  news:       'rgba(48,176,199,0.08)',
-  custom:     'rgba(88,86,214,0.08)',
-  all:        'rgba(0,122,255,0.08)',
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -128,15 +114,6 @@ function FocusLawCard({
   return (
     <Pressable onPress={onPress} style={{ width: LAW_CARD_WIDTH }}>
       <View style={[lawCardStyles.card, law.isEnabled && lawCardStyles.cardActive]}>
-        {Platform.OS !== 'web' ? (
-          <BlurView tint="systemUltraThinMaterial" intensity={80} style={StyleSheet.absoluteFillObject} />
-        ) : (
-          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(255,255,255,0.72)' }]} />
-        )}
-        <View style={[StyleSheet.absoluteFillObject, lawCardStyles.tint, law.isEnabled && lawCardStyles.tintActive]} />
-        <View style={lawCardStyles.highlight} />
-        <View style={[lawCardStyles.border, law.isEnabled && lawCardStyles.borderActive]} />
-
         {/* Top: icon + toggle */}
         <View style={lawCardStyles.topRow}>
           <View style={lawCardStyles.iconWrap}>
@@ -180,39 +157,21 @@ function FocusLawCard({
 const lawCardStyles = StyleSheet.create({
   card: {
     borderRadius: radius.xl,
-    overflow: 'hidden',
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderBottomWidth: 4,
+    borderBottomColor: colors.depthEdge,
     padding: 12,
     gap: 6,
     minHeight: 148,
     ...shadows.soft,
   },
   cardActive: {
-    shadowColor: colors.blue,
-    shadowOpacity: 0.18,
-    shadowRadius: 14,
+    backgroundColor: '#FBFCFF',
+    borderColor: '#C9D7F7',
+    borderBottomColor: '#B9C8EF',
   },
-  tint: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    borderRadius: radius.xl,
-  },
-  tintActive: { backgroundColor: 'rgba(0,122,255,0.07)' },
-  highlight: {
-    position: 'absolute',
-    top: 0, left: 0, right: 0,
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.6)',
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-  },
-  border: {
-    position: 'absolute',
-    top: 0, left: 0, right: 0, bottom: 0,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.22)',
-  },
-  borderActive: { borderColor: 'rgba(0,122,255,0.28)' },
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -221,7 +180,7 @@ const lawCardStyles = StyleSheet.create({
   iconWrap: {
     width: 40, height: 40,
     borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: colors.surfaceMuted,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
@@ -266,14 +225,6 @@ function AddLawCard({ onPress }: { onPress: () => void }) {
   return (
     <Pressable onPress={onPress} style={{ width: LAW_CARD_WIDTH }}>
       <View style={addCardStyles.card}>
-        {Platform.OS !== 'web' ? (
-          <BlurView tint="systemUltraThinMaterial" intensity={60} style={StyleSheet.absoluteFillObject} />
-        ) : (
-          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(255,255,255,0.5)' }]} />
-        )}
-        <View style={[StyleSheet.absoluteFillObject, addCardStyles.tint]} />
-        <View style={addCardStyles.highlight} />
-        <View style={addCardStyles.border} />
         <View style={addCardStyles.content}>
           <View style={addCardStyles.plusCircle}>
             <Text style={addCardStyles.plus}>+</Text>
@@ -290,27 +241,15 @@ const addCardStyles = StyleSheet.create({
   card: {
     minHeight: 148,
     borderRadius: radius.xl,
-    overflow: 'hidden',
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: '#C9D7F7',
+    borderBottomWidth: 4,
+    borderBottomColor: '#B9C8EF',
+    borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
     ...shadows.soft,
-  },
-  tint: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,122,255,0.05)', borderRadius: radius.xl },
-  highlight: {
-    position: 'absolute',
-    top: 0, left: 0, right: 0,
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.55)',
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-  },
-  border: {
-    position: 'absolute',
-    top: 0, left: 0, right: 0, bottom: 0,
-    borderRadius: radius.xl,
-    borderWidth: 1.5,
-    borderColor: 'rgba(0,122,255,0.22)',
-    borderStyle: 'dashed',
   },
   content: { alignItems: 'center', gap: 6 },
   plusCircle: {
@@ -338,11 +277,10 @@ function CarouselLawCard({
   onPress: () => void;
 }) {
   const accent = categoryAccent[law.category] ?? colors.blue;
-  const tint   = categoryTint[law.category]   ?? 'rgba(0,122,255,0.08)';
 
   return (
     <Pressable onPress={onPress} style={carouselStyles.cardWrap}>
-      <View style={[carouselStyles.card, { backgroundColor: tint }]}>
+      <View style={carouselStyles.card}>
         {/* Accent top bar */}
         <View style={[carouselStyles.accentBar, { backgroundColor: accent }]} />
 
@@ -407,8 +345,11 @@ const carouselStyles = StyleSheet.create({
   },
   card: {
     borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderBottomWidth: 4,
+    borderBottomColor: colors.depthEdge,
     overflow: 'hidden',
     padding: 18,
     gap: 12,
@@ -551,11 +492,6 @@ function LawDetailSheet({
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <View style={sheetStyles.root}>
-        {Platform.OS !== 'web' ? (
-          <BlurView tint="systemUltraThinMaterial" intensity={100} style={StyleSheet.absoluteFillObject} />
-        ) : (
-          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: colors.background }]} />
-        )}
         <View style={sheetStyles.inner}>
           <View style={sheetStyles.handle} />
           {/* Header */}
@@ -808,14 +744,6 @@ function SuspectRow({
 
   return (
     <View style={[styles.suspectRow, suspect.isSelected && styles.suspectRowSelected]}>
-      {Platform.OS !== 'web' ? (
-        <BlurView tint="systemUltraThinMaterial" intensity={18} style={StyleSheet.absoluteFillObject} />
-      ) : (
-        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(255,255,255,0.72)' }]} />
-      )}
-      <View style={[StyleSheet.absoluteFillObject, styles.suspectRowTint, suspect.isSelected && styles.suspectRowTintSelected]} />
-      <View style={styles.suspectRowHighlight} />
-      <View style={[styles.suspectRowBorder, suspect.isSelected && styles.suspectRowBorderSelected]} />
       <View style={[styles.suspectIcon, { backgroundColor: suspect.iconColor }]}>
         <Text style={styles.suspectIconText}>{suspect.displayName.slice(0, 1)}</Text>
       </View>
@@ -1110,32 +1038,14 @@ const styles = StyleSheet.create({
     gap: 12,
     padding: 14,
     borderRadius: radius.xl,
-    overflow: 'hidden',
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderBottomWidth: 4,
+    borderBottomColor: colors.depthEdge,
     ...shadows.soft,
   },
-  suspectRowSelected: {},
-  suspectRowTint: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: radius.xl,
-  },
-  suspectRowTintSelected: { backgroundColor: 'rgba(0,122,255,0.07)' },
-  suspectRowHighlight: {
-    position: 'absolute',
-    top: 0, left: 0, right: 0,
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.5)',
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-  },
-  suspectRowBorder: {
-    position: 'absolute',
-    top: 0, left: 0, right: 0, bottom: 0,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
-  },
-  suspectRowBorderSelected: { borderColor: 'rgba(0,122,255,0.26)' },
+  suspectRowSelected: { backgroundColor: '#FBFCFF', borderColor: '#C9D7F7', borderBottomColor: '#B9C8EF' },
   suspectIcon: {
     width: 46, height: 46,
     borderRadius: 14,

@@ -1,12 +1,6 @@
-import { BlurView } from 'expo-blur';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from 'react-native-reanimated';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AssetImage } from '@/src/components/AssetImage';
 import { CourtBackground } from '@/src/components/CourtBackground';
 import { CourtButton } from '@/src/components/CourtButton';
@@ -31,29 +25,15 @@ function ReasonPill({
   selected: boolean;
   onPress: () => void;
 }) {
-  const scale = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
   return (
     <Pressable
       onPress={onPress}
-      onPressIn={() => { scale.value = withSpring(0.96, { damping: 16, stiffness: 360 }); }}
-      onPressOut={() => { scale.value = withSpring(1, { damping: 13, stiffness: 260 }); }}
+      accessibilityRole="radio"
+      accessibilityState={{ checked: selected }}
+      style={({ pressed }) => [styles.reasonOuter, selected && styles.reasonSelected, pressed && styles.reasonPressed]}
     >
-      <Animated.View style={[styles.reasonOuter, selected && styles.reasonSelected, animStyle]}>
-        {Platform.OS !== 'web' ? (
-          <BlurView
-            tint={selected ? 'systemThinMaterial' : 'systemUltraThinMaterial'}
-            intensity={16}
-            style={StyleSheet.absoluteFillObject}
-          />
-        ) : null}
-        <View style={[StyleSheet.absoluteFillObject, selected ? styles.reasonTintSelected : styles.reasonTint]} />
-        <View style={styles.reasonHighlight} />
-        <Text style={[styles.reasonText, selected && styles.reasonTextSelected]}>{label}</Text>
-      </Animated.View>
+      <View style={[styles.reasonRadio, selected && styles.reasonRadioSelected]}>{selected ? <View style={styles.reasonRadioDot} /> : null}</View>
+      <Text style={[styles.reasonText, selected && styles.reasonTextSelected]}>{label}</Text>
     </Pressable>
   );
 }
@@ -172,37 +152,28 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   reasonOuter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
     borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
-    overflow: 'hidden',
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderBottomWidth: 4,
+    borderBottomColor: colors.depthEdge,
+    backgroundColor: colors.surface,
     paddingHorizontal: 16,
     paddingVertical: 14,
     ...shadows.soft,
   },
   reasonSelected: {
-    borderColor: 'rgba(0,122,255,0.3)',
+    borderColor: '#C9D7F7',
+    borderBottomColor: '#B9C8EF',
+    backgroundColor: '#FBFCFF',
   },
-  reasonTint: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: radius.xl,
-  },
-  reasonTintSelected: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,122,255,0.08)',
-    borderRadius: radius.xl,
-  },
-  reasonHighlight: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.45)',
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-  },
+  reasonPressed: { transform: [{ translateY: 3 }], borderBottomWidth: 1.5, marginBottom: 2.5 },
+  reasonRadio: { width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, borderColor: colors.borderStrong, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
+  reasonRadioSelected: { borderColor: colors.blue },
+  reasonRadioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.blue },
   reasonText: {
     color: colors.label,
     fontSize: 15,

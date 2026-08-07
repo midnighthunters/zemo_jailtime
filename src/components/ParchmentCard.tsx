@@ -19,11 +19,13 @@ export function ParchmentCard({ children, style }: ParchmentCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.parchment,
-    borderRadius: radius.md,
-    borderWidth: 2,
-    borderColor: colors.parchmentDark,
-    padding: 14,
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderBottomWidth: 4,
+    borderBottomColor: colors.depthEdge,
+    padding: 16,
     ...shadows.soft,
   },
 });

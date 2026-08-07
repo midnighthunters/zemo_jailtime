@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
   chart: {
     marginTop: 10,
     borderRadius: radius.lg,
-    backgroundColor: 'rgba(255, 242, 210, 0.08)',
+    backgroundColor: colors.surfaceMuted,
     overflow: 'hidden',
   },
   reportRow: {

@@ -2,14 +2,18 @@
 
 Break focus laws. Serve jail time. Earn parole. Reclaim your life.
 
-JailTime: Focus Court is a courtroom-themed screen-time discipline app built with Expo SDK 54, Expo Router, TypeScript, Zustand, RevenueCat-safe premium scaffolding, local notifications, and mocked screen-time enforcement.
+JailTime: Focus Court is an iOS-only courtroom-themed screen-time discipline app built with Expo SDK 54, Expo Router, TypeScript, Zustand, RevenueCat-safe premium scaffolding, local notifications, and iOS Screen Time integrations.
+
+The supported target is iOS only. The app uses FamilyControls, ManagedSettings, Device Activity extensions, and an App Group for device-level focus enforcement. Android and web builds are intentionally out of scope.
+
+For agent context, see [AGENTS.md](AGENTS.md), [docs/SCREEN_INVENTORY.md](docs/SCREEN_INVENTORY.md), [docs/IOS_ONLY.md](docs/IOS_ONLY.md), and [docs/PREMIUM_WHITE_REDESIGN_MASTERPLAN.md](docs/PREMIUM_WHITE_REDESIGN_MASTERPLAN.md).
 
 ## Run
 
 ```bash
 npm install
 npm run assets:extract
-npm run start
+npm run ios
 ```
 
 The extraction script reads exactly 8 PNG sheets from `public/data/ui`, splits each sheet into 8 cells, removes the generated checkerboard background, trims the cutout, pads it, and writes 64 transparent assets into `assets/focus-court`.
@@ -17,7 +21,7 @@ The extraction script reads exactly 8 PNG sheets from `public/data/ui`, splits e
 ## Current MVP
 
 - UI complete with onboarding, court tabs, modals, paywall, and blocked screen.
-- Local mocked screen-time logic.
+- iOS Screen Time service bridge with a mock service for UI development.
 - 64 extracted transparent UI assets.
 - Fake laws, charges, sentence, jail, and parole reward loop.
 - RevenueCat service with guarded configure, offerings, purchase, restore, and entitlement checks.
@@ -27,19 +31,7 @@ The extraction script reads exactly 8 PNG sheets from `public/data/ui`, splits e
 
 ## Roadmap
 
-### Phase 2 - Android Native Enforcement
-
-- Create config plugin/native module.
-- UsageStatsManager permission screen.
-- Detect foreground apps.
-- Track installed apps.
-- Usage thresholds.
-- Blocking activity.
-- Optional AccessibilityService only if policy-compliant.
-- Foreground service for monitoring.
-- Play Store policy declarations.
-
-### Phase 3 - iOS Screen Time Enforcement
+### Phase 2 - Complete iOS Screen Time Enforcement
 
 - Request FamilyControls entitlement.
 - FamilyActivityPicker.
@@ -79,10 +71,9 @@ The extraction script reads exactly 8 PNG sheets from `public/data/ui`, splits e
 - RevenueCat webhooks.
 - Push notification campaigns.
 
-### Phase 7 - Widgets
+### Phase 7 - iOS Widgets
 
 - iOS widgets.
-- Android widgets.
 - Jail timer widget.
 - Clean record widget.
 - Bedtime law widget.

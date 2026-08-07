@@ -169,7 +169,9 @@ const styles = StyleSheet.create({
     gap: 10,
     padding: 12,
     borderRadius: 16,
-    backgroundColor: 'rgba(255, 242, 210, 0.1)',
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   historyText: {
     flex: 1,

@@ -45,19 +45,6 @@ const categoryAccent: Record<string, string> = {
   all:        colors.blue,
 };
 
-// Subtle glass tint per category
-const categoryTint: Record<string, string> = {
-  shortVideo: 'rgba(255,59,48,0.08)',
-  social:     'rgba(0,122,255,0.08)',
-  video:      'rgba(175,82,222,0.08)',
-  game:       'rgba(52,199,89,0.08)',
-  shopping:   'rgba(255,149,0,0.08)',
-  dating:     'rgba(255,45,85,0.08)',
-  news:       'rgba(48,176,199,0.08)',
-  custom:     'rgba(88,86,214,0.08)',
-  all:        'rgba(0,122,255,0.08)',
-};
-
 function CarouselCard({
   law,
   locked,
@@ -68,12 +55,10 @@ function CarouselCard({
   onToggle: () => void;
 }) {
   const accent = categoryAccent[law.category] ?? colors.blue;
-  const tint   = categoryTint[law.category]   ?? 'rgba(0,122,255,0.08)';
 
   return (
     <Pressable onPress={onToggle} style={styles.carouselCardWrap}>
-      {/* Glass base */}
-      <View style={[styles.carouselCard, { backgroundColor: tint }]}>
+      <View style={styles.carouselCard}>
         {/* Top highlight line */}
         <View style={[styles.cardHighlight, { backgroundColor: accent }]} />
 
@@ -335,13 +320,15 @@ const styles = StyleSheet.create({
   carouselCard: {
     marginHorizontal: 0,
     borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.18)',
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderBottomWidth: 4,
+    borderBottomColor: colors.depthEdge,
     overflow: 'hidden',
     padding: 18,
     gap: 12,
     ...shadows.card,
-    backgroundColor: 'rgba(255,255,255,0.07)',
+    backgroundColor: colors.surface,
   },
   cardHighlight: {
     position: 'absolute',
@@ -475,21 +462,21 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: 'center',
     borderRadius: radius.md,
-    backgroundColor: 'rgba(255, 242, 210, 0.09)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 242, 210, 0.14)',
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.border,
   },
   strictActive: {
-    backgroundColor: colors.danger,
-    borderColor: colors.gold,
+    backgroundColor: colors.redLight,
+    borderColor: colors.red,
   },
   strictText: {
-    color: colors.parchment,
-    fontWeight: '900',
+    color: colors.labelSecondary,
+    fontWeight: '600',
     fontSize: 12,
   },
   strictTextActive: {
-    color: colors.white,
+    color: colors.redDark,
   },
 
   // ── Filter pills ──────────────────────────────────────────────────
@@ -501,18 +488,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: radius.pill,
-    backgroundColor: 'rgba(255, 242, 210, 0.1)',
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   filterActive: {
-    backgroundColor: colors.gold,
+    backgroundColor: colors.blueLight,
+    borderColor: colors.blue,
   },
   filterText: {
-    color: colors.cream,
+    color: colors.labelSecondary,
     fontSize: 12,
-    fontWeight: '900',
+    fontWeight: '600',
   },
   filterTextActive: {
-    color: colors.ink,
+    color: colors.blueDark,
   },
 
   // ── Quick actions ─────────────────────────────────────────────────

@@ -1,7 +1,7 @@
 import { useState } from 'react';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { BlurView } from 'expo-blur';
-import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { G, Rect, Text as SvgText } from 'react-native-svg';
 
 import { AssetImage } from '@/src/components/AssetImage';
@@ -65,30 +65,16 @@ function SectionToggle({
   return (
     <Pressable
       onPress={onToggle}
+      accessibilityRole="button"
+      accessibilityState={{ expanded }}
+      style={({ pressed }) => [styles.sectionToggle, pressed && styles.sectionTogglePressed]}
     >
-      <View style={styles.sectionToggle}>
-        {Platform.OS !== 'web' ? (
-          <BlurView
-            tint="systemUltraThinMaterial"
-            intensity={18}
-            style={StyleSheet.absoluteFillObject}
-          />
-        ) : (
-          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(255,255,255,0.72)' }]} />
-        )}
-        <View style={[StyleSheet.absoluteFillObject, styles.sectionToggleTint]} />
-        <View style={styles.sectionToggleHighlight} />
-        <View style={styles.sectionToggleBorder} />
-
-        <View style={styles.toggleLeft}>
-          <Text style={styles.sectionToggleTitle}>{title}</Text>
-          {subtitle ? <Text style={styles.sectionToggleSub}>{subtitle}</Text> : null}
-        </View>
-        <View style={[styles.chevronWrap, { backgroundColor: `${accentColor}15` }]}>
-          <Text style={[styles.chevron, { color: accentColor }]}>
-            {expanded ? '▲' : '▼'}
-          </Text>
-        </View>
+      <View style={styles.toggleLeft}>
+        <Text style={styles.sectionToggleTitle}>{title}</Text>
+        {subtitle ? <Text style={styles.sectionToggleSub}>{subtitle}</Text> : null}
+      </View>
+      <View style={[styles.chevronWrap, { backgroundColor: `${accentColor}15` }]}> 
+        <Image source={`sf:${expanded ? 'chevron.up' : 'chevron.down'}`} tintColor={accentColor} contentFit="contain" style={styles.chevron} />
       </View>
     </Pressable>
   );
@@ -397,31 +383,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderRadius: radius.xl,
-    overflow: 'hidden',
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderBottomWidth: 4,
+    borderBottomColor: colors.depthEdge,
     ...shadows.soft,
   },
-  sectionToggleTint: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: radius.xl,
-  },
-  sectionToggleHighlight: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.5)',
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-  },
-  sectionToggleBorder: {
-    position: 'absolute',
-    top: 0, left: 0, right: 0, bottom: 0,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
-  },
-  pressed: { opacity: 0.82 },
+  sectionTogglePressed: { transform: [{ translateY: 3 }], borderBottomWidth: 1.5, marginBottom: 2.5 },
   toggleLeft: { flex: 1, gap: 2 },
   sectionToggleTitle: { color: colors.label, fontSize: 16, fontWeight: '600', letterSpacing: -0.2 },
   sectionToggleSub: { color: colors.labelSecondary, fontSize: 12, fontWeight: '400' },
@@ -432,7 +401,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  chevron: { fontSize: 11, fontWeight: '700' },
+  chevron: { width: 12, height: 12 },
 
   // ── section body ──
   sectionBody: { gap: 12 },

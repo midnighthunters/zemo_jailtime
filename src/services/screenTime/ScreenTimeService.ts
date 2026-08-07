@@ -15,6 +15,7 @@ export type ScreenTimeService = {
   getTodayUsage: () => Promise<ScreenTimeUsageEvent[]>;
   getInstalledApps: () => Promise<AppSuspect[]>;
   applyPolicy?: (policy: { laws: FocusLaw[]; suspects: AppSuspect[]; settings: UserProfile['screenTimeSettings'] }) => Promise<void>;
+  clearPolicy?: () => Promise<void>;
   openPermissionSettings?: (permissionId: PermissionId) => Promise<void>;
   startMonitoring: () => Promise<void>;
   stopMonitoring: () => Promise<void>;

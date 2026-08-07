@@ -1,11 +1,9 @@
-import { BlurView, type BlurTint } from 'expo-blur';
 import type { ReactNode } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
-import { Platform, StyleSheet, View } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { Pressable, StyleSheet, View } from 'react-native';
 import type { FocusCourtAssetKey } from '@/src/constants/assets';
-import { radius, shadows } from '@/src/constants/theme';
 import { AssetImage } from '@/src/components/AssetImage';
+import { colors, radius, shadows } from '@/src/constants/theme';
 
 type CourtCardProps = {
   children: ReactNode;
@@ -17,99 +15,22 @@ type CourtCardProps = {
   onPress?: () => void;
 };
 
-// expo-blur tint values + intensity (1–100) for each glass variant
 type VariantConfig = {
-  tintColor: string;   // transparent color overlay on top of blur
-  borderColor: string;
-  borderWidth: number;
-  highlightColor: string; // specular top-edge
-  blurTint: BlurTint;
-  blurIntensity: number;  // 1–100
-  fallbackBg: string;
+  accent: string;
+  wash: string;
+  border: string;
 };
 
 const variantMap: Record<NonNullable<CourtCardProps['variant']>, VariantConfig> = {
-  glass: {
-    tintColor: 'rgba(255,255,255,0.08)',
-    borderColor: 'rgba(255,255,255,0.14)',
-    borderWidth: 1,
-    highlightColor: 'rgba(255,255,255,0.28)',
-    blurTint: 'systemUltraThinMaterial',
-    blurIntensity: 80,
-    fallbackBg: 'rgba(255,255,255,0.72)',
-  },
-  blue: {
-    tintColor: 'rgba(0,122,255,0.06)',
-    borderColor: 'rgba(0,122,255,0.22)',
-    borderWidth: 1,
-    highlightColor: 'rgba(255,255,255,0.22)',
-    blurTint: 'systemUltraThinMaterial',
-    blurIntensity: 80,
-    fallbackBg: 'rgba(0,122,255,0.1)',
-  },
-  purple: {
-    tintColor: 'rgba(88,86,214,0.06)',
-    borderColor: 'rgba(175,82,222,0.26)',
-    borderWidth: 1,
-    highlightColor: 'rgba(255,255,255,0.2)',
-    blurTint: 'systemUltraThinMaterial',
-    blurIntensity: 80,
-    fallbackBg: 'rgba(88,86,214,0.1)',
-  },
-  orange: {
-    tintColor: 'rgba(255,149,0,0.06)',
-    borderColor: 'rgba(255,149,0,0.24)',
-    borderWidth: 1,
-    highlightColor: 'rgba(255,220,130,0.22)',
-    blurTint: 'systemThinMaterial',
-    blurIntensity: 70,
-    fallbackBg: 'rgba(255,149,0,0.1)',
-  },
-  red: {
-    tintColor: 'rgba(255,59,48,0.06)',
-    borderColor: 'rgba(255,59,48,0.2)',
-    borderWidth: 1,
-    highlightColor: 'rgba(255,150,140,0.2)',
-    blurTint: 'systemThinMaterial',
-    blurIntensity: 70,
-    fallbackBg: 'rgba(255,59,48,0.08)',
-  },
-  green: {
-    tintColor: 'rgba(52,199,89,0.06)',
-    borderColor: 'rgba(52,199,89,0.22)',
-    borderWidth: 1,
-    highlightColor: 'rgba(140,255,180,0.2)',
-    blurTint: 'systemUltraThinMaterial',
-    blurIntensity: 80,
-    fallbackBg: 'rgba(52,199,89,0.08)',
-  },
-  dark: {
-    tintColor: 'rgba(28,28,30,0.12)',
-    borderColor: 'rgba(255,255,255,0.1)',
-    borderWidth: 1,
-    highlightColor: 'rgba(255,255,255,0.15)',
-    blurTint: 'systemMaterial',
-    blurIntensity: 90,
-    fallbackBg: 'rgba(255,255,255,0.72)',
-  },
-  parchment: {
-    tintColor: 'rgba(255,255,255,0.1)',
-    borderColor: 'rgba(255,255,255,0.22)',
-    borderWidth: 1,
-    highlightColor: 'rgba(255,255,255,0.3)',
-    blurTint: 'systemChromeMaterial',
-    blurIntensity: 90,
-    fallbackBg: 'rgba(255,255,255,0.82)',
-  },
-  wood: {
-    tintColor: 'rgba(255,149,0,0.05)',
-    borderColor: 'rgba(255,149,0,0.2)',
-    borderWidth: 1,
-    highlightColor: 'rgba(255,220,130,0.18)',
-    blurTint: 'systemThinMaterial',
-    blurIntensity: 70,
-    fallbackBg: 'rgba(255,149,0,0.08)',
-  },
+  glass: { accent: colors.borderStrong, wash: '#FAFBFC', border: colors.border },
+  blue: { accent: colors.blue, wash: colors.blueLight, border: '#D8E3FA' },
+  purple: { accent: colors.indigo, wash: colors.purpleLight, border: '#E2DCF5' },
+  orange: { accent: colors.orange, wash: colors.orangeLight, border: '#F2DFCB' },
+  red: { accent: colors.red, wash: colors.redLight, border: '#F1D8DA' },
+  green: { accent: colors.green, wash: colors.greenLight, border: '#D2EADD' },
+  dark: { accent: colors.label, wash: colors.surfaceMuted, border: colors.borderStrong },
+  parchment: { accent: colors.orange, wash: '#FFF9F1', border: '#ECE1D4' },
+  wood: { accent: colors.orangeDark, wash: colors.wood, border: '#EADBC8' },
 };
 
 export function CourtCard({
@@ -117,89 +38,85 @@ export function CourtCard({
   variant = 'glass',
   style,
   assetKey,
-  delay = 0,
   pressable = false,
   onPress,
 }: CourtCardProps) {
-  const cfg = variantMap[variant];
+  const config = variantMap[variant];
+  const interactive = pressable || Boolean(onPress);
 
-  const gesture = Gesture.Tap()
-    .onFinalize(() => {
-      if (onPress) onPress();
-    });
-
-  const cardContent = (
-    <View style={styles.inner}>
+  const content = (
+    <>
+      <View style={[styles.wash, { backgroundColor: config.wash }]} pointerEvents="none" />
+      <View style={[styles.accent, { backgroundColor: config.accent }]} pointerEvents="none" />
       {assetKey ? (
-        <AssetImage assetKey={assetKey} width={92} height={92} absolute right={-8} bottom={-12} opacity={0.18} />
+        <AssetImage assetKey={assetKey} width={88} height={88} absolute right={-6} bottom={-10} opacity={0.13} />
       ) : null}
-      {children}
-    </View>
+      <View style={styles.inner}>{children}</View>
+    </>
   );
 
-  return (
-    <GestureDetector gesture={gesture}>
-      <View
-        style={[
+  if (interactive) {
+    return (
+      <Pressable
+        accessibilityRole="button"
+        onPress={onPress}
+        style={({ pressed }) => [
           styles.card,
-          { borderColor: cfg.borderColor, borderWidth: cfg.borderWidth },
+          { borderColor: config.border },
           style,
+          pressed && styles.pressed,
         ]}
       >
-        {/* Native blur base — the core of the glass effect */}
-        {Platform.OS !== 'web' ? (
-          <BlurView
-            tint={cfg.blurTint}
-            intensity={cfg.blurIntensity}
-            style={StyleSheet.absoluteFillObject}
-          />
-        ) : (
-          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: cfg.fallbackBg }]} />
-        )}
+        {content}
+      </Pressable>
+    );
+  }
 
-        {/* Color tint overlay — adds variant hue on top of the neutral blur */}
-        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: cfg.tintColor, borderRadius: radius.xl }]} />
-
-        {/* Specular top-edge highlight — the key "glass" visual cue */}
-        <View style={[styles.highlight, { backgroundColor: cfg.highlightColor }]} />
-
-        {/* Subtle inner shadow at bottom to add depth */}
-        <View style={styles.innerShadow} />
-
-        {cardContent}
-      </View>
-    </GestureDetector>
+  return (
+    <View style={[styles.card, { borderColor: config.border }, style]}>
+      {content}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
+    position: 'relative',
+    backgroundColor: colors.surface,
     borderRadius: radius.xl,
+    borderCurve: 'continuous',
+    borderWidth: 1.5,
+    borderBottomWidth: 4,
+    borderBottomColor: colors.depthEdge,
     overflow: 'hidden',
     ...shadows.card,
   },
-  inner: {
-    padding: 16,
+  pressed: {
+    transform: [{ translateY: 3 }],
+    borderBottomWidth: 1,
+    shadowOpacity: 0.025,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
   },
-  // Top-edge specular highlight — simulates light reflecting off glass
-  highlight: {
+  wash: {
+    position: 'absolute',
+    top: -44,
+    right: -36,
+    width: 126,
+    height: 126,
+    borderRadius: 63,
+    opacity: 0.74,
+  },
+  accent: {
     position: 'absolute',
     top: 0,
-    left: 0,
-    right: 0,
-    height: 1,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
+    left: 22,
+    width: 38,
+    height: 4,
+    borderBottomLeftRadius: 4,
+    borderBottomRightRadius: 4,
   },
-  // Bottom inner shadow — adds depth
-  innerShadow: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 40,
-    borderBottomLeftRadius: radius.xl,
-    borderBottomRightRadius: radius.xl,
-    backgroundColor: 'rgba(0,0,0,0.024)',
+  inner: {
+    padding: 20,
   },
 });

@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { PermissionId, PermissionRequirement, PermissionStatus } from '@/src/types/court';
 import { CourtButton } from '@/src/components/CourtButton';
 import { StampBadge } from '@/src/components/StampBadge';
-import { colors, radius } from '@/src/constants/theme';
+import { colors, radius, shadows } from '@/src/constants/theme';
 import { PERMISSION_REQUIREMENTS } from '@/src/data/permissions';
 import { NotificationService } from '@/src/services/notifications/NotificationService';
 import { getScreenTimeService } from '@/src/services/screenTime/ScreenTimeServiceFactory';
@@ -14,15 +14,8 @@ type PermissionChecklistProps = {
   limit?: number;
 };
 
-function currentPlatform() {
-  if (process.env.EXPO_OS === 'ios') return 'ios';
-  if (process.env.EXPO_OS === 'android') return 'android';
-  return 'all';
-}
-
 function visiblePermissions() {
-  const platform = currentPlatform();
-  return PERMISSION_REQUIREMENTS.filter((item) => item.platform === 'all' || item.platform === platform);
+  return PERMISSION_REQUIREMENTS.filter((item) => item.platform === 'all' || item.platform === 'ios');
 }
 
 function toneForStatus(status: PermissionStatus) {
@@ -47,7 +40,7 @@ async function requestPermission(id: PermissionId) {
   }
 
   const service = getScreenTimeService();
-  const result = id === 'usageAccess' || id === 'screenTimeAuthorization' ? await service.requestPermissions() : await service.getPermissionStatus();
+  const result = id === 'screenTimeAuthorization' ? await service.requestPermissions() : await service.getPermissionStatus();
   return result.granted ? 'granted' : 'missing';
 }
 
@@ -103,11 +96,14 @@ const styles = StyleSheet.create({
   },
   row: {
     gap: 10,
-    padding: 12,
-    borderRadius: radius.md,
-    backgroundColor: 'rgba(255, 242, 210, 0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 242, 210, 0.12)',
+    padding: 14,
+    borderRadius: radius.xl,
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderBottomWidth: 4,
+    borderBottomColor: colors.depthEdge,
+    ...shadows.soft,
   },
   compactRow: {
     flexDirection: 'row',
@@ -125,21 +121,21 @@ const styles = StyleSheet.create({
   },
   title: {
     flex: 1,
-    color: colors.cream,
+    color: colors.label,
     fontSize: 15,
-    fontWeight: '900',
+    fontWeight: '600',
   },
   description: {
-    color: colors.parchment,
+    color: colors.labelSecondary,
     fontSize: 12,
     lineHeight: 17,
-    fontWeight: '700',
+    fontWeight: '400',
   },
   path: {
-    color: colors.gold,
+    color: colors.blue,
     fontSize: 11,
     lineHeight: 15,
-    fontWeight: '900',
+    fontWeight: '600',
   },
   iconButton: {
     width: 42,
@@ -147,11 +143,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radius.pill,
-    backgroundColor: colors.gold,
+    backgroundColor: colors.blueLight,
+    borderWidth: 1,
+    borderColor: '#D5E0F8',
   },
   iconText: {
-    color: colors.ink,
+    color: colors.blueDark,
     fontSize: 12,
-    fontWeight: '900',
+    fontWeight: '700',
   },
 });

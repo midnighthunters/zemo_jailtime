@@ -1,16 +1,5 @@
-import { BlurView } from 'expo-blur';
-import { useEffect } from 'react';
-import { Platform, StyleSheet, Text, View } from 'react-native';
-import Animated, {
-  FadeInLeft,
-  FadeInRight,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withSequence,
-  withSpring,
-  withTiming,
-} from 'react-native-reanimated';
+import { StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeInLeft, FadeInRight } from 'react-native-reanimated';
 import type { FocusCourtAssetKey } from '@/src/constants/assets';
 import { AssetImage } from '@/src/components/AssetImage';
 import { colors, radius, shadows } from '@/src/constants/theme';
@@ -22,61 +11,16 @@ type CharacterBubbleProps = {
 };
 
 export function CharacterBubble({ assetKey, name, line }: CharacterBubbleProps) {
-  const float = useSharedValue(0);
-
-  useEffect(() => {
-    float.value = withRepeat(
-      withSequence(
-        withTiming(1, { duration: 2400 }),
-        withTiming(0, { duration: 2400 }),
-      ),
-      -1,
-      false,
-    );
-  }, [float]);
-
-  const avatarStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateY: float.value * -5 },
-      { rotate: `${-0.5 + float.value * 1}deg` },
-    ],
-  }));
-
   return (
     <View style={styles.root}>
-      <Animated.View
-        entering={FadeInLeft.duration(320).springify().damping(16)}
-        style={avatarStyle}
-      >
-        <AssetImage assetKey={assetKey} width={78} height={78} />
+      <Animated.View entering={FadeInLeft.duration(260)} style={styles.avatarStage}>
+        <AssetImage assetKey={assetKey} width={70} height={70} />
       </Animated.View>
 
-      <Animated.View
-        entering={FadeInRight.duration(340).delay(80).springify().damping(18)}
-        style={styles.bubbleOuter}
-      >
-        {/* Native glass blur */}
-        {Platform.OS !== 'web' ? (
-          <BlurView
-            tint="systemUltraThinMaterial"
-            intensity={18}
-            style={StyleSheet.absoluteFillObject}
-          />
-        ) : (
-          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(255,255,255,0.82)' }]} />
-        )}
-        {/* Tint */}
-        <View style={[StyleSheet.absoluteFillObject, styles.tint]} />
-        {/* Specular highlight */}
-        <View style={styles.highlight} />
-        {/* Tail pointer */}
+      <Animated.View entering={FadeInRight.duration(280).delay(60)} style={styles.bubble}>
         <View style={styles.tail} />
-
-        {/* Text content */}
-        <View style={styles.bubbleContent}>
-          <Text style={styles.name}>{name}</Text>
-          <Text style={styles.line}>{line}</Text>
-        </View>
+        <Text style={styles.name}>{name}</Text>
+        <Text style={styles.line}>{line}</Text>
       </Animated.View>
     </View>
   );
@@ -88,45 +32,42 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  bubbleOuter: {
-    flex: 1,
-    borderRadius: radius.xl,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.22)',
+  avatarStage: {
+    width: 78,
+    height: 78,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 24,
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderBottomWidth: 4,
+    borderBottomColor: colors.depthEdge,
     ...shadows.soft,
   },
-  tint: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
+  bubble: {
+    flex: 1,
+    gap: 4,
+    padding: 14,
     borderRadius: radius.xl,
-  },
-  highlight: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.5)',
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderBottomWidth: 4,
+    borderBottomColor: colors.depthEdge,
+    ...shadows.soft,
   },
   tail: {
     position: 'absolute',
-    left: -6,
-    top: '50%',
-    marginTop: -5,
-    width: 0,
-    height: 0,
-    borderTopWidth: 5,
-    borderBottomWidth: 5,
-    borderRightWidth: 6,
-    borderTopColor: 'transparent',
-    borderBottomColor: 'transparent',
-    borderRightColor: 'rgba(255,255,255,0.4)',
-  },
-  bubbleContent: {
-    padding: 14,
-    gap: 4,
+    left: -7,
+    top: 28,
+    width: 14,
+    height: 14,
+    transform: [{ rotate: '45deg' }],
+    backgroundColor: colors.surface,
+    borderLeftWidth: 1.5,
+    borderBottomWidth: 1.5,
+    borderColor: colors.border,
   },
   name: {
     color: colors.blue,

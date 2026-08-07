@@ -34,20 +34,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 9,
     borderRadius: radius.pill,
-    backgroundColor: 'rgba(255, 242, 210, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 242, 210, 0.18)',
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.border,
   },
   selected: {
-    backgroundColor: colors.gold,
-    borderColor: colors.deepGold,
+    backgroundColor: colors.blueLight,
+    borderColor: colors.blue,
   },
   chipText: {
-    color: colors.cream,
+    color: colors.label,
     fontSize: 13,
-    fontWeight: '900',
+    fontWeight: '600',
   },
   selectedText: {
-    color: colors.ink,
+    color: colors.blueDark,
   },
 });

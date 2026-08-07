@@ -6,10 +6,10 @@ let Purchases: any;
 let configured = false;
 
 function getPurchases() {
-  if (Platform.OS === 'web') return undefined;
+  if (Platform.OS !== 'ios') return undefined;
   if (Purchases) return Purchases;
   try {
-    // Native module is intentionally guarded so Expo Go/web stay usable.
+    // Native module is intentionally guarded so Expo Go stays usable.
     Purchases = require('react-native-purchases').default;
   } catch {
     Purchases = undefined;
@@ -18,9 +18,7 @@ function getPurchases() {
 }
 
 function apiKey() {
-  if (Platform.OS === 'ios') return REVENUECAT.iosApiKey;
-  if (Platform.OS === 'android') return REVENUECAT.androidApiKey;
-  return '';
+  return Platform.OS === 'ios' ? REVENUECAT.iosApiKey : '';
 }
 
 function mapPackage(pkg: any): PaywallPackage {

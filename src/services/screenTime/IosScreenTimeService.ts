@@ -18,7 +18,7 @@
 import { NativeModules, Platform } from 'react-native';
 import type { ScreenTimeService } from '@/src/services/screenTime/ScreenTimeService';
 
-// Pull the native module — will be undefined on Android / web
+// Pull the native module — it is unavailable in Expo Go without the iOS native module.
 const { FocusCourtModule } = NativeModules as {
   FocusCourtModule?: {
     requestAuthorization(): Promise<{ granted: boolean; reason?: string }>;
@@ -108,7 +108,7 @@ export const IosScreenTimeService: ScreenTimeService & {
     await FocusCourtModule!.clearImmediateBlock();
   },
 
-  // ── Stubs for interface methods not applicable on iOS ───────────────────
+  // ── Stubs for interface methods not yet backed by a report extension ────
 
   async getTodayUsage() {
     // DeviceActivityReport requires a separate App Extension using SwiftUI.

@@ -38,38 +38,37 @@ class JailTimeShieldConfiguration: ShieldConfigurationDataSource {
     private func makeShield(appName: String) -> ShieldConfiguration {
         let policy = AppGroupStorage.loadPolicy()
 
-        // Title: "SENTENCED"
         let title = ShieldConfiguration.Label(
-            text: "⚖️  SENTENCED",
-            color: UIColor(red: 1.0, green: 0.784, blue: 0.239, alpha: 1.0) // gold #FFC83D
+            text: "SENTENCED",
+            color: UIColor(red: 0.153, green: 0.169, blue: 0.188, alpha: 1.0) // charcoal #272B30
         )
 
         // Body: explain why it's blocked
         let subtitle = ShieldConfiguration.Label(
             text: "\(appName) has been taken into custody.\nYou've used your daily allowance. Serve your sentence before re-entering.",
-            color: UIColor(red: 0.965, green: 0.878, blue: 0.722, alpha: 1.0) // cream #F6E0B8
+            color: UIColor(red: 0.435, green: 0.463, blue: 0.502, alpha: 1.0) // secondary #6F7680
         )
 
         // Primary button: none (user cannot bypass by default)
         // If emergency bypass is set, we show it — JS handles the actual bypass logic
         // by calling clearImmediateBlock, so here the button just closes the shield UI.
         let primaryButton = ShieldConfiguration.Label(
-            text: "🔒  Locked",
-            color: UIColor(red: 0.843, green: 0.208, blue: 0.165, alpha: 1.0) // danger red
+            text: "Locked",
+            color: .white
         )
 
         return ShieldConfiguration(
-            backgroundBlurStyle: .dark,
-            backgroundColor: UIColor(red: 0.094, green: 0.043, blue: 0.031, alpha: 0.97), // #180B08
+            backgroundBlurStyle: nil,
+            backgroundColor: UIColor(red: 0.969, green: 0.973, blue: 0.980, alpha: 1.0), // canvas #F7F8FA
             icon: UIImage(systemName: "lock.fill")?
                 .withTintColor(
-                    UIColor(red: 1.0, green: 0.784, blue: 0.239, alpha: 1),
+                    UIColor(red: 0.886, green: 0.333, blue: 0.333, alpha: 1), // red #E25555
                     renderingMode: .alwaysOriginal
                 ),
             title: title,
             subtitle: subtitle,
             primaryButtonLabel: primaryButton,
-            primaryButtonBackgroundColor: UIColor(red: 0.478, green: 0.247, blue: 0.094, alpha: 1) // wood #7A3F18
+            primaryButtonBackgroundColor: UIColor(red: 0.208, green: 0.416, blue: 0.902, alpha: 1) // blue #356AE6
         )
     }
 }

@@ -7,9 +7,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   name: 'JailTime: Focus Court',
   slug: 'jailtime-focus-court',
   version: '1.0.0',
+  platforms: ['ios'],
   orientation: 'portrait',
   scheme: 'zemolabsjailtime',
-  userInterfaceStyle: 'dark',
+  userInterfaceStyle: 'light',
   newArchEnabled: false,
   assetBundlePatterns: ['assets/**/*'],
   plugins: [
@@ -39,36 +40,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'com.apple.security.application-groups': ['group.com.zemolabs.jailtime'],
     },
   },
-  android: {
-    package: 'com.zemolabs.jailtime',
-    permissions: [
-      'android.permission.INTERNET',
-      'android.permission.POST_NOTIFICATIONS',
-      'android.permission.PACKAGE_USAGE_STATS',
-      'android.permission.SYSTEM_ALERT_WINDOW',
-      'android.permission.FOREGROUND_SERVICE',
-      'android.permission.RECEIVE_BOOT_COMPLETED',
-      'android.permission.QUERY_ALL_PACKAGES',
-      'android.permission.VIBRATE',
-    ],
-    adaptiveIcon: {
-      backgroundColor: '#180B08',
-    },
-  },
-  web: {
-    bundler: 'metro',
-    output: 'single',
-  },
   extra: {
     // ─── RevenueCat ──────────────────────────────────────────────────────────
     // Live values are baked in as defaults so the app works without env vars.
     // Override per-build via EXPO_PUBLIC_* env vars:
     //   EXPO_PUBLIC_REVENUECAT_IOS_API_KEY
-    //   EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY
     revenueCatIosApiKey:
       process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY ?? '',
-    revenueCatAndroidApiKey:
-      process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY ?? '',
     revenueCatUseTestStore: boolFromEnv(process.env.EXPO_PUBLIC_REVENUECAT_USE_TEST_STORE),
   },
 });

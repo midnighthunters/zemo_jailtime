@@ -1,7 +1,6 @@
+import type { ReactNode } from 'react';
 import { ImageBackground, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { type ReactNode } from 'react';
 import { useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import { OnboardingArt } from '@/src/constants/assets';
 import { ONBOARDING_STEPS, type OnboardingStep } from '@/src/data/onboarding';
 import { AssetImage } from '@/src/components/AssetImage';
@@ -12,7 +11,6 @@ import { useCourtStore } from '@/src/store/useCourtStore';
 type OnboardingSceneProps = {
   step: OnboardingStep;
   children?: ReactNode;
-  /** Provide a custom CTA block to replace the default single CourtButton. */
   overrideCta?: ReactNode;
 };
 
@@ -21,7 +19,7 @@ export function OnboardingScene({ step, children, overrideCta }: OnboardingScene
   const completeOnboarding = useCourtStore((state) => state.completeOnboarding);
   const index = ONBOARDING_STEPS.findIndex((item) => item.id === step.id);
   const next = ONBOARDING_STEPS[index + 1];
-  const art = OnboardingArt[step.artKey];
+  const progress = `${((index + 1) / ONBOARDING_STEPS.length) * 100}%` as `${number}%`;
 
   const goNext = () => {
     if (next) router.push(next.route);
@@ -33,27 +31,46 @@ export function OnboardingScene({ step, children, overrideCta }: OnboardingScene
 
   return (
     <View style={styles.root}>
-      <ImageBackground source={art} resizeMode="cover" style={styles.backgroundArt} imageStyle={styles.image} />
-      <LinearGradient colors={['rgba(24, 11, 8, 0.1)', 'rgba(24, 11, 8, 0.48)', colors.background]} style={styles.tint}>
-        <ScrollView contentContainerStyle={styles.content}>
-          <View style={styles.top}>
-            <Text style={styles.step}>COURT BRIEFING {index + 1}/{ONBOARDING_STEPS.length}</Text>
-            <Text style={styles.title}>{step.title}</Text>
-            <Text style={styles.subtitle}>{step.subtitle}</Text>
+      <View style={styles.topWash} pointerEvents="none" />
+      <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.content}
+      >
+        <View style={styles.progressHeader}>
+          <View style={styles.progressCopy}>
+            <Text style={styles.brand}>FOCUS COURT</Text>
+            <Text style={styles.step}>Briefing {index + 1} of {ONBOARDING_STEPS.length}</Text>
           </View>
+          <View style={styles.progressTrack}>
+            <View style={[styles.progressFill, { width: progress }]} />
+          </View>
+        </View>
+
+        <ImageBackground
+          source={OnboardingArt[step.artKey]}
+          resizeMode="cover"
+          style={styles.hero}
+          imageStyle={styles.heroImage}
+        >
+          <View style={styles.heroWash} />
           <View style={styles.assets}>
             {step.assetKeys.map((assetKey) => (
-              <AssetImage key={assetKey} assetKey={assetKey} width={88} height={88} />
+              <View key={assetKey} style={styles.assetStage}>
+                <AssetImage assetKey={assetKey} width={82} height={82} />
+              </View>
             ))}
           </View>
-          {children ? (
-            <View style={styles.panel}>
-              {children}
-            </View>
-          ) : null}
-          {overrideCta ?? <CourtButton title={step.cta} onPress={goNext} />}
-        </ScrollView>
-      </LinearGradient>
+        </ImageBackground>
+
+        <View style={styles.heading}>
+          <Text style={styles.title}>{step.title}</Text>
+          <Text style={styles.subtitle}>{step.subtitle}</Text>
+        </View>
+
+        {children ? <View style={styles.panel}>{children}</View> : null}
+        <View style={styles.cta}>{overrideCta ?? <CourtButton title={step.cta} onPress={goNext} />}</View>
+      </ScrollView>
     </View>
   );
 }
@@ -63,59 +80,126 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     backgroundColor: colors.background,
-    overflow: 'hidden',
   },
-  backgroundArt: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  image: {
-    opacity: 0.72,
-  },
-  tint: {
-    flex: 1,
+  topWash: {
+    position: 'absolute',
+    top: -160,
+    right: -130,
+    width: 340,
+    height: 340,
+    borderRadius: 170,
+    backgroundColor: '#EDF2FF',
   },
   content: {
     flexGrow: 1,
-    justifyContent: 'flex-end',
-    gap: 18,
-    padding: 18,
-    paddingTop: 60,
-    paddingBottom: 32,
+    gap: 20,
+    paddingHorizontal: 18,
+    paddingTop: 18,
+    paddingBottom: 36,
   },
-  top: {
-    gap: 8,
+  progressHeader: {
+    gap: 10,
+  },
+  progressCopy: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  brand: {
+    color: colors.blue,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.8,
   },
   step: {
-    color: colors.gold,
+    color: colors.labelSecondary,
     fontSize: 12,
-    fontWeight: '900',
+    fontWeight: '600',
   },
-  title: {
-    color: colors.cream,
-    fontSize: 36,
-    lineHeight: 40,
-    fontWeight: '900',
-    textShadowColor: colors.black,
-    textShadowRadius: 14,
+  progressTrack: {
+    height: 7,
+    borderRadius: radius.pill,
+    backgroundColor: colors.fillSecondary,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  subtitle: {
-    color: colors.parchment,
-    fontSize: 17,
-    lineHeight: 24,
-    fontWeight: '800',
+  progressFill: {
+    height: '100%',
+    borderRadius: radius.pill,
+    backgroundColor: colors.blue,
+  },
+  hero: {
+    minHeight: 218,
+    borderRadius: radius.xxl,
+    borderCurve: 'continuous',
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderBottomWidth: 4,
+    borderBottomColor: colors.depthEdge,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    ...shadows.card,
+  },
+  heroImage: {
+    borderRadius: radius.xxl,
+    opacity: 0.18,
+  },
+  heroWash: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255,255,255,0.76)',
   },
   assets: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'center',
+    gap: 12,
     flexWrap: 'wrap',
+    padding: 24,
+  },
+  assetStage: {
+    width: 102,
+    height: 102,
+    borderRadius: radius.xl,
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderBottomWidth: 4,
+    borderBottomColor: colors.depthEdge,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.soft,
+  },
+  heading: {
+    gap: 8,
+    paddingHorizontal: 2,
+  },
+  title: {
+    color: colors.label,
+    fontSize: 34,
+    lineHeight: 39,
+    fontWeight: '700',
+    letterSpacing: -0.8,
+  },
+  subtitle: {
+    color: colors.labelSecondary,
+    fontSize: 16,
+    lineHeight: 23,
+    fontWeight: '500',
   },
   panel: {
-    padding: 14,
-    borderRadius: radius.lg,
-    backgroundColor: 'rgba(58, 29, 17, 0.82)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 242, 210, 0.18)',
+    padding: 20,
+    borderRadius: radius.xl,
+    borderCurve: 'continuous',
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderBottomWidth: 4,
+    borderBottomColor: colors.depthEdge,
     ...shadows.soft,
+  },
+  cta: {
+    paddingTop: 2,
   },
 });

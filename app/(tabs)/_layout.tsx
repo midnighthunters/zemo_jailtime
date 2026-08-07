@@ -1,54 +1,22 @@
-import { BlurView } from 'expo-blur';
-import { useEffect } from 'react';
-import { Platform, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import { Tabs } from 'expo-router';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
-import { colors, radius } from '@/src/constants/theme';
+import { StyleSheet, View } from 'react-native';
+import { colors, radius, shadows } from '@/src/constants/theme';
 
 type TabIconProps = {
-  emoji: string;
-  label: string;
+  symbol: string;
   focused: boolean;
 };
 
-function TabIcon({ emoji, label, focused }: TabIconProps) {
-  const scale = useSharedValue(focused ? 1.14 : 1);
-  const pillScale = useSharedValue(focused ? 1 : 0.7);
-  const pillOpacity = useSharedValue(focused ? 1 : 0);
-
-  useEffect(() => {
-    scale.value = withSpring(focused ? 1.14 : 1, {
-      damping: 14,
-      stiffness: 280,
-      mass: 0.8,
-    });
-    pillScale.value = withSpring(focused ? 1 : 0.7, {
-      damping: 16,
-      stiffness: 300,
-      mass: 0.7,
-    });
-    pillOpacity.value = withSpring(focused ? 1 : 0, {
-      damping: 16,
-      stiffness: 300,
-    });
-  }, [focused, scale, pillScale, pillOpacity]);
-
-  const emojiStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const pillStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: pillScale.value }],
-    opacity: pillOpacity.value,
-  }));
-
+function TabIcon({ symbol, focused }: TabIconProps) {
   return (
-    <View style={tabStyles.iconWrap}>
-      {/* Active pill indicator */}
-      <Animated.View style={[tabStyles.activePill, pillStyle]} />
-      <Animated.Text style={[tabStyles.emoji, emojiStyle]}>
-        {emoji}
-      </Animated.Text>
+    <View style={[styles.iconStage, focused && styles.iconStageFocused]}>
+      <Image
+        source={`sf:${symbol}`}
+        contentFit="contain"
+        tintColor={focused ? colors.blue : colors.labelTertiary}
+        style={styles.icon}
+      />
     </View>
   );
 }
@@ -60,77 +28,59 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarShowLabel: true,
         tabBarActiveTintColor: colors.blue,
-        tabBarInactiveTintColor: colors.labelSecondary,
+        tabBarInactiveTintColor: colors.labelTertiary,
         tabBarLabelStyle: {
           fontSize: 10,
           fontWeight: '600',
-          letterSpacing: 0.1,
-          marginTop: -2,
+          letterSpacing: 0,
+          marginTop: -3,
         },
-        // The tab bar itself — floating glass capsule
         tabBarStyle: {
           position: 'absolute',
-          left: 20,
-          right: 20,
-          bottom: 18,
-          height: 76,
-          borderRadius: 38,
-          borderTopWidth: 0,
-          // Transparent so the BlurView behind shows through
-          backgroundColor: 'transparent',
-          elevation: 0,
-          paddingBottom: 0,
-          paddingTop: 0,
-          // Prevent clipping of the blur
+          left: 18,
+          right: 18,
+          bottom: 16,
+          height: 78,
+          borderRadius: radius.xl,
+          borderCurve: 'continuous',
+          borderWidth: 1.5,
+          borderTopWidth: 1.5,
+          borderColor: colors.border,
+          borderBottomWidth: 4,
+          borderBottomColor: colors.depthEdge,
+          backgroundColor: colors.surface,
+          paddingBottom: 4,
+          paddingTop: 5,
           overflow: 'hidden',
+          ...shadows.strong,
         },
         tabBarItemStyle: {
-          paddingVertical: 8,
+          borderRadius: radius.lg,
+          paddingVertical: 4,
         },
-        tabBarBackground: () => (
-          <View style={StyleSheet.absoluteFillObject}>
-            {/* Native glass blur — the real iOS tab bar material */}
-            {Platform.OS !== 'web' ? (
-              <BlurView
-                tint="systemChromeMaterial"
-                intensity={24}
-                style={StyleSheet.absoluteFillObject}
-              />
-            ) : (
-              <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(255,255,255,0.88)' }]} />
-            )}
-            {/* Glass tint */}
-            <View style={[StyleSheet.absoluteFillObject, tabStyles.tint]} />
-            {/* Top specular highlight edge */}
-            <View style={tabStyles.topEdge} />
-            {/* Border ring */}
-            <View style={tabStyles.borderRing} />
-          </View>
-        ),
       }}
     >
       <Tabs.Screen
         name="courtroom"
         options={{
           title: 'Court',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="⚖️" label="Court" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon symbol="building.columns.fill" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="culprits"
         options={{
           title: 'Culprits',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="🔍" label="Culprits" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon symbol="person.2.fill" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="jail"
         options={{
           title: 'Jail',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="🔒" label="Jail" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon symbol="lock.fill" focused={focused} />,
         }}
       />
-      {/* Hidden routes for deep-link compat */}
       <Tabs.Screen name="laws" options={{ href: null }} />
       <Tabs.Screen name="evidence" options={{ href: null }} />
       <Tabs.Screen name="parole" options={{ href: null }} />
@@ -138,48 +88,21 @@ export default function TabsLayout() {
   );
 }
 
-const tabStyles = StyleSheet.create({
-  iconWrap: {
+const styles = StyleSheet.create({
+  iconStage: {
+    width: 42,
+    height: 32,
+    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    width: 44,
-    height: 36,
   },
-  activePill: {
-    position: 'absolute',
-    width: 38,
-    height: 28,
-    borderRadius: 14,
+  iconStageFocused: {
     backgroundColor: colors.blueLight,
-  },
-  emoji: {
-    fontSize: 19,
-  },
-  // Glass tint overlay
-  tint: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 38,
-  },
-  // Specular top edge highlight
-  topEdge: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 1,
-    borderTopLeftRadius: 38,
-    borderTopRightRadius: 38,
-    backgroundColor: 'rgba(255,255,255,0.5)',
-  },
-  // Outer border ring
-  borderRing: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderRadius: 38,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
+    borderColor: '#D5E0F8',
+  },
+  icon: {
+    width: 20,
+    height: 20,
   },
 });

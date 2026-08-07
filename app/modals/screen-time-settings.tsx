@@ -16,7 +16,7 @@ function SettingSwitch({ label, value, onValueChange }: { label: string; value: 
   return (
     <View style={styles.settingRow}>
       <Text style={styles.settingLabel}>{label}</Text>
-      <Switch value={value} onValueChange={onValueChange} thumbColor={value ? colors.gold : colors.muted} trackColor={{ true: colors.deepGold, false: colors.woodDark }} />
+      <Switch value={value} onValueChange={onValueChange} thumbColor={colors.white} trackColor={{ true: colors.blue, false: colors.fillPrimary }} />
     </View>
   );
 }
@@ -120,24 +120,24 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   title: {
-    color: colors.cream,
+    color: colors.label,
     fontSize: 28,
     lineHeight: 32,
-    fontWeight: '900',
+    fontWeight: '700',
   },
   copy: {
-    color: colors.parchment,
+    color: colors.labelSecondary,
     fontSize: 14,
     lineHeight: 20,
-    fontWeight: '800',
+    fontWeight: '400',
   },
   section: {
     gap: 12,
   },
   sectionTitle: {
-    color: colors.cream,
+    color: colors.label,
     fontSize: 19,
-    fontWeight: '900',
+    fontWeight: '700',
   },
   settingRow: {
     minHeight: 48,
@@ -149,10 +149,10 @@ const styles = StyleSheet.create({
   },
   settingLabel: {
     flex: 1,
-    color: colors.cream,
+    color: colors.label,
     fontSize: 14,
     lineHeight: 18,
-    fontWeight: '900',
+    fontWeight: '600',
   },
   segmented: {
     flexDirection: 'row',
@@ -164,21 +164,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radius.md,
-    backgroundColor: 'rgba(255, 242, 210, 0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 242, 210, 0.16)',
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.border,
   },
   segmentActive: {
-    backgroundColor: colors.gold,
-    borderColor: colors.deepGold,
+    backgroundColor: colors.blueLight,
+    borderColor: colors.blue,
   },
   segmentText: {
-    color: colors.parchment,
+    color: colors.labelSecondary,
     fontSize: 11,
-    fontWeight: '900',
+    fontWeight: '600',
   },
   segmentTextActive: {
-    color: colors.ink,
+    color: colors.blueDark,
   },
   stepperRow: {
     minHeight: 54,
@@ -193,9 +193,9 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   stepperValue: {
-    color: colors.gold,
+    color: colors.blue,
     fontSize: 12,
-    fontWeight: '900',
+    fontWeight: '600',
   },
   stepperButtons: {
     flexDirection: 'row',
@@ -207,12 +207,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radius.pill,
-    backgroundColor: colors.gold,
+    backgroundColor: colors.blue,
   },
   stepperButtonText: {
-    color: colors.ink,
+    color: colors.white,
     fontSize: 20,
     lineHeight: 22,
-    fontWeight: '900',
+    fontWeight: '700',
   },
 });
