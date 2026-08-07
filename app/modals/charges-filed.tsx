@@ -169,16 +169,18 @@ const styles = StyleSheet.create({
   },
   carouselCard: {
     width: CARD_WIDTH,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: colors.surface,
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.10)',
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderBottomWidth: 4,
+    borderBottomColor: colors.depthEdge,
     padding: 16,
     gap: 8,
   },
   carouselCardActive: {
     borderColor: colors.red,
-    backgroundColor: 'rgba(220,50,50,0.10)',
+    backgroundColor: colors.redLight,
   },
   carouselTop: {
     flexDirection: 'row',

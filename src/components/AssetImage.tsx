@@ -62,13 +62,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radius.md,
-    backgroundColor: colors.parchment,
-    borderWidth: 2,
-    borderColor: colors.parchmentDark,
+    backgroundColor: colors.surfaceMuted,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   placeholderText: {
-    color: colors.ink,
+    color: colors.labelSecondary,
     fontSize: 10,
-    fontWeight: '900',
+    fontWeight: '600',
   },
 });
