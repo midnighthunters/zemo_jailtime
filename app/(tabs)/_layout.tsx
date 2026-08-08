@@ -1,26 +1,13 @@
-import { Image } from 'expo-image';
 import { Tabs } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
 import { colors, radius, shadows } from '@/src/constants/theme';
 
-type TabIconProps = {
-  symbol: string;
-  focused: boolean;
-};
-
-function TabIcon({ symbol, focused }: TabIconProps) {
-  return (
-    <View style={[styles.iconStage, focused && styles.iconStageFocused]}>
-      <Image
-        source={`sf:${symbol}`}
-        contentFit="contain"
-        tintColor={focused ? colors.blue : colors.labelTertiary}
-        style={styles.icon}
-      />
-    </View>
-  );
-}
-
+/**
+ * Two visible tabs: Court (docket, custody, verdicts, focus) and Culprits
+ * (laws, distractions, enforcement switch). Laws, Evidence, and Parole stay
+ * registered for deep links.
+ *
+ * The tab bar is label-only. See docs/DAILY_DOCKET_MASTERPLAN.md.
+ */
 export default function TabsLayout() {
   return (
     <Tabs
@@ -30,17 +17,16 @@ export default function TabsLayout() {
         tabBarActiveTintColor: colors.blue,
         tabBarInactiveTintColor: colors.labelTertiary,
         tabBarLabelStyle: {
-          fontSize: 10,
+          fontSize: 14,
           fontWeight: '600',
-          letterSpacing: 0,
-          marginTop: -3,
+          letterSpacing: -0.1,
         },
         tabBarStyle: {
           position: 'absolute',
           left: 18,
           right: 18,
           bottom: 16,
-          height: 78,
+          height: 66,
           borderRadius: radius.xl,
           borderCurve: 'continuous',
           borderWidth: 1.5,
@@ -49,60 +35,22 @@ export default function TabsLayout() {
           borderBottomWidth: 4,
           borderBottomColor: colors.depthEdge,
           backgroundColor: colors.surface,
-          paddingBottom: 4,
-          paddingTop: 5,
+          paddingBottom: 6,
+          paddingTop: 6,
           overflow: 'hidden',
           ...shadows.strong,
         },
         tabBarItemStyle: {
           borderRadius: radius.lg,
-          paddingVertical: 4,
+          paddingVertical: 6,
         },
       }}
     >
-      <Tabs.Screen
-        name="courtroom"
-        options={{
-          title: 'Court',
-          tabBarIcon: ({ focused }) => <TabIcon symbol="building.columns.fill" focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="culprits"
-        options={{
-          title: 'Culprits',
-          tabBarIcon: ({ focused }) => <TabIcon symbol="person.2.fill" focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="jail"
-        options={{
-          title: 'Jail',
-          tabBarIcon: ({ focused }) => <TabIcon symbol="lock.fill" focused={focused} />,
-        }}
-      />
+      <Tabs.Screen name="courtroom" options={{ title: 'Court' }} />
+      <Tabs.Screen name="culprits" options={{ title: 'Culprits' }} />
       <Tabs.Screen name="laws" options={{ href: null }} />
       <Tabs.Screen name="evidence" options={{ href: null }} />
       <Tabs.Screen name="parole" options={{ href: null }} />
     </Tabs>
   );
 }
-
-const styles = StyleSheet.create({
-  iconStage: {
-    width: 42,
-    height: 32,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconStageFocused: {
-    backgroundColor: colors.blueLight,
-    borderWidth: 1,
-    borderColor: '#D5E0F8',
-  },
-  icon: {
-    width: 20,
-    height: 20,
-  },
-});

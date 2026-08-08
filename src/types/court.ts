@@ -71,13 +71,16 @@ export type AppSuspect = {
   unblockedUntil?: string;
 };
 
-// A running focus timer. When it ends it can reduce an active jail sentence.
+// A running focus timer.
+// When `caseId` is set the session serves that case and releases the app on
+// completion. Without a `caseId` it is free-standing deep work that only earns
+// parole points.
 export type FocusSession = {
   id: string;
   startedAt: string;
   endsAt: string;
   durationMinutes: number;
-  reducesJail: boolean;
+  caseId?: string;
 };
 
 export type FocusLaw = {
@@ -120,27 +123,34 @@ export type PermissionRequirement = {
   status: PermissionStatus;
 };
 
-export type Charge = {
-  id: string;
-  lawId: string;
-  appId: string;
-  title: string;
-  description: string;
-  evidenceLine: string;
-  severity: 1 | 2 | 3 | 4 | 5;
-  punishmentMinutes: number;
-  createdAt: string;
-  status: 'filed' | 'sentenced' | 'served' | 'pardoned';
-};
+// Where a case sits on today's docket.
+//  - hearing   → law broken, case filed, awaiting the user's call
+//  - warning   → let off with a notice; the app stays open
+//  - jailed    → the app is locked until focus time is served
+//  - served    → focus time completed; the app is released
+//  - dismissed → thrown out via mercy pass or the user's choice
+export type CaseVerdict = 'hearing' | 'warning' | 'jailed' | 'served' | 'dismissed';
 
+// One law break against one app. The docket holds every case filed today and is
+// renewed from scratch at the start of each local day.
 export type CourtCase = {
   id: string;
+  // Local day key (YYYY-MM-DD) this case belongs to.
   date: string;
+  lawId: string;
+  lawName: string;
+  appId: string;
+  appName: string;
   title: string;
-  charges: Charge[];
-  totalSentenceMinutes: number;
-  remainingSentenceSeconds: number;
-  status: 'clean' | 'warning' | 'charged' | 'jailed' | 'parole' | 'dismissed';
+  evidenceLine: string;
+  severity: 1 | 2 | 3 | 4 | 5;
+  verdict: CaseVerdict;
+  filedAt: string;
+  resolvedAt?: string;
+  // Focus minutes required to clear a `jailed` verdict.
+  requiredFocusMinutes: number;
+  // Focus seconds banked so far. Partial sessions still count.
+  focusServedSeconds: number;
 };
 
 export type ParoleRecord = {

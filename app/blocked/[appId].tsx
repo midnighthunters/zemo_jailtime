@@ -4,42 +4,64 @@ import { AssetImage } from '@/src/components/AssetImage';
 import { CourtBackground } from '@/src/components/CourtBackground';
 import { CourtButton } from '@/src/components/CourtButton';
 import { CourtCard } from '@/src/components/CourtCard';
-import { SentenceTimer } from '@/src/components/SentenceTimer';
 import { StampBadge } from '@/src/components/StampBadge';
 import { colors } from '@/src/constants/theme';
 import { useCourtStore } from '@/src/store/useCourtStore';
+import { caseFocusRemainingSeconds, jailedCaseForApp } from '@/src/utils/docket';
+import { formatMinutes } from '@/src/utils/format';
 
+/**
+ * Native-block fallback. Shows the case holding this app and routes straight to
+ * the focus timer that can release it.
+ */
 export default function BlockedAppScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ appId: string }>();
-  const activeCase = useCourtStore((state) => state.activeCase);
   const suspect = useCourtStore((state) =>
     state.suspects.find((item) => item.id === params.appId),
   );
+  const courtCase = useCourtStore((state) => jailedCaseForApp(state.cases, params.appId));
+
+  const appName = suspect?.displayName ?? courtCase?.appName ?? 'This app';
+  const owedMinutes = courtCase
+    ? Math.max(1, Math.ceil(caseFocusRemainingSeconds(courtCase) / 60))
+    : 0;
 
   return (
     <CourtBackground>
       <View style={styles.content}>
-        <CourtCard variant="red" style={styles.card}>
+        <CourtCard variant={courtCase ? 'red' : 'green'}>
           <View style={styles.center}>
             <AssetImage assetKey="ASSET_STRICT_MODE_LOCK" width={130} height={130} />
-            <StampBadge label="App Shielded" tone="danger" />
+            <StampBadge
+              label={courtCase ? 'In custody' : 'Released'}
+              tone={courtCase ? 'danger' : 'success'}
+            />
             <Text style={styles.title}>
-              {suspect?.displayName ?? 'Distracting App'} is in custody.
+              {courtCase ? `${appName} is in custody.` : `${appName} is open.`}
             </Text>
             <Text style={styles.copy}>
-              Step away from the app icon. The jail timer is watching.
+              {courtCase
+                ? `${courtCase.lawName} was broken. Serve ${formatMinutes(owedMinutes)} of focus and the court releases it.`
+                : 'No case is holding this app. You are free to carry on.'}
             </Text>
-            <SentenceTimer seconds={activeCase.remainingSentenceSeconds || 600} />
+
+            {courtCase ? (
+              <CourtButton
+                title={`Start ${formatMinutes(owedMinutes)} Focus Timer`}
+                variant="primary"
+                onPress={() =>
+                  router.push({
+                    pathname: '/modals/focus-timer',
+                    params: { caseId: courtCase.id },
+                  })
+                }
+              />
+            ) : null}
             <CourtButton
-              title="🫧  Breathe to Unblock"
-              variant="primary"
-              onPress={() => router.push({ pathname: '/modals/unblock', params: { appId: params.appId } })}
-            />
-            <CourtButton
-              title="Return to Jail"
+              title="Back to Court"
               variant="ghost"
-              onPress={() => router.replace('/(tabs)/jail')}
+              onPress={() => router.replace('/(tabs)/courtroom')}
             />
           </View>
         </CourtCard>
@@ -54,7 +76,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 4,
   },
-  card: {},
   center: {
     alignItems: 'center',
     gap: 14,
@@ -66,7 +87,7 @@ const styles = StyleSheet.create({
     lineHeight: 30,
     fontWeight: '700',
     textAlign: 'center',
-    letterSpacing: 0.35,
+    letterSpacing: -0.4,
   },
   copy: {
     color: colors.labelSecondary,

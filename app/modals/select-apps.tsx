@@ -102,7 +102,7 @@ export default function SelectAppsModal() {
             <StepRow n="1" text="Tap below → iOS asks permission for Screen Time" />
             <StepRow n="2" text="System picker opens — choose Instagram, TikTok, YouTube, etc." />
             <StepRow n="3" text={`After ${dailyLimitMinutes} min of daily use, the app is locked with a jail screen`} />
-            <StepRow n="4" text="Serve your sentence in JailTime to unlock" />
+            <StepRow n="4" text="Serve focus time in JailTime to release the app" />
           </View>
         </CourtCard>
 
@@ -136,7 +136,7 @@ export default function SelectAppsModal() {
         {/* Primary CTA */}
         {step !== 'done' && (
           <CourtButton
-            title={step === 'idle' || step === 'error' ? '⚖️  Select Apps to Block' : '…'}
+            title={step === 'idle' || step === 'error' ? 'Select Apps to Block' : 'Working…'}
             variant="gold"
             loading={isLoading}
             onPress={run}

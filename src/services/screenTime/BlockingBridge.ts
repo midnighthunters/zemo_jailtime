@@ -5,8 +5,12 @@
  * Import and call `initBlockingBridge()` once from app/_layout.tsx.
  *
  * It subscribes to the Zustand store and:
- *   • When case status becomes 'jailed'   → applyImmediateBlock()
- *   • When case status leaves  'jailed'   → clearImmediateBlock()
+ *   • When the first app enters custody → applyImmediateBlock()
+ *   • When the last app leaves custody  → clearImmediateBlock()
+ *
+ * The iOS bridge only exposes a global immediate block, so the native shield is
+ * all-or-nothing while per-app locking is enforced in-app. Turning off
+ * `enforcementEnabled` always clears the shield.
  *
  * applyPolicy() is called whenever the user toggles a law or suspect
  * so the DeviceActivityMonitor schedule stays in sync.
@@ -15,26 +19,27 @@
 import { Platform } from 'react-native';
 import { IosScreenTimeService } from '@/src/services/screenTime/IosScreenTimeService';
 import { useCourtStore } from '@/src/store/useCourtStore';
+import { jailedAppIds } from '@/src/utils/docket';
 
 let _initialized = false;
-let _previousJailed = false;
+let _previousBlocking = false;
 
 export function initBlockingBridge() {
   if (_initialized || Platform.OS !== 'ios') return;
   _initialized = true;
 
   useCourtStore.subscribe((state) => {
-    const isJailed = state.activeCase.status === 'jailed';
+    const shouldBlock = state.enforcementEnabled && jailedAppIds(state.cases).length > 0;
 
-    if (isJailed && !_previousJailed) {
-      // Sentence just started → block apps now
+    if (shouldBlock && !_previousBlocking) {
+      // First app entered custody → shield now.
       IosScreenTimeService.applyImmediateBlock().catch(() => undefined);
-    } else if (!isJailed && _previousJailed) {
-      // Sentence ended (parole, mercy, bypass) → unblock
+    } else if (!shouldBlock && _previousBlocking) {
+      // Docket cleared, released, or enforcement switched off → unshield.
       IosScreenTimeService.clearImmediateBlock().catch(() => undefined);
     }
 
-    _previousJailed = isJailed;
+    _previousBlocking = shouldBlock;
   });
 }
 

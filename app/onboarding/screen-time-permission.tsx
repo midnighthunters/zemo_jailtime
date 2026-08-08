@@ -10,9 +10,9 @@ import { getScreenTimeService } from '@/src/services/screenTime/ScreenTimeServic
 import { useCourtStore } from '@/src/store/useCourtStore';
 
 const FEATURES = [
-  { icon: '🛡️', text: 'Block distracting apps when your focus session is active' },
-  { icon: '📊', text: 'Read your real daily screen time to build an accurate case file' },
-  { icon: '⏰', text: 'Automatically enforce bedtime and focus-window laws' },
+  'Lock distracting apps while a case is open',
+  'Read your real daily screen time to build an accurate case file',
+  'Enforce bedtime and focus-window laws automatically',
 ];
 
 export default function ScreenTimePermissionOnboarding() {
@@ -61,9 +61,9 @@ export default function ScreenTimePermissionOnboarding() {
     >
       <View style={styles.content}>
         <View style={styles.list}>
-          {FEATURES.map(({ icon, text }) => (
+          {FEATURES.map((text) => (
             <View key={text} style={styles.row}>
-              <View style={styles.iconStage}><Text style={styles.icon}>{icon}</Text></View>
+              <View style={styles.marker} />
               <Text style={styles.featureText}>{text}</Text>
             </View>
           ))}
@@ -95,17 +95,12 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 7,
   },
-  iconStage: {
-    width: 42,
-    height: 42,
-    borderRadius: radius.md,
-    backgroundColor: colors.blueLight,
-    borderWidth: 1,
-    borderColor: '#D5E0F8',
-    alignItems: 'center',
-    justifyContent: 'center',
+  marker: {
+    width: 4,
+    height: 28,
+    borderRadius: 2,
+    backgroundColor: colors.blue,
   },
-  icon: { fontSize: 19 },
   featureText: { flex: 1, color: colors.label, fontSize: 14, lineHeight: 20, fontWeight: '600' },
   grantedRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   grantedNote: { flex: 1, color: colors.labelSecondary, fontSize: 13, fontWeight: '500' },

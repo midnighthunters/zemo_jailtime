@@ -156,7 +156,7 @@ export default function UnblockModal() {
 
             <CourtCard variant="orange">
               <Text style={styles.warnText}>
-                ⏳ {appName} unlocks for {minutes} min, then returns to custody.
+                {appName} unlocks for {minutes} min, then returns to custody.
               </Text>
             </CourtCard>
 
@@ -172,9 +172,6 @@ export default function UnblockModal() {
             <Text style={styles.subtitle}>
               You have {minutes} minutes. Use them with intention — the lock returns when time runs out.
             </Text>
-            <View style={styles.doneGlyphWrap}>
-              <Text style={styles.doneGlyph}>🔓</Text>
-            </View>
             <CourtButton title="Done" variant="green" onPress={() => router.back()} />
           </>
         ) : null}
@@ -266,7 +263,4 @@ const styles = StyleSheet.create({
   durationUnit: { color: colors.labelSecondary, fontSize: 13, fontWeight: '600' },
   durationUnitOn: { color: colors.blue },
   warnText: { color: colors.label, fontSize: 14, fontWeight: '500', lineHeight: 20 },
-
-  doneGlyphWrap: { marginVertical: 8 },
-  doneGlyph: { fontSize: 72 },
 });

@@ -14,6 +14,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { AssetBootstrapService } from '@/src/services/assets/AssetBootstrapService';
 import { NotificationService } from '@/src/services/notifications/NotificationService';
 import { initBlockingBridge } from '@/src/services/screenTime/BlockingBridge';
+import { CourtClerk } from '@/src/services/court/CourtClerk';
 import { useCourtStore } from '@/src/store/useCourtStore';
 import { usePremiumStore } from '@/src/store/usePremiumStore';
 import { colors } from '@/src/constants/theme';
@@ -74,10 +75,19 @@ export default function RootLayout() {
     return () => clearTimeout(failsafeTimeout);
   }, []);
 
+  // Global heartbeat: renew the docket on a new day, bank focus seconds against
+  // the case being served, settle finished sessions, and let the clerk file any
+  // law breaks it can see.
   useEffect(() => {
+    let ticks = 0;
     const timer = setInterval(() => {
-      useCourtStore.getState().tickSentence();
-      useCourtStore.getState().tickFocusSession();
+      const store = useCourtStore.getState();
+      store.renewDocket();
+      store.tickDocket();
+      store.tickFocusSession();
+      // The clerk reads daily usage, which changes slowly. Every 30s is plenty.
+      if (ticks % 30 === 0) CourtClerk.evaluateNow();
+      ticks += 1;
     }, 1000);
     return () => clearInterval(timer);
   }, []);

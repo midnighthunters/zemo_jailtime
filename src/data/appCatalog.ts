@@ -12,7 +12,6 @@ export type CatalogApp = {
 export type CatalogCategory = {
   category: AppCategory;
   label: string;
-  emoji: string;
   color: string;
   apps: CatalogApp[];
 };
@@ -22,7 +21,6 @@ export const APP_CATALOG: CatalogCategory[] = [
   {
     category: 'shortVideo',
     label: 'Short Video',
-    emoji: '📱',
     color: '#F04B8A',
     apps: [
       { id: 'tiktok', name: 'TikTok', color: '#000000', villainName: 'Scroll Phantom', dangerLevel: 5 },
@@ -34,7 +32,6 @@ export const APP_CATALOG: CatalogCategory[] = [
   {
     category: 'social',
     label: 'Social & Chat',
-    emoji: '💬',
     color: '#2D7FF9',
     apps: [
       { id: 'instagram', name: 'Instagram', color: '#C13584', villainName: 'Vanity Viper', dangerLevel: 5 },
@@ -48,7 +45,6 @@ export const APP_CATALOG: CatalogCategory[] = [
   {
     category: 'video',
     label: 'Video & Streaming',
-    emoji: '🎬',
     color: '#E53935',
     apps: [
       { id: 'youtube', name: 'YouTube', color: '#FF0000', villainName: 'Rabbit-Hole Rook', dangerLevel: 4 },
@@ -60,7 +56,6 @@ export const APP_CATALOG: CatalogCategory[] = [
   {
     category: 'game',
     label: 'Games',
-    emoji: '🎮',
     color: '#6B4EFF',
     apps: [
       { id: 'clash', name: 'Clash of Clans', color: '#F7A600', villainName: 'Loot Goblin', dangerLevel: 3 },
@@ -72,7 +67,6 @@ export const APP_CATALOG: CatalogCategory[] = [
   {
     category: 'shopping',
     label: 'Shopping',
-    emoji: '🛍️',
     color: '#FF9F1C',
     apps: [
       { id: 'amazon', name: 'Amazon', color: '#FF9900', villainName: 'Cart Crook', dangerLevel: 3 },
@@ -83,7 +77,6 @@ export const APP_CATALOG: CatalogCategory[] = [
   {
     category: 'news',
     label: 'News',
-    emoji: '📰',
     color: '#455A64',
     apps: [
       { id: 'applenews', name: 'News', color: '#FD415E', villainName: 'Doom Hyena', dangerLevel: 4 },
@@ -93,7 +86,6 @@ export const APP_CATALOG: CatalogCategory[] = [
   {
     category: 'dating',
     label: 'Dating',
-    emoji: '❤️',
     color: '#E64980',
     apps: [
       { id: 'tinder', name: 'Tinder', color: '#FE3C72', villainName: 'Swipe Dragon', dangerLevel: 3 },

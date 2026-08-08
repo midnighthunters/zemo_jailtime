@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Dimensions, FlatList, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AssetImage } from '@/src/components/AssetImage';
 import { CourtBackground } from '@/src/components/CourtBackground';
@@ -40,14 +40,16 @@ function LawCarouselItem({ item, isActive }: { item: FocusLaw; isActive: boolean
 
 export default function ChargesFiledModal() {
   const router = useRouter();
-  const charge = useCourtStore(
-    (state) => state.charges.find((item) => item.id === state.activeChargeId) ?? state.charges[0],
+  const params = useLocalSearchParams<{ caseId?: string }>();
+  const courtCase = useCourtStore(
+    (state) =>
+      state.cases.find((item) => item.id === params.caseId) ??
+      state.cases.find((item) => item.verdict === 'hearing'),
   );
   const laws = useCourtStore((state) => state.laws);
-  const suspects = useCourtStore((state) => state.suspects);
+  const warnCase = useCourtStore((state) => state.warnCase);
   const requestMercy = useCourtStore((state) => state.requestMercy);
-  const law = laws.find((item) => item.id === charge?.lawId);
-  const suspect = suspects.find((item) => item.id === charge?.appId);
+  const law = laws.find((item) => item.id === courtCase?.lawId);
 
   // Build carousel: active violated law first, then up to 4 others from featured list
   const featuredLaws = FEATURED_LAW_IDS
@@ -62,14 +64,16 @@ export default function ChargesFiledModal() {
     <CourtBackground>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
-        {/* ── Hero glass card ──────────────────────────────────────── */}
+        {/* ── Hero ─────────────────────────────────────────────────── */}
         <CourtCard variant="red">
           <View style={styles.hero}>
             <AssetImage assetKey="ASSET_CHARGES_FILED_SCROLL" width={130} height={130} />
             <View style={styles.heroText}>
-              <StampBadge label="Charges Filed" tone="danger" />
-              <Text style={styles.title}>{charge?.title ?? 'Charges Filed'}</Text>
-              <Text style={styles.copy}>{charge?.description ?? 'Evidence submitted.'}</Text>
+              <StampBadge label="Hearing in progress" tone="gold" />
+              <Text style={styles.title}>{courtCase?.title ?? 'Case Filed'}</Text>
+              <Text style={styles.copy}>
+                {courtCase?.evidenceLine ?? 'Evidence submitted to the court.'}
+              </Text>
             </View>
           </View>
         </CourtCard>
@@ -99,25 +103,38 @@ export default function ChargesFiledModal() {
               <Text style={styles.quoteLabel}>PROSECUTOR</Text>
               <Text style={styles.quoteLine}>
                 {law?.prosecutorLine ??
-                  `The ${suspect?.displayName ?? 'app'} was opened with suspicious confidence.`}
+                  `${courtCase?.appName ?? 'The app'} was opened with suspicious confidence.`}
               </Text>
             </View>
             <AssetImage assetKey="ASSET_GUILTY_STAMP" width={60} height={60} />
           </View>
         </CourtCard>
 
-        {/* ── Actions ───────────────────────────────────────────────── */}
+        {/* ── Verdict ───────────────────────────────────────────────── */}
         <View style={styles.buttons}>
           <CourtButton
-            title="Accept Sentence"
+            title="Send to Jail"
             variant="destructive"
-            onPress={() => router.push('/modals/sentence')}
+            disabled={!courtCase}
+            onPress={() =>
+              router.replace({ pathname: '/modals/sentence', params: { caseId: courtCase?.id } })
+            }
+          />
+          <CourtButton
+            title="Issue a Warning"
+            variant="secondary"
+            disabled={!courtCase}
+            onPress={() => {
+              if (!courtCase) return;
+              warnCase(courtCase.id);
+              router.back();
+            }}
           />
           <CourtButton
             title="Request Mercy Pass"
             variant="ghost"
             onPress={() => {
-              const granted = requestMercy(charge?.id);
+              const granted = requestMercy(courtCase?.id);
               router.replace(granted ? '/modals/parole-granted' : '/modals/paywall');
             }}
           />

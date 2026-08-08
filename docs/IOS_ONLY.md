@@ -25,6 +25,8 @@ The `MockScreenTimeService` remains available for UI development and environment
 
 Agents must keep iOS permission IDs and requirements in `src/data/permissions.ts`, preserve the FamilyControls/application-group entitlements in `app.config.ts` and the native project, and use `npm run ios` for native verification. Do not reintroduce `android`, `web`, `run:android`, Android UsageStats/overlay/accessibility permissions, or Android RevenueCat keys unless the product scope is explicitly changed first.
 
-## Known MVP limitation
+## Known MVP limitations
 
 The iOS bridge can authorize, select apps, apply/clear policies, and apply/clear immediate shields. Detailed usage reports and richer history still use the local court-store simulation until the Device Activity report extension is completed.
+
+**Per-app locking is enforced in-app only.** The docket model locks individual apps (see `docs/DAILY_DOCKET_MASTERPLAN.md`), but `FocusCourtModule` exposes just a global `applyImmediateBlock`/`clearImmediateBlock` pair. `BlockingBridge` therefore shields the whole selection whenever any app is in custody. Wiring the per-app `shieldApp`/`unshieldApp` path through ManagedSettings so the native shield matches the docket exactly is open follow-up work; it requires storing the jailed `ApplicationToken` set in the App Group.

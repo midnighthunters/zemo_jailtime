@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { useRouter } from 'expo-router';
-import { Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { CourtBackground } from '@/src/components/CourtBackground';
 import { CourtButton } from '@/src/components/CourtButton';
 import { CourtCard } from '@/src/components/CourtCard';
@@ -8,23 +8,30 @@ import { ScreenHeader } from '@/src/components/ScreenHeader';
 import { StampBadge } from '@/src/components/StampBadge';
 import { colors, radius, shadows } from '@/src/constants/theme';
 import { useCourtStore } from '@/src/store/useCourtStore';
-import { formatCountdown } from '@/src/utils/format';
+import { caseFocusRemainingSeconds } from '@/src/utils/docket';
+import { formatCountdown, formatMinutes } from '@/src/utils/format';
 
 const PRESET_DURATIONS = [5, 15, 30, 35, 60] as const;
 type DurationSelection = (typeof PRESET_DURATIONS)[number] | 'custom';
 
 export default function FocusTimerModal() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ caseId?: string }>();
   const focusSession = useCourtStore((s) => s.focusSession);
-  const activeCase = useCourtStore((s) => s.activeCase);
   const startFocusSession = useCourtStore((s) => s.startFocusSession);
   const cancelFocusSession = useCourtStore((s) => s.cancelFocusSession);
 
-  const jailActive = activeCase.status === 'jailed' && activeCase.remainingSentenceSeconds > 0;
+  // The case this timer is here to serve, if the user arrived from one.
+  const servingCase = useCourtStore((s) =>
+    s.cases.find((item) => item.id === (focusSession?.caseId ?? params.caseId)),
+  );
+  const jailedCase = servingCase?.verdict === 'jailed' ? servingCase : undefined;
+  const owedMinutes = jailedCase
+    ? Math.max(1, Math.ceil(caseFocusRemainingSeconds(jailedCase) / 60))
+    : 0;
 
   const [durationSelection, setDurationSelection] = useState<DurationSelection>(15);
   const [customMinutes, setCustomMinutes] = useState('25');
-  const [reduceJail, setReduceJail] = useState(true);
   const [now, setNow] = useState(Date.now());
   const [finished, setFinished] = useState(false);
   const wasActive = useRef(false);
@@ -56,7 +63,7 @@ export default function FocusTimerModal() {
   const handleStart = () => {
     if (durationSelection === 'custom' && !customDurationIsValid) return;
     setFinished(false);
-    startFocusSession(minutes, jailActive ? reduceJail : false);
+    startFocusSession(minutes, jailedCase?.id);
   };
 
   const handleCancel = () => {
@@ -66,15 +73,19 @@ export default function FocusTimerModal() {
 
   // ── Completed state ──
   if (finished) {
+    const released = servingCase && servingCase.verdict === 'served';
     return (
       <CourtBackground>
         <View style={styles.centered}>
           <StampBadge label="Focus Complete" tone="success" />
           <Text style={styles.bigTitle}>Time served.</Text>
           <Text style={styles.bigSub}>
-            Your focus session is done. {jailActive ? 'Your sentence was reduced.' : 'Parole points earned.'}
+            {released
+              ? `${servingCase.appName} is released from custody.`
+              : servingCase
+                ? `${formatMinutes(Math.ceil(caseFocusRemainingSeconds(servingCase) / 60))} of focus still owed on ${servingCase.appName}.`
+                : 'Parole points earned.'}
           </Text>
-          <View style={styles.glyphWrap}><Text style={styles.glyph}>🎯</Text></View>
           <CourtButton title="Done" variant="green" onPress={() => router.back()} />
         </View>
       </CourtBackground>
@@ -86,7 +97,10 @@ export default function FocusTimerModal() {
     return (
       <CourtBackground>
         <View style={styles.centered}>
-          <StampBadge label={focusSession.reducesJail ? 'Reducing Sentence' : 'Deep Focus'} tone="blue" />
+          <StampBadge
+            label={focusSession.caseId ? 'Serving a Case' : 'Deep Focus'}
+            tone="blue"
+          />
           <Text style={styles.bigTitle}>Stay with it.</Text>
 
           <View style={styles.ringOuter}>
@@ -97,9 +111,13 @@ export default function FocusTimerModal() {
           </View>
 
           <Text style={styles.bigSub}>
-            {focusSession.reducesJail
-              ? 'When the timer ends, your jail sentence drops.'
+            {jailedCase
+              ? `When the timer ends, ${jailedCase.appName} is released.`
               : 'Phone down. Let the timer run.'}
+          </Text>
+
+          <Text style={styles.finePrint}>
+            Giving up keeps the time you already banked.
           </Text>
 
           <CourtButton title="Give Up" variant="destructive" onPress={handleCancel} />
@@ -116,12 +134,23 @@ export default function FocusTimerModal() {
           eyebrow="FOCUS TIMER"
           title="Start a Timer"
           subtitle={
-            jailActive
-              ? 'Run a focus session to cut your jail sentence.'
+            jailedCase
+              ? `Serve ${formatMinutes(owedMinutes)} to release ${jailedCase.appName}.`
               : 'Run a focus session to earn parole points.'
           }
           assetKey="ASSET_JAIL_TIMER_HOURGLASS"
         />
+
+        {jailedCase ? (
+          <CourtCard variant="red">
+            <StampBadge label="In custody" tone="danger" />
+            <Text style={styles.caseTitle}>{jailedCase.appName}</Text>
+            <Text style={styles.caseCopy}>
+              {formatMinutes(owedMinutes)} of focus left. Any session counts toward it, so you can
+              chip away at it in shorter runs.
+            </Text>
+          </CourtCard>
+        ) : null}
 
         <View style={styles.durationGrid}>
           {PRESET_DURATIONS.map((d) => {
@@ -178,24 +207,6 @@ export default function FocusTimerModal() {
               Enter a whole number from 1 to 120 minutes.
             </Text>
           </View>
-        ) : null}
-
-        {jailActive ? (
-          <CourtCard variant="glass">
-            <View style={styles.toggleRow}>
-              <View style={styles.toggleText}>
-                <Text style={styles.toggleTitle}>Reduce my sentence</Text>
-                <Text style={styles.toggleSub}>Apply this session toward your active jail time.</Text>
-              </View>
-              <Switch
-                value={reduceJail}
-                onValueChange={setReduceJail}
-                thumbColor={colors.white}
-                trackColor={{ true: colors.blue, false: 'rgba(120,120,128,0.22)' }}
-                ios_backgroundColor="rgba(120,120,128,0.22)"
-              />
-            </View>
-          </CourtCard>
         ) : null}
 
         <CourtButton
@@ -277,10 +288,26 @@ const styles = StyleSheet.create({
   customHint: { color: colors.labelSecondary, fontSize: 12, lineHeight: 16 },
   customHintError: { color: colors.red },
 
-  toggleRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  toggleText: { flex: 1, gap: 3 },
-  toggleTitle: { color: colors.label, fontSize: 16, fontWeight: '700', letterSpacing: -0.3 },
-  toggleSub: { color: colors.labelSecondary, fontSize: 13, fontWeight: '400', lineHeight: 18 },
+  caseTitle: {
+    color: colors.label,
+    fontSize: 20,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+    marginTop: 10,
+  },
+  caseCopy: {
+    color: colors.labelSecondary,
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: '400',
+    marginTop: 6,
+  },
+  finePrint: {
+    color: colors.labelTertiary,
+    fontSize: 12,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
 
   ringOuter: {
     width: 220, height: 220,
@@ -304,7 +331,4 @@ const styles = StyleSheet.create({
   },
   ringTime: { color: colors.label, fontSize: 44, fontWeight: '800', letterSpacing: -1, fontVariant: ['tabular-nums'] },
   ringLabel: { color: colors.labelSecondary, fontSize: 13, fontWeight: '600' },
-
-  glyphWrap: { marginVertical: 4 },
-  glyph: { fontSize: 72 },
 });

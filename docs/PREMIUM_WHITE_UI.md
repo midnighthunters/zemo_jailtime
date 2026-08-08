@@ -32,7 +32,8 @@ Import semantic values from `src/constants/theme.ts`; do not introduce a second 
 
 - Use the iOS system font and semantic type tokens where practical.
 - Avoid heavy all-caps except short eyebrows and status labels.
-- Use SF Symbols through `expo-image` for navigation and functional actions. Product illustrations may support content but must not replace functional icons.
+- **This app is icon-free.** Do not add SF Symbols, icon fonts, or emoji used as glyphs — not in JSX, not in button titles, and not in data tables. Label every affordance with text, a `StampBadge`, or a small accent marker. This supersedes the earlier SF Symbols guidance; see `docs/DAILY_DOCKET_MASTERPLAN.md`.
+- Product illustrations through `AssetImage` are not icons and are still welcome as supporting artwork.
 
 ## Motion and effects
 

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { G, Rect, Text as SvgText } from 'react-native-svg';
@@ -68,8 +67,10 @@ function SectionToggle({
         <Text style={styles.sectionToggleTitle}>{title}</Text>
         {subtitle ? <Text style={styles.sectionToggleSub}>{subtitle}</Text> : null}
       </View>
-      <View style={[styles.chevronWrap, { backgroundColor: `${accentColor}15` }]}> 
-        <Image source={`sf:${expanded ? 'chevron.up' : 'chevron.down'}`} tintColor={accentColor} contentFit="contain" style={styles.chevron} />
+      <View style={[styles.disclosureWrap, { backgroundColor: `${accentColor}15` }]}>
+        <Text style={[styles.disclosureLabel, { color: accentColor }]}>
+          {expanded ? 'Hide' : 'Show'}
+        </Text>
       </View>
     </Pressable>
   );
@@ -82,7 +83,7 @@ export default function ReportScreen() {
 
   const profile = useCourtStore((state) => state.profile);
   const suspects = useCourtStore((state) => state.suspects);
-  const charges = useCourtStore((state) => state.charges);
+  const cases = useCourtStore((state) => state.cases);
   const paroleRecords = useCourtStore((state) => state.paroleRecords);
 
   const worst = [...suspects].sort((a, b) => b.dailyUsageMinutes - a.dailyUsageMinutes)[0];
@@ -124,8 +125,8 @@ export default function ReportScreen() {
         </CourtCard>
 
         <SectionToggle
-          title="🔍  Trial Evidence"
-          subtitle={`${charges.length} items`}
+          title="Trial Evidence"
+          subtitle={`${cases.length} case${cases.length === 1 ? '' : 's'} today`}
           expanded={evidenceExpanded}
           onToggle={() => setEvidenceExpanded((value) => !value)}
           accentColor={colors.orange}
@@ -136,11 +137,11 @@ export default function ReportScreen() {
             <CourtCard variant="glass">
               <View style={styles.infoRow}>
                 <View style={styles.infoText}>
-                  <Text style={styles.infoTitle}>Today's charges</Text>
+                  <Text style={styles.infoTitle}>Today's docket</Text>
                   <Text style={styles.infoCopy}>
-                    {charges.length
-                      ? `${charges.length} evidence items prepared.`
-                      : 'No charges filed today.'}
+                    {cases.length
+                      ? `${cases.length} case${cases.length === 1 ? '' : 's'} on file.`
+                      : 'No case filed today.'}
                   </Text>
                 </View>
                 <AssetImage assetKey="ASSET_OWL_JUSTICE_INSPECT" width={92} height={92} />
@@ -206,7 +207,7 @@ export default function ReportScreen() {
         ) : null}
 
         <SectionToggle
-          title="🏅  Parole & Rewards"
+          title="Parole & Rewards"
           subtitle={`${profile.parolePoints} points`}
           expanded={paroleExpanded}
           onToggle={() => setParoleExpanded((value) => !value)}
@@ -314,8 +315,8 @@ const styles = StyleSheet.create({
   toggleLeft: { flex: 1, gap: 2 },
   sectionToggleTitle: { color: colors.label, fontSize: 16, fontWeight: '600', letterSpacing: -0.2 },
   sectionToggleSub: { color: colors.labelSecondary, fontSize: 12, fontWeight: '400' },
-  chevronWrap: { width: 28, height: 28, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center' },
-  chevron: { width: 12, height: 12 },
+  disclosureWrap: { minWidth: 52, minHeight: 30, paddingHorizontal: 10, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center' },
+  disclosureLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 0.2 },
   sectionBody: { gap: 12 },
   infoRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   infoText: { flex: 1, gap: 8 },

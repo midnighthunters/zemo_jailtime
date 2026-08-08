@@ -35,7 +35,7 @@ function CrimeDistributionChart() {
 
 export default function EvidenceTab() {
   const router = useRouter();
-  const charges = useCourtStore((state) => state.charges);
+  const cases = useCourtStore((state) => state.cases);
   const suspects = useCourtStore((state) => state.suspects);
   const worst = [...suspects].sort((a, b) => b.dailyUsageMinutes - a.dailyUsageMinutes)[0];
 
@@ -52,8 +52,8 @@ export default function EvidenceTab() {
         <CourtCard variant="dark" delay={80}>
           <View style={styles.boardTop}>
             <View style={styles.boardText}>
-              <Text style={styles.boardTitle}>Today's charges</Text>
-              <Text style={styles.boardCopy}>{charges.length ? `${charges.length} evidence items prepared.` : 'No charges filed today.'}</Text>
+              <Text style={styles.boardTitle}>Today's docket</Text>
+              <Text style={styles.boardCopy}>{cases.length ? `${cases.length} case${cases.length === 1 ? '' : 's'} on file.` : 'No case filed today.'}</Text>
             </View>
             <AssetImage assetKey="ASSET_OWL_JUSTICE_INSPECT" width={112} height={112} />
           </View>

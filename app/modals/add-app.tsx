@@ -11,10 +11,10 @@ import { useCourtStore } from '@/src/store/useCourtStore';
 import { usePremiumStore } from '@/src/store/usePremiumStore';
 import type { BlockCategory } from '@/src/types/court';
 
-const TARGETS: { key: BlockCategory; label: string; emoji: string; color: string }[] = [
-  { key: 'distracting', label: 'Distracting', emoji: '🚫', color: colors.orange },
-  { key: 'alwaysAllowed', label: 'Allowed', emoji: '✅', color: colors.green },
-  { key: 'neverAllowed', label: 'Never', emoji: '🔒', color: colors.indigo },
+const TARGETS: { key: BlockCategory; label: string; color: string }[] = [
+  { key: 'distracting', label: 'Distracting', color: colors.orange },
+  { key: 'alwaysAllowed', label: 'Allowed', color: colors.green },
+  { key: 'neverAllowed', label: 'Never', color: colors.indigo },
 ];
 
 export default function AddAppModal() {
@@ -97,10 +97,11 @@ export default function AddAppModal() {
               return (
                 <Pressable
                   key={t.key}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: on }}
                   onPress={() => setTarget(t.key)}
                   style={[styles.targetBtn, on && { backgroundColor: `${t.color}22`, borderColor: `${t.color}55` }]}
                 >
-                  <Text style={styles.targetEmoji}>{t.emoji}</Text>
                   <Text style={[styles.targetText, on && { color: t.color }]}>{t.label}</Text>
                 </Pressable>
               );
@@ -113,15 +114,18 @@ export default function AddAppModal() {
           const open = expanded === cat.category;
           return (
             <CourtCard key={cat.category} variant="glass">
-              <Pressable onPress={() => setExpanded(open ? null : cat.category)} style={styles.catHeader}>
-                <View style={[styles.catIcon, { backgroundColor: `${cat.color}22`, borderColor: `${cat.color}3D` }]}>
-                  <Text style={styles.catEmoji}>{cat.emoji}</Text>
-                </View>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ expanded: open }}
+                onPress={() => setExpanded(open ? null : cat.category)}
+                style={styles.catHeader}
+              >
+                <View style={[styles.catMarker, { backgroundColor: cat.color }]} />
                 <View style={styles.catText}>
                   <Text style={styles.catLabel}>{cat.label}</Text>
                   <Text style={styles.catSub}>{cat.apps.length} apps</Text>
                 </View>
-                <Text style={styles.chevron}>{open ? '▲' : '▼'}</Text>
+                <Text style={styles.disclosure}>{open ? 'Hide' : 'Show'}</Text>
               </Pressable>
 
               {open ? (
@@ -140,7 +144,7 @@ export default function AddAppModal() {
                           style={[styles.addBtn, added && styles.addBtnDone]}
                         >
                           <Text style={[styles.addBtnText, added && styles.addBtnTextDone]}>
-                            {added ? '✓ Added' : '＋ Add'}
+                            {added ? 'Added' : 'Add'}
                           </Text>
                         </Pressable>
                       </View>
@@ -154,7 +158,7 @@ export default function AddAppModal() {
 
         {/* Custom website */}
         <CourtCard variant="blue">
-          <Text style={styles.siteTitle}>🌐  Add a Website</Text>
+          <Text style={styles.siteTitle}>Add a Website</Text>
           <Text style={styles.siteSub}>Block or allow a specific site by name.</Text>
           <TextInput
             style={styles.input}
@@ -199,16 +203,14 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(120,120,128,0.18)',
     backgroundColor: 'rgba(120,120,128,0.08)',
   },
-  targetEmoji: { fontSize: 14 },
   targetText: { color: colors.labelSecondary, fontSize: 13, fontWeight: '600' },
 
-  catHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  catIcon: { width: 40, height: 40, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  catEmoji: { fontSize: 18 },
+  catHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44 },
+  catMarker: { width: 4, height: 34, borderRadius: 2 },
   catText: { flex: 1, gap: 2 },
   catLabel: { color: colors.label, fontSize: 16, fontWeight: '700', letterSpacing: -0.3 },
   catSub: { color: colors.labelSecondary, fontSize: 12, fontWeight: '500' },
-  chevron: { color: colors.labelTertiary, fontSize: 12, fontWeight: '700' },
+  disclosure: { color: colors.blue, fontSize: 12, fontWeight: '700' },
 
   appList: { marginTop: 12, gap: 8 },
   appRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },

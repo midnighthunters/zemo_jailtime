@@ -10,10 +10,10 @@ import { NotificationService } from '@/src/services/notifications/NotificationSe
 import { useCourtStore } from '@/src/store/useCourtStore';
 
 const NOTIFICATION_TYPES = [
-  { icon: '⚠️', title: 'Limit Warnings', body: 'Alert before you hit your daily app limit.' },
-  { icon: '🌙', title: 'Bedtime Court Notices', body: 'Reminder when your bedtime law is about to activate.' },
-  { icon: '📋', title: 'Weekly Trial Report', body: 'Your screen time verdict every Monday morning.' },
-  { icon: '🏅', title: 'Parole & Streaks', body: 'Celebration when you earn a clean record.' },
+  { title: 'Limit Warnings', body: 'Alert before you hit your daily app limit.' },
+  { title: 'Bedtime Court Notices', body: 'Reminder when your bedtime law is about to activate.' },
+  { title: 'Weekly Trial Report', body: 'Your screen time verdict every Monday morning.' },
+  { title: 'Parole & Streaks', body: 'Celebration when you earn a clean record.' },
 ];
 
 export default function NotificationsPermissionOnboarding() {
@@ -60,9 +60,9 @@ export default function NotificationsPermissionOnboarding() {
     >
       <View style={styles.content}>
         <View style={styles.list}>
-          {NOTIFICATION_TYPES.map(({ icon, title, body }) => (
+          {NOTIFICATION_TYPES.map(({ title, body }) => (
             <View key={title} style={styles.row}>
-              <View style={styles.iconStage}><Text style={styles.icon}>{icon}</Text></View>
+              <View style={styles.marker} />
               <View style={styles.copy}>
                 <Text style={styles.title}>{title}</Text>
                 <Text style={styles.body}>{body}</Text>
@@ -92,17 +92,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.separator,
   },
-  iconStage: {
-    width: 42,
-    height: 42,
-    borderRadius: radius.md,
-    backgroundColor: colors.surfaceMuted,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
+  marker: {
+    width: 4,
+    height: 30,
+    borderRadius: 2,
+    backgroundColor: colors.blue,
   },
-  icon: { fontSize: 19 },
   copy: { flex: 1, gap: 3 },
   title: { color: colors.label, fontSize: 14, fontWeight: '700' },
   body: { color: colors.labelSecondary, fontSize: 12, lineHeight: 17, fontWeight: '500' },

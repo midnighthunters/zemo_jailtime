@@ -1,4 +1,3 @@
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
@@ -11,14 +10,14 @@ import { colors, radius, shadows } from '@/src/constants/theme';
 import { usePremiumStore } from '@/src/store/usePremiumStore';
 
 const benefits = [
-  { symbol: 'square.stack.3d.up.fill', text: 'Unlimited suspect apps' },
-  { symbol: 'building.columns.fill', text: 'Unlimited Focus Laws' },
-  { symbol: 'lock.shield.fill', text: 'Supreme Strict Mode' },
-  { symbol: 'chart.bar.fill', text: 'Advanced evidence reports' },
-  { symbol: 'pencil.line', text: 'Custom law names' },
-  { symbol: 'ticket.fill', text: 'Mercy Passes' },
-  { symbol: 'sparkles', text: 'Courtroom upgrades' },
-  { symbol: 'iphone.gen3', text: 'Real iOS blocking' },
+  'Unlimited suspect apps',
+  'Unlimited Focus Laws',
+  'Supreme Strict Mode',
+  'Advanced evidence reports',
+  'Custom law names',
+  'Mercy Passes',
+  'Courtroom upgrades',
+  'Real iOS blocking',
 ];
 
 export default function PaywallModal() {
@@ -42,9 +41,9 @@ export default function PaywallModal() {
 
         <Animated.View entering={FadeInUp.duration(280).delay(60)} style={styles.benefitGrid}>
           {benefits.map((benefit) => (
-            <View key={benefit.text} style={styles.benefitOuter}>
-              <View style={styles.benefitIconStage}><Image source={`sf:${benefit.symbol}`} tintColor={colors.indigo} contentFit="contain" style={styles.benefitIcon} /></View>
-              <Text style={styles.benefitText}>{benefit.text}</Text>
+            <View key={benefit} style={styles.benefitOuter}>
+              <View style={styles.benefitMarker} />
+              <Text style={styles.benefitText}>{benefit}</Text>
             </View>
           ))}
         </Animated.View>
@@ -86,8 +85,7 @@ const styles = StyleSheet.create({
   heroCopy: { color: colors.labelSecondary, fontSize: 15, lineHeight: 21, fontWeight: '400' },
   benefitGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   benefitOuter: { width: '48%', minHeight: 64, flexDirection: 'row', alignItems: 'center', gap: 9, padding: 11, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.border, borderBottomWidth: 3, borderBottomColor: colors.depthEdge },
-  benefitIconStage: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.purpleLight },
-  benefitIcon: { width: 16, height: 16 },
+  benefitMarker: { width: 4, alignSelf: 'stretch', borderRadius: 2, backgroundColor: colors.indigo },
   benefitText: { flex: 1, color: colors.label, fontSize: 12, lineHeight: 16, fontWeight: '500', letterSpacing: -0.1 },
   packages: { gap: 10 },
   packageRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },

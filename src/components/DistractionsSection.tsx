@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { CourtButton } from '@/src/components/CourtButton';
@@ -8,23 +7,34 @@ import { useCourtStore } from '@/src/store/useCourtStore';
 import { usePremiumStore } from '@/src/store/usePremiumStore';
 import type { AppSuspect, BlockCategory } from '@/src/types/court';
 
-type CategoryMeta = { key: BlockCategory; label: string; symbol: string; color: string; tint: string; blurb: string };
+type CategoryMeta = {
+  key: BlockCategory;
+  label: string;
+  /** Short form used inside the per-row category switcher. */
+  shortLabel: string;
+  color: string;
+  tint: string;
+  blurb: string;
+};
 
 const CATEGORIES: CategoryMeta[] = [
-  { key: 'distracting', label: 'Distracting', symbol: 'hand.raised.fill', color: colors.orangeDark, tint: colors.orangeLight, blurb: 'Monitored and jailed when limits break.' },
-  { key: 'alwaysAllowed', label: 'Always Allowed', symbol: 'checkmark.shield.fill', color: colors.greenDark, tint: colors.greenLight, blurb: 'Whitelisted — never blocked.' },
-  { key: 'neverAllowed', label: 'Never Allowed', symbol: 'lock.shield.fill', color: colors.indigo, tint: colors.purpleLight, blurb: 'Hard-locked at all times. No parole.' },
+  { key: 'distracting', label: 'Distracting', shortLabel: 'Watch', color: colors.orangeDark, tint: colors.orangeLight, blurb: 'Monitored. A case is filed when a limit breaks.' },
+  { key: 'alwaysAllowed', label: 'Always Allowed', shortLabel: 'Allow', color: colors.greenDark, tint: colors.greenLight, blurb: 'Whitelisted — never locked.' },
+  { key: 'neverAllowed', label: 'Never Allowed', shortLabel: 'Never', color: colors.indigo, tint: colors.purpleLight, blurb: 'Always under watch. No exceptions.' },
 ];
 
 function appCategory(s: AppSuspect): BlockCategory { return s.blockCategory ?? 'distracting'; }
 
 function CategoryCard({ meta, count, active, onPress }: { meta: CategoryMeta; count: number; active: boolean; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [cardStyles.wrap, pressed && cardStyles.pressed]}>
+    <Pressable
+      accessibilityRole="tab"
+      accessibilityState={{ selected: active }}
+      accessibilityLabel={`${meta.label}, ${count} apps`}
+      onPress={onPress}
+      style={({ pressed }) => [cardStyles.wrap, pressed && cardStyles.pressed]}
+    >
       <View style={[cardStyles.card, active && { backgroundColor: meta.tint, borderColor: `${meta.color}55`, borderBottomColor: `${meta.color}66` }]}>
-        <View style={[cardStyles.iconStage, { backgroundColor: active ? colors.surface : meta.tint }]}>
-          <Image source={`sf:${meta.symbol}`} tintColor={meta.color} contentFit="contain" style={cardStyles.icon} />
-        </View>
         <Text style={[cardStyles.count, active && { color: meta.color }]}>{count}</Text>
         <Text style={cardStyles.label} numberOfLines={2}>{meta.label}</Text>
       </View>
@@ -34,28 +44,47 @@ function CategoryCard({ meta, count, active, onPress }: { meta: CategoryMeta; co
 
 function AppRow({ suspect, onSetCategory, onRemove }: { suspect: AppSuspect; onSetCategory: (c: BlockCategory) => void; onRemove?: () => void }) {
   const current = appCategory(suspect);
-  const locked = current === 'neverAllowed';
   return (
     <View style={rowStyles.row}>
       <View style={[rowStyles.appIcon, { backgroundColor: suspect.iconColor }]}>
         <Text style={rowStyles.iconText}>{suspect.isWebsite ? 'W' : suspect.displayName.slice(0, 1).toUpperCase()}</Text>
-        {locked ? <View style={rowStyles.iconLock}><Image source="sf:lock.fill" tintColor={colors.white} contentFit="contain" style={rowStyles.iconLockGlyph} /></View> : null}
       </View>
       <View style={rowStyles.info}>
         <Text style={rowStyles.name} numberOfLines={1}>{suspect.displayName}</Text>
         <Text style={rowStyles.villain} numberOfLines={1}>{suspect.isWebsite ? suspect.url ?? 'Website' : suspect.villainName}</Text>
+        <View style={rowStyles.segment}>
+          {CATEGORIES.map((c) => {
+            const isOn = current === c.key;
+            return (
+              <Pressable
+                key={c.key}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isOn }}
+                accessibilityLabel={`Set ${suspect.displayName} to ${c.label}`}
+                onPress={() => onSetCategory(c.key)}
+                style={({ pressed }) => [
+                  rowStyles.segBtn,
+                  isOn && { backgroundColor: c.tint, borderColor: `${c.color}55` },
+                  pressed && rowStyles.segPressed,
+                ]}
+              >
+                <Text style={[rowStyles.segLabel, isOn && { color: c.color }]}>{c.shortLabel}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
-      <View style={rowStyles.segment}>
-        {CATEGORIES.map((c) => {
-          const isOn = current === c.key;
-          return (
-            <Pressable key={c.key} accessibilityLabel={c.label} onPress={() => onSetCategory(c.key)} style={({ pressed }) => [rowStyles.segBtn, isOn && { backgroundColor: c.tint, borderColor: `${c.color}55` }, pressed && rowStyles.segPressed]}>
-              <Image source={`sf:${c.symbol}`} tintColor={isOn ? c.color : colors.labelTertiary} contentFit="contain" style={rowStyles.segGlyph} />
-            </Pressable>
-          );
-        })}
-      </View>
-      {onRemove ? <Pressable accessibilityLabel="Remove app" onPress={onRemove} hitSlop={8} style={rowStyles.remove}><Image source="sf:xmark" tintColor={colors.red} contentFit="contain" style={rowStyles.removeGlyph} /></Pressable> : null}
+      {onRemove ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Remove ${suspect.displayName}`}
+          onPress={onRemove}
+          hitSlop={8}
+          style={({ pressed }) => [rowStyles.remove, pressed && rowStyles.segPressed]}
+        >
+          <Text style={rowStyles.removeLabel}>Remove</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -101,16 +130,18 @@ const styles = StyleSheet.create({
 
 const cardStyles = StyleSheet.create({
   wrap: { flex: 1 }, pressed: { transform: [{ translateY: 3 }] },
-  card: { minHeight: 112, borderRadius: radius.xl, backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.border, borderBottomWidth: 4, borderBottomColor: colors.depthEdge, padding: 12, gap: 6, alignItems: 'flex-start', ...shadows.soft },
-  iconStage: { width: 34, height: 34, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }, icon: { width: 17, height: 17 },
-  count: { color: colors.label, fontSize: 24, fontWeight: '800', letterSpacing: -0.5, marginTop: 2 }, label: { color: colors.labelSecondary, fontSize: 12, fontWeight: '600', letterSpacing: -0.1 },
+  card: { minHeight: 92, borderRadius: radius.xl, backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.border, borderBottomWidth: 4, borderBottomColor: colors.depthEdge, padding: 12, gap: 4, justifyContent: 'center', alignItems: 'flex-start', ...shadows.soft },
+  count: { color: colors.label, fontSize: 26, fontWeight: '800', letterSpacing: -0.5 }, label: { color: colors.labelSecondary, fontSize: 12, fontWeight: '600', letterSpacing: -0.1 },
 });
 
 const rowStyles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: radius.xl, backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.border, borderBottomWidth: 4, borderBottomColor: colors.depthEdge, ...shadows.soft },
   appIcon: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }, iconText: { color: colors.white, fontSize: 18, fontWeight: '700' },
-  iconLock: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(39,43,48,0.42)', alignItems: 'center', justifyContent: 'center' }, iconLockGlyph: { width: 14, height: 14 },
   info: { flex: 1, gap: 2 }, name: { color: colors.label, fontSize: 15, fontWeight: '600', letterSpacing: -0.2 }, villain: { color: colors.labelSecondary, fontSize: 12, fontWeight: '500' },
-  segment: { flexDirection: 'row', gap: 4 }, segBtn: { width: 30, height: 30, borderRadius: 9, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
-  segPressed: { transform: [{ translateY: 2 }] }, segGlyph: { width: 14, height: 14 }, remove: { width: 26, height: 26, borderRadius: 13, backgroundColor: colors.redLight, alignItems: 'center', justifyContent: 'center' }, removeGlyph: { width: 11, height: 11 },
+  segment: { flexDirection: 'row', gap: 6, marginTop: 6 },
+  segBtn: { minHeight: 30, paddingHorizontal: 10, justifyContent: 'center', borderRadius: radius.sm, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceMuted },
+  segLabel: { color: colors.labelSecondary, fontSize: 11, fontWeight: '700', letterSpacing: 0.2 },
+  segPressed: { transform: [{ translateY: 2 }] },
+  remove: { minHeight: 30, paddingHorizontal: 10, justifyContent: 'center', borderRadius: radius.sm, backgroundColor: colors.redLight, borderWidth: 1, borderColor: '#F1D8DA' },
+  removeLabel: { color: colors.redDark, fontSize: 11, fontWeight: '700' },
 });

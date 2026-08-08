@@ -4,8 +4,10 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { DEFAULT_LAWS } from '@/src/data/laws';
 import { DEFAULT_PERMISSION_STATUSES } from '@/src/data/permissions';
 import { DEFAULT_SUSPECTS } from '@/src/data/suspects';
-import type { AgeRange, AppCategory, AppSuspect, BlockCategory, Charge, CourtCase, DailyScreenTime, DreamType, FocusGoal, FocusLaw, FocusSession, PermissionId, PermissionStatus, StrictnessLevel, UserProfile, UserRole } from '@/src/types/court';
+import type { AgeRange, AppCategory, AppSuspect, BlockCategory, CaseVerdict, CourtCase, DailyScreenTime, DreamType, FocusGoal, FocusLaw, FocusSession, PermissionId, PermissionStatus, StrictnessLevel, UserProfile, UserRole } from '@/src/types/court';
 import { nowIso, todayKey } from '@/src/utils/date';
+import { caseFocusRemainingSeconds } from '@/src/utils/docket';
+import { sentenceForRepeat } from '@/src/utils/sentence';
 
 const freeSuspectLimit = 3;
 const freeLawLimit = 3;
@@ -64,19 +66,17 @@ function mergeProfile(saved?: Partial<UserProfile>): UserProfile {
   };
 }
 
-function createCase(): CourtCase {
-  return {
-    id: todayKey(),
-    date: todayKey(),
-    title: 'The People vs. Your Screen Habits',
-    charges: [],
-    totalSentenceMinutes: 0,
-    remainingSentenceSeconds: 0,
-    status: 'clean',
-  };
-}
-
 type ToggleResult = { allowed: boolean; reason?: string };
+
+// Input for filing a case. Everything not supplied is derived from the law and
+// the suspect so callers stay terse.
+type FileCaseInput = {
+  lawId: string;
+  appId: string;
+  title?: string;
+  evidenceLine?: string;
+  requiredFocusMinutes?: number;
+};
 
 type AddSuspectInput = {
   displayName: string;
@@ -95,9 +95,12 @@ type CourtState = {
   profile: UserProfile;
   suspects: AppSuspect[];
   laws: FocusLaw[];
-  activeCase: CourtCase;
-  charges: Charge[];
-  activeChargeId?: string;
+  // Today's docket, newest case first. Cleared and renewed each local day.
+  cases: CourtCase[];
+  // Local day key the docket belongs to. Drives the daily renewal.
+  docketDate: string;
+  // Master switch. When false nothing locks, whatever the docket says.
+  enforcementEnabled: boolean;
   focusSession: FocusSession | null;
   paroleRecords: {
     id: string;
@@ -120,7 +123,8 @@ type CourtState = {
   addSuspect: (input: AddSuspectInput, isPro?: boolean) => AddSuspectResult;
   removeSuspect: (id: string) => void;
   unblockApp: (id: string, minutes: number) => void;
-  startFocusSession: (minutes: number, reducesJail?: boolean) => void;
+  setEnforcementEnabled: (enabled: boolean) => void;
+  startFocusSession: (minutes: number, caseId?: string) => void;
   cancelFocusSession: () => void;
   tickFocusSession: () => void;
   toggleLaw: (id: string, isPro?: boolean) => ToggleResult;
@@ -128,12 +132,17 @@ type CourtState = {
   setStrictness: (strictness: StrictnessLevel, isPro?: boolean) => ToggleResult;
   setBedtime: (bedtime: string) => void;
   setWakeTime: (wakeTime: string) => void;
-  acceptSentence: (chargeId?: string) => void;
-  requestMercy: (chargeId?: string) => boolean;
-  reduceSentence: (minutes: number, message: string, points?: number) => boolean;
+  // ── Docket ──
+  fileCase: (input: FileCaseInput) => string | undefined;
+  setVerdict: (caseId: string, verdict: CaseVerdict) => void;
+  jailCase: (caseId: string) => void;
+  warnCase: (caseId: string) => void;
+  dismissCase: (caseId: string) => void;
+  serveFocusSeconds: (caseId: string, seconds: number) => boolean;
+  requestMercy: (caseId?: string) => boolean;
   grantParole: (message?: string, points?: number) => void;
-  tickSentence: () => void;
-  resetCourtDay: () => void;
+  tickDocket: () => void;
+  renewDocket: (force?: boolean) => void;
 };
 
 export const useCourtStore = create<CourtState>()(
@@ -142,8 +151,9 @@ export const useCourtStore = create<CourtState>()(
       profile: initialProfile,
       suspects: DEFAULT_SUSPECTS,
       laws: DEFAULT_LAWS,
-      activeCase: createCase(),
-      charges: [],
+      cases: [],
+      docketDate: todayKey(),
+      enforcementEnabled: true,
       focusSession: null,
       paroleRecords: [
         {
@@ -304,7 +314,15 @@ export const useCourtStore = create<CourtState>()(
         }));
       },
 
-      startFocusSession(minutes, reducesJail = true) {
+      setEnforcementEnabled(enabled) {
+        set(() => ({ enforcementEnabled: enabled }));
+      },
+
+      /**
+       * Starts a focus timer. Pass a `caseId` to serve a jailed case and release
+       * its app; omit it for free-standing deep work that only earns points.
+       */
+      startFocusSession(minutes, caseId) {
         const duration = Math.min(120, Math.max(1, Math.round(minutes)));
         const now = Date.now();
         set(() => ({
@@ -313,11 +331,15 @@ export const useCourtStore = create<CourtState>()(
             startedAt: new Date(now).toISOString(),
             endsAt: new Date(now + duration * 60 * 1000).toISOString(),
             durationMinutes: duration,
-            reducesJail,
+            caseId,
           },
         }));
       },
 
+      /**
+       * Gives up on the running timer. Time already banked against a case is
+       * kept — quitting early costs progress, it does not erase it.
+       */
       cancelFocusSession() {
         set(() => ({ focusSession: null }));
       },
@@ -326,32 +348,39 @@ export const useCourtStore = create<CourtState>()(
         const session = get().focusSession;
         if (!session) return;
         if (Date.now() < new Date(session.endsAt).getTime()) return;
-        // Session complete — reward focus and reduce the sentence if asked.
-        if (session.reducesJail) {
-          get().reduceSentence(
-            session.durationMinutes,
-            `Focus session complete — ${session.durationMinutes} min served.`,
-            session.durationMinutes * 3,
-          );
-        } else {
-          set((current) => ({
-            profile: {
-              ...current.profile,
-              parolePoints: current.profile.parolePoints + session.durationMinutes * 2,
-              focusCoins: current.profile.focusCoins + session.durationMinutes,
-            },
-            paroleRecords: [
-              {
-                id: `focus-done-${Date.now()}`,
-                type: 'focus',
-                pointsEarned: session.durationMinutes * 2,
-                message: `Focus session complete — ${session.durationMinutes} min of deep work.`,
-                createdAt: nowIso(),
-              },
-              ...current.paroleRecords,
-            ],
-          }));
+
+        const minutes = session.durationMinutes;
+
+        if (session.caseId) {
+          // The per-second tick banks progress while the app is foregrounded.
+          // Top up whatever it missed (backgrounded time, rounding) so a timer
+          // that ran to the end always clears its case.
+          const target = get().cases.find((item) => item.id === session.caseId);
+          if (target && target.verdict === 'jailed') {
+            get().serveFocusSeconds(session.caseId, Math.max(1, caseFocusRemainingSeconds(target)));
+          }
         }
+
+        // One payout per completed session, whatever it was serving.
+        const points = session.caseId ? minutes * 3 : minutes * 2;
+        set((current) => ({
+          profile: {
+            ...current.profile,
+            parolePoints: current.profile.parolePoints + points,
+            focusCoins: current.profile.focusCoins + minutes,
+          },
+          paroleRecords: [
+            {
+              id: `focus-done-${Date.now()}`,
+              type: 'focus',
+              pointsEarned: points,
+              message: `Focus session complete — ${minutes} min of deep work.`,
+              createdAt: nowIso(),
+            },
+            ...current.paroleRecords,
+          ],
+        }));
+
         set(() => ({ focusSession: null }));
       },
 
@@ -401,85 +430,185 @@ export const useCourtStore = create<CourtState>()(
         set((state) => ({ profile: { ...state.profile, wakeTime } }));
       },
 
-      acceptSentence(chargeId) {
-        const state = get();
-        const targetId = chargeId ?? state.activeChargeId ?? state.charges[0]?.id;
-        const charge = state.charges.find((item) => item.id === targetId);
-        if (!charge) return;
+      // ── Docket ────────────────────────────────────────────────────────────
+      // One law break equals one case against one app. Cases open as a
+      // 'hearing'; the user converts them to a warning or a jail term.
 
+      fileCase(input) {
+        const state = get();
+        const law = state.laws.find((item) => item.id === input.lawId);
+        const suspect = state.suspects.find((item) => item.id === input.appId);
+        if (!law || !suspect) return undefined;
+
+        const today = todayKey();
+        // One law break yields one case per app per day.
+        const duplicate = state.cases.find(
+          (item) => item.date === today && item.lawId === law.id && item.appId === suspect.id,
+        );
+        if (duplicate) return duplicate.id;
+
+        const id = `case-${today}-${law.id}-${suspect.id}`;
+        const item: CourtCase = {
+          id,
+          date: today,
+          lawId: law.id,
+          lawName: law.name,
+          appId: suspect.id,
+          appName: suspect.displayName,
+          title: input.title ?? `${law.shortName} broken`,
+          evidenceLine:
+            input.evidenceLine ??
+            `${suspect.displayName} crossed the line set by ${law.name}.`,
+          severity: suspect.dangerLevel,
+          verdict: 'hearing',
+          filedAt: nowIso(),
+          requiredFocusMinutes:
+            input.requiredFocusMinutes ?? sentenceForRepeat(law, state.cases),
+          focusServedSeconds: 0,
+        };
+
+        set((current) => ({ cases: [item, ...current.cases] }));
+        return id;
+      },
+
+      setVerdict(caseId, verdict) {
+        const resolved = verdict !== 'hearing' && verdict !== 'jailed';
+        set((current) => {
+          const target = current.cases.find((item) => item.id === caseId);
+          if (!target) return current;
+          return {
+            cases: current.cases.map((item) =>
+              item.id === caseId
+                ? { ...item, verdict, resolvedAt: resolved ? nowIso() : undefined }
+                : item,
+            ),
+            // Leaving custody also drops any temporary access window.
+            suspects:
+              verdict === 'jailed'
+                ? current.suspects
+                : current.suspects.map((suspect) =>
+                    suspect.id === target.appId ? { ...suspect, unblockedUntil: undefined } : suspect,
+                  ),
+            // A session serving a case that just left custody is finished.
+            focusSession:
+              !resolved || current.focusSession?.caseId !== caseId ? current.focusSession : null,
+          };
+        });
+      },
+
+      jailCase(caseId) {
+        get().setVerdict(caseId, 'jailed');
+      },
+
+      warnCase(caseId) {
+        const state = get();
+        const item = state.cases.find((entry) => entry.id === caseId);
+        state.setVerdict(caseId, 'warning');
+        if (!item) return;
         set((current) => ({
-          charges: current.charges.map((item) => (item.id === charge.id ? { ...item, status: 'sentenced' } : item)),
-          activeChargeId: charge.id,
-          activeCase: {
-            ...current.activeCase,
-            remainingSentenceSeconds: charge.punishmentMinutes * 60,
-            totalSentenceMinutes: Math.max(current.activeCase.totalSentenceMinutes, charge.punishmentMinutes),
-            status: 'jailed',
-          },
+          paroleRecords: [
+            {
+              id: `warning-${caseId}-${Date.now()}`,
+              type: 'manual',
+              pointsEarned: 0,
+              message: `Warning issued for ${item.appName}. The court is keeping the file open.`,
+              createdAt: nowIso(),
+            },
+            ...current.paroleRecords,
+          ],
         }));
       },
 
-      requestMercy(chargeId) {
+      dismissCase(caseId) {
+        get().setVerdict(caseId, 'dismissed');
+      },
+
+      /**
+       * Banks focus seconds against a jailed case and flips it to 'served' once
+       * the required time is covered. Returns true when the app is released.
+       *
+       * Progress only — rewards are paid once per completed session in
+       * `tickFocusSession`, so the per-second tick cannot inflate them.
+       */
+      serveFocusSeconds(caseId, seconds) {
+        const banked = Math.max(0, Math.round(seconds));
+        if (banked === 0) return false;
+
+        let served = false;
+        let releasedName = '';
+
+        set((current) => {
+          const target = current.cases.find((item) => item.id === caseId);
+          if (!target || target.verdict !== 'jailed') return current;
+
+          const total = target.focusServedSeconds + banked;
+          served = total >= target.requiredFocusMinutes * 60;
+          releasedName = target.appName;
+
+          return {
+            cases: current.cases.map((item) =>
+              item.id === caseId
+                ? {
+                    ...item,
+                    focusServedSeconds: total,
+                    verdict: served ? ('served' as const) : ('jailed' as const),
+                    resolvedAt: served ? nowIso() : undefined,
+                  }
+                : item,
+            ),
+          };
+        });
+
+        if (served) {
+          set((current) => ({
+            profile: {
+              ...current.profile,
+              cleanRecordStreak: current.profile.cleanRecordStreak + 1,
+            },
+            paroleRecords: [
+              {
+                id: `released-${caseId}-${Date.now()}`,
+                type: 'focus' as const,
+                pointsEarned: 0,
+                message: `${releasedName} released. Focus time served in full.`,
+                createdAt: nowIso(),
+              },
+              ...current.paroleRecords,
+            ],
+          }));
+        }
+
+        return served;
+      },
+
+      requestMercy(caseId) {
         const state = get();
         if (state.profile.mercyPasses <= 0) return false;
-        const targetId = chargeId ?? state.activeChargeId ?? state.charges[0]?.id;
-        if (!targetId) return false;
+        const target =
+          state.cases.find((item) => item.id === caseId) ??
+          state.cases.find((item) => item.verdict === 'jailed') ??
+          state.cases.find((item) => item.verdict === 'hearing');
+        if (!target) return false;
+
+        state.setVerdict(target.id, 'dismissed');
         set((current) => ({
           profile: {
             ...current.profile,
             mercyPasses: current.profile.mercyPasses - 1,
             parolePoints: current.profile.parolePoints + 12,
           },
-          charges: current.charges.map((item) => (item.id === targetId ? { ...item, status: 'pardoned' } : item)),
-          activeChargeId: undefined,
-          activeCase: {
-            ...current.activeCase,
-            status: 'parole',
-          },
           paroleRecords: [
             {
               id: `mercy-${Date.now()}`,
               type: 'manual',
               pointsEarned: 12,
-              message: 'Mercy pass accepted. The court allows emergencies, not excuses.',
+              message: `Mercy pass spent on ${target.appName}. The court allows emergencies, not excuses.`,
               createdAt: nowIso(),
             },
             ...current.paroleRecords,
           ],
         }));
         return true;
-      },
-
-      reduceSentence(minutes, message, points = Math.max(5, minutes * 3)) {
-        let granted = false;
-        set((current) => {
-          const remaining = Math.max(0, current.activeCase.remainingSentenceSeconds - minutes * 60);
-          granted = remaining === 0;
-          return {
-            profile: {
-              ...current.profile,
-              focusCoins: current.profile.focusCoins + Math.max(1, minutes),
-              parolePoints: current.profile.parolePoints + points,
-              cleanRecordStreak: granted ? current.profile.cleanRecordStreak + 1 : current.profile.cleanRecordStreak,
-            },
-            activeCase: {
-              ...current.activeCase,
-              remainingSentenceSeconds: remaining,
-              status: granted ? 'parole' : current.activeCase.status,
-            },
-            paroleRecords: [
-              {
-                id: `mini-${Date.now()}`,
-                type: 'miniAction',
-                pointsEarned: points,
-                message,
-                createdAt: nowIso(),
-              },
-              ...current.paroleRecords,
-            ],
-          };
-        });
-        return granted;
       },
 
       grantParole(message = 'Parole granted. You protected your focus record.', points = 20) {
@@ -490,12 +619,12 @@ export const useCourtStore = create<CourtState>()(
             focusCoins: current.profile.focusCoins + 10,
             cleanRecordStreak: current.profile.cleanRecordStreak + 1,
           },
-          activeChargeId: undefined,
-          activeCase: {
-            ...current.activeCase,
-            remainingSentenceSeconds: 0,
-            status: 'parole',
-          },
+          // Parole clears every app still in custody.
+          cases: current.cases.map((item) =>
+            item.verdict === 'jailed'
+              ? { ...item, verdict: 'served' as const, resolvedAt: nowIso() }
+              : item,
+          ),
           paroleRecords: [
             {
               id: `parole-${Date.now()}`,
@@ -509,42 +638,81 @@ export const useCourtStore = create<CourtState>()(
         }));
       },
 
-      tickSentence() {
-        set((current) => {
-          if (current.activeCase.status !== 'jailed' || current.activeCase.remainingSentenceSeconds <= 0) return current;
-          const remaining = Math.max(0, current.activeCase.remainingSentenceSeconds - 1);
-          return {
-            activeCase: {
-              ...current.activeCase,
-              remainingSentenceSeconds: remaining,
-              status: remaining === 0 ? 'parole' : 'jailed',
-            },
-          };
-        });
+      /**
+       * Credits one second of focus to the case the running session is serving.
+       * Free-standing sessions (no `caseId`) are settled in `tickFocusSession`.
+       */
+      tickDocket() {
+        const state = get();
+        const session = state.focusSession;
+        if (!session?.caseId) return;
+        const target = state.cases.find((item) => item.id === session.caseId);
+        if (!target || target.verdict !== 'jailed') return;
+
+        set((current) => ({
+          cases: current.cases.map((item) =>
+            item.id === session.caseId
+              ? { ...item, focusServedSeconds: item.focusServedSeconds + 1 }
+              : item,
+          ),
+        }));
       },
 
-      resetCourtDay() {
+      /**
+       * Clears the docket and every daily counter at the start of a new local
+       * day so the user always begins fresh. No debt carries over.
+       */
+      renewDocket(force = false) {
+        const today = todayKey();
+        if (!force && get().docketDate === today) return;
         set((current) => ({
-          activeChargeId: undefined,
-          activeCase: createCase(),
-          suspects: current.suspects.map((suspect) => ({ ...suspect, dailyUsageMinutes: 0, dailyOpenCount: 0 })),
+          docketDate: today,
+          cases: [],
+          focusSession: null,
+          suspects: current.suspects.map((suspect) => ({
+            ...suspect,
+            dailyUsageMinutes: 0,
+            dailyOpenCount: 0,
+            unblockedUntil: undefined,
+          })),
         }));
       },
     }),
     {
       name: 'focus-court-store',
+      version: 2,
       storage: createJSONStorage(() => AsyncStorage),
+      // v1 stored a single global `activeCase` plus a flat `charges` array.
+      // Those shapes cannot be mapped onto per-app cases, so case state is
+      // dropped and the user starts on a clean docket. Profile, laws,
+      // suspects, and parole history are preserved.
+      migrate: (persisted, version) => {
+        const saved = (persisted ?? {}) as Record<string, unknown>;
+        if (version >= 2) return saved as Partial<CourtState>;
+        const { activeCase, charges, activeChargeId, ...rest } = saved;
+        return {
+          ...rest,
+          cases: [],
+          docketDate: todayKey(),
+          enforcementEnabled: true,
+          focusSession: null,
+        } as Partial<CourtState>;
+      },
       merge: (persisted, current) => {
         const saved = persisted as Partial<CourtState> | undefined;
+        const savedDate = saved?.docketDate;
+        // A docket from an earlier day never survives a relaunch.
+        const isToday = savedDate === todayKey();
         return {
           ...current,
           ...saved,
           profile: mergeProfile(saved?.profile),
           laws: mergeById(DEFAULT_LAWS, saved?.laws),
           suspects: mergeById(DEFAULT_SUSPECTS, saved?.suspects),
-          activeCase: saved?.activeCase ?? current.activeCase,
-          charges: saved?.charges ?? current.charges,
-          focusSession: saved?.focusSession ?? null,
+          docketDate: todayKey(),
+          cases: isToday ? saved?.cases ?? [] : [],
+          enforcementEnabled: saved?.enforcementEnabled ?? true,
+          focusSession: isToday ? saved?.focusSession ?? null : null,
           paroleRecords: saved?.paroleRecords ?? current.paroleRecords,
         };
       },

@@ -25,6 +25,7 @@ import { StampBadge } from '@/src/components/StampBadge';
 import { colors, radius, shadows } from '@/src/constants/theme';
 import { useCourtStore } from '@/src/store/useCourtStore';
 import { usePremiumStore } from '@/src/store/usePremiumStore';
+import { jailedAppIds } from '@/src/utils/docket';
 import { describesSchedule } from '@/src/utils/lawPolicy';
 import type { AppSuspect, FocusLaw } from '@/src/types/court';
 
@@ -58,19 +59,10 @@ function getEnforcementColor(mode?: string) {
 }
 
 function getEnforcementLabel(mode?: string) {
-  if (mode === 'hardBlock') return '🔒 Hard Block';
-  if (mode === 'focusSession') return '⏱ Focus Session';
-  if (mode === 'notice') return '🔔 Notice';
-  return '⚠️ Soft Block';
-}
-
-function getTriggerIcon(trigger?: string) {
-  if (trigger === 'blockedWindow') return '🕐';
-  if (trigger === 'dailyLimit') return '📊';
-  if (trigger === 'focusSession') return '⏱';
-  if (trigger === 'pickupLoop') return '🔄';
-  if (trigger === 'unlockCount') return '🔓';
-  return '📱';
+  if (mode === 'hardBlock') return 'Hard Block';
+  if (mode === 'focusSession') return 'Focus Session';
+  if (mode === 'notice') return 'Notice';
+  return 'Soft Block';
 }
 
 function getScheduleText(law: FocusLaw) {
@@ -144,8 +136,7 @@ function FocusLawCard({
 
         {locked && (
           <View style={lawCardStyles.lockOverlay}>
-            <Text style={lawCardStyles.lockIcon}>🔒</Text>
-            <Text style={lawCardStyles.lockText}>Pro</Text>
+            <StampBadge label="Pro only" tone="purple" />
           </View>
         )}
       </View>
@@ -215,8 +206,6 @@ const lawCardStyles = StyleSheet.create({
     justifyContent: 'center',
     gap: 4,
   },
-  lockIcon: { fontSize: 20 },
-  lockText: { color: colors.purple, fontSize: 12, fontWeight: '700' },
 });
 
 
@@ -226,9 +215,6 @@ function AddLawCard({ onPress }: { onPress: () => void }) {
     <Pressable onPress={onPress} style={{ width: LAW_CARD_WIDTH }}>
       <View style={addCardStyles.card}>
         <View style={addCardStyles.content}>
-          <View style={addCardStyles.plusCircle}>
-            <Text style={addCardStyles.plus}>+</Text>
-          </View>
           <Text style={addCardStyles.label}>New Law</Text>
           <Text style={addCardStyles.sub}>Custom rule</Text>
         </View>
@@ -252,14 +238,7 @@ const addCardStyles = StyleSheet.create({
     ...shadows.soft,
   },
   content: { alignItems: 'center', gap: 6 },
-  plusCircle: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: 'rgba(0,122,255,0.12)',
-    borderWidth: 1.5, borderColor: 'rgba(0,122,255,0.28)',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  plus: { color: colors.blue, fontSize: 24, fontWeight: '300', lineHeight: 28 },
-  label: { color: colors.blue, fontSize: 13, fontWeight: '700', letterSpacing: -0.2 },
+  label: { color: colors.blue, fontSize: 15, fontWeight: '700', letterSpacing: -0.2 },
   sub: { color: colors.labelSecondary, fontSize: 11, fontWeight: '500' },
 });
 
@@ -519,11 +498,11 @@ function LawDetailSheet({
               <Text style={[sheetStyles.badgeText, { color: enforcementColor }]}>{getEnforcementLabel(law.enforcementMode)}</Text>
             </View>
             <View style={sheetStyles.badge}>
-              <Text style={sheetStyles.badgeText}>{getTriggerIcon(law.trigger)} {law.trigger ?? 'appLaunch'}</Text>
+              <Text style={sheetStyles.badgeText}>Trigger: {law.trigger ?? 'appLaunch'}</Text>
             </View>
             {getScheduleText(law) ? (
               <View style={sheetStyles.badge}>
-                <Text style={sheetStyles.badgeText}>🕐 {getScheduleText(law)}</Text>
+                <Text style={sheetStyles.badgeText}>Schedule: {getScheduleText(law)}</Text>
               </View>
             ) : null}
           </View>
@@ -587,7 +566,7 @@ function LawDetailSheet({
                       <Text style={[sheetStyles.appChipLabel, isSelected && sheetStyles.appChipLabelSelected]} numberOfLines={1}>
                         {suspect.displayName}
                       </Text>
-                      {isSelected && <Text style={sheetStyles.appCheckmark}>✓</Text>}
+                      {isSelected && <Text style={sheetStyles.appCheckmark}>On</Text>}
                     </Pressable>
                   );
                 })}
@@ -612,7 +591,7 @@ function LawDetailSheet({
             </View>
             {!canEdit && (
               <View style={sheetStyles.proGate}>
-                <Text style={sheetStyles.proGateText}>🔒 Editing requires Supreme Court Mode (Pro)</Text>
+                <Text style={sheetStyles.proGateText}>Editing requires Supreme Court Mode (Pro)</Text>
               </View>
             )}
             <View style={sheetStyles.actions}>
@@ -766,9 +745,14 @@ function SuspectRow({
                 maxLength={4}
               />
             ) : (
-              <Pressable onPress={() => { if (!locked) setEditing(true); }} style={styles.timerPill}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Daily limit ${draftMinutes} minutes, tap to edit`}
+                onPress={() => { if (!locked) setEditing(true); }}
+                style={styles.timerPill}
+              >
                 <Text style={styles.timerPillText}>{draftMinutes} min</Text>
-                {!locked && <Text style={styles.timerEditIcon}> ✎</Text>}
+                {!locked && <Text style={styles.timerEditHint}>Edit</Text>}
               </Pressable>
             )}
           </View>
@@ -797,6 +781,9 @@ export default function CulpritsTab() {
   const toggleSuspect = useCourtStore((state) => state.toggleSuspect);
   const updateLaw = useCourtStore((state) => state.updateLaw);
   const toggleLaw = useCourtStore((state) => state.toggleLaw);
+  const enforcementEnabled = useCourtStore((state) => state.enforcementEnabled);
+  const setEnforcementEnabled = useCourtStore((state) => state.setEnforcementEnabled);
+  const jailedCount = useCourtStore((state) => jailedAppIds(state.cases).length);
   const isPro = usePremiumStore((state) => state.isPro);
 
   const [selectedLaw, setSelectedLaw] = useState<FocusLaw | null>(null);
@@ -873,6 +860,29 @@ export default function CulpritsTab() {
           assetKey="ASSET_SELECT_SUSPECTS_LINEUP"
         />
 
+        {/* ── Master enforcement switch ─────────────────────────────── */}
+        <CourtCard variant={enforcementEnabled ? 'glass' : 'orange'}>
+          <View style={styles.enforceRow}>
+            <View style={styles.enforceText}>
+              <Text style={styles.enforceTitle}>Court enforcement</Text>
+              <Text style={styles.enforceCopy}>
+                {enforcementEnabled
+                  ? jailedCount > 0
+                    ? `On. ${jailedCount} app${jailedCount === 1 ? '' : 's'} in custody right now.`
+                    : 'On. The court files cases and locks apps when a law breaks.'
+                  : 'Off. Nothing locks and no case gets filed.'}
+              </Text>
+            </View>
+            <Switch
+              value={enforcementEnabled}
+              onValueChange={setEnforcementEnabled}
+              thumbColor={colors.white}
+              trackColor={{ true: colors.blue, false: 'rgba(120,120,128,0.22)' }}
+              ios_backgroundColor="rgba(120,120,128,0.22)"
+            />
+          </View>
+        </CourtCard>
+
         {/* ── Focus Laws Section ────────────────────────────────────── */}
         <View style={styles.sectionHeaderRow}>
           <View style={styles.sectionHeaderLeft}>
@@ -944,7 +954,7 @@ export default function CulpritsTab() {
                 screen — even when JailTime is closed.
               </Text>
               <CourtButton
-                title="⚖️  Select Apps to Block"
+                title="Select Apps to Block"
                 variant="primary"
                 small
                 onPress={() => router.push('/modals/select-apps')}
@@ -1070,7 +1080,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0,122,255,0.22)',
   },
   timerPillText: { color: colors.blue, fontSize: 12, fontWeight: '600' },
-  timerEditIcon: { color: colors.blue, fontSize: 11 },
+  timerEditHint: { color: colors.blue, fontSize: 11, fontWeight: '600', marginLeft: 6 },
   timerInput: {
     width: 72,
     paddingHorizontal: 10, paddingVertical: 4,
@@ -1082,6 +1092,12 @@ const styles = StyleSheet.create({
     fontSize: 13, fontWeight: '600',
     textAlign: 'center',
   },
+
+  // ── enforcement switch ──
+  enforceRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  enforceText: { flex: 1, gap: 4 },
+  enforceTitle: { color: colors.label, fontSize: 17, fontWeight: '700', letterSpacing: -0.3 },
+  enforceCopy: { color: colors.labelSecondary, fontSize: 13, lineHeight: 18, fontWeight: '400' },
 
   // ── blocking CTA ──
   blockingRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },

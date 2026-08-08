@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AssetImage } from '@/src/components/AssetImage';
 import { CourtBackground } from '@/src/components/CourtBackground';
@@ -7,61 +7,65 @@ import { CourtCard } from '@/src/components/CourtCard';
 import { StampBadge } from '@/src/components/StampBadge';
 import { colors } from '@/src/constants/theme';
 import { useCourtStore } from '@/src/store/useCourtStore';
+import { formatMinutes } from '@/src/utils/format';
 
+/**
+ * Confirms a jail verdict for one case. Jailing locks only the app named on the
+ * case, and only until its focus time is served.
+ */
 export default function SentenceModal() {
   const router = useRouter();
-  const charge = useCourtStore(
-    (state) => state.charges.find((item) => item.id === state.activeChargeId) ?? state.charges[0],
+  const params = useLocalSearchParams<{ caseId?: string }>();
+  const item = useCourtStore((state) =>
+    state.cases.find((entry) => entry.id === params.caseId) ??
+    state.cases.find((entry) => entry.verdict === 'hearing'),
   );
-  const acceptSentence = useCourtStore((state) => state.acceptSentence);
+  const jailCase = useCourtStore((state) => state.jailCase);
+
+  const minutes = item?.requiredFocusMinutes ?? 8;
 
   return (
     <CourtBackground>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-
-        {/* ── Sentence glass hero ──────────────────────────────────── */}
         <CourtCard variant="red">
           <View style={styles.hero}>
             <AssetImage assetKey="ASSET_SENTENCE_SERVED_SCROLL" width={136} height={136} />
             <View style={styles.text}>
               <StampBadge label="Sentence" tone="danger" />
-              <Text style={styles.title}>
-                {charge?.punishmentMinutes ?? 8} Minutes
-              </Text>
+              <Text style={styles.title}>{formatMinutes(minutes)}</Text>
               <Text style={styles.copy}>
-                Sentence active. Complete one focus action and the court may consider parole.
+                {item
+                  ? `${item.appName} locks until you serve ${formatMinutes(minutes)} of focus. Nothing else is affected.`
+                  : 'No case is waiting for a verdict.'}
               </Text>
             </View>
           </View>
         </CourtCard>
 
-        {/* ── Escalation warning ─────────────────────────────────── */}
         <CourtCard variant="orange">
           <View style={styles.warnRow}>
             <AssetImage assetKey="ASSET_MAXIMUM_SENTENCE_ALARM" width={88} height={88} />
             <View style={styles.warnText}>
               <Text style={styles.warnTitle}>Escalation Warning</Text>
               <Text style={styles.warnCopy}>
-                Repeat opening detected. Jail time may increase.
+                Break the same law again today and the next sentence gets longer. The docket clears
+                at midnight.
               </Text>
             </View>
           </View>
         </CourtCard>
 
-        {/* ── Actions ──────────────────────────────────────────── */}
         <CourtButton
-          title="Start Jail Time"
+          title="Lock the App"
           variant="destructive"
+          disabled={!item}
           onPress={() => {
-            acceptSentence(charge?.id);
-            router.replace('/(tabs)/jail');
+            if (!item) return;
+            jailCase(item.id);
+            router.replace('/(tabs)/courtroom');
           }}
         />
-        <CourtButton
-          title="Return to Courtroom"
-          variant="ghost"
-          onPress={() => router.back()}
-        />
+        <CourtButton title="Back to Court" variant="ghost" onPress={() => router.back()} />
       </ScrollView>
     </CourtBackground>
   );
@@ -83,10 +87,10 @@ const styles = StyleSheet.create({
   },
   title: {
     color: colors.label,
-    fontSize: 34,
-    lineHeight: 40,
+    fontSize: 32,
+    lineHeight: 38,
     fontWeight: '700',
-    letterSpacing: 0.37,
+    letterSpacing: -0.5,
   },
   copy: {
     color: colors.labelSecondary,
