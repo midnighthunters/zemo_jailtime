@@ -4,15 +4,22 @@ Audited 2026-08-07 from the Expo Router file tree and route implementations.
 
 ## Count
 
-There are **36 route-backed screens**. This count excludes `_layout.tsx` files because they configure navigation rather than render a standalone screen.
+There are **37 route-backed screens**. This count excludes `_layout.tsx` files because they configure navigation rather than render a standalone screen.
 
 | Group | Count | Notes |
 | --- | ---: | --- |
 | Entry and blocked-app routes | 2 | `/` is a hydration/redirect gate; `[appId]` is the block screen |
+| Report route | 1 | Dedicated evidence, offender, parole, and rewards report |
 | Onboarding | 16 | Ordered by `src/data/onboarding.ts` |
 | Tab routes | 6 | 3 visible tabs and 3 hidden deep-link routes |
 | Modal routes | 12 | Presented as stack modals |
-| **Total** | **36** | |
+| **Total** | **37** | |
+
+## Report route
+
+| Route | What it does |
+| --- | --- |
+| `/report` | Dedicated report opened from Jail's top-right Report button; contains Owl Justice, worst offender, trial evidence, parole, rewards, and history. |
 
 ## Entry and enforcement routes
 
@@ -50,7 +57,7 @@ The floating tab bar visibly exposes Courtroom, Culprits, and Jail. Laws, Eviden
 
 | Route | Visibility | What it does |
 | --- | --- | --- |
-| `/(tabs)/courtroom` | Visible: Court | Shows the active case, sentence status, clean streak, coins, charges, parole readiness, collapsible trial evidence, rewards, history, and weekly-report/upgrade actions. |
+| `/(tabs)/courtroom` | Visible: Court | Shows the active case, sentence status, clean streak, coins, charges, and parole readiness; detailed evidence, offender, parole, and rewards data is now in `/report`. |
 | `/(tabs)/culprits` | Visible: Culprits | Manages suspect apps, focus-law toggles, law detail/edit sheets, premium gates, and the iOS “Select Apps to Block” flow. |
 | `/(tabs)/jail` | Visible: Jail | Shows custody and sentence state, blocked apps, focus timer, sentence-reducing mini actions, emergency bypass, and parole completion. |
 | `/(tabs)/laws` | Hidden | Full focus-law carousel with category filters, strictness controls, Screen Time Setup, custom-law editor, weekly report, and upgrade links. |

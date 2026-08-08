@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { CourtBackground } from '@/src/components/CourtBackground';
 import { CourtButton } from '@/src/components/CourtButton';
 import { CourtCard } from '@/src/components/CourtCard';
@@ -10,7 +10,8 @@ import { colors, radius, shadows } from '@/src/constants/theme';
 import { useCourtStore } from '@/src/store/useCourtStore';
 import { formatCountdown } from '@/src/utils/format';
 
-const DURATIONS = [5, 15, 25, 45];
+const PRESET_DURATIONS = [5, 15, 30, 35, 60] as const;
+type DurationSelection = (typeof PRESET_DURATIONS)[number] | 'custom';
 
 export default function FocusTimerModal() {
   const router = useRouter();
@@ -21,7 +22,8 @@ export default function FocusTimerModal() {
 
   const jailActive = activeCase.status === 'jailed' && activeCase.remainingSentenceSeconds > 0;
 
-  const [minutes, setMinutes] = useState(25);
+  const [durationSelection, setDurationSelection] = useState<DurationSelection>(15);
+  const [customMinutes, setCustomMinutes] = useState('25');
   const [reduceJail, setReduceJail] = useState(true);
   const [now, setNow] = useState(Date.now());
   const [finished, setFinished] = useState(false);
@@ -46,7 +48,13 @@ export default function FocusTimerModal() {
     ? Math.max(0, Math.round((new Date(focusSession.endsAt).getTime() - now) / 1000))
     : 0;
 
+  const parsedCustomMinutes = Number.parseInt(customMinutes, 10);
+  const customDurationIsValid =
+    Number.isInteger(parsedCustomMinutes) && parsedCustomMinutes >= 1 && parsedCustomMinutes <= 120;
+  const minutes = durationSelection === 'custom' ? parsedCustomMinutes : durationSelection;
+
   const handleStart = () => {
+    if (durationSelection === 'custom' && !customDurationIsValid) return;
     setFinished(false);
     startFocusSession(minutes, jailActive ? reduceJail : false);
   };
@@ -116,16 +124,61 @@ export default function FocusTimerModal() {
         />
 
         <View style={styles.durationGrid}>
-          {DURATIONS.map((d) => {
-            const on = minutes === d;
+          {PRESET_DURATIONS.map((d) => {
+            const on = durationSelection === d;
             return (
-              <Pressable key={d} onPress={() => setMinutes(d)} style={[styles.durCard, on && styles.durCardOn]}>
+              <Pressable
+                key={d}
+                accessibilityRole="button"
+                accessibilityState={{ selected: on }}
+                accessibilityLabel={`${d} minute focus timer`}
+                onPress={() => setDurationSelection(d)}
+                style={({ pressed }) => [styles.durCard, on && styles.durCardOn, pressed && styles.durCardPressed]}
+              >
                 <Text style={[styles.durValue, on && styles.durValueOn]}>{d}</Text>
                 <Text style={[styles.durUnit, on && styles.durUnitOn]}>minutes</Text>
               </Pressable>
             );
           })}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ selected: durationSelection === 'custom' }}
+            accessibilityLabel="Custom focus timer duration"
+            onPress={() => setDurationSelection('custom')}
+            style={({ pressed }) => [
+              styles.durCard,
+              durationSelection === 'custom' && styles.durCardOn,
+              pressed && styles.durCardPressed,
+            ]}
+          >
+            <Text style={[styles.durValue, durationSelection === 'custom' && styles.durValueOn]}>Custom</Text>
+            <Text style={[styles.durUnit, durationSelection === 'custom' && styles.durUnitOn]}>minutes</Text>
+          </Pressable>
         </View>
+
+        {durationSelection === 'custom' ? (
+          <View style={styles.customDuration}>
+            <Text style={styles.customDurationLabel}>Custom duration</Text>
+            <View style={styles.customInputRow}>
+              <TextInput
+                accessibilityLabel="Custom focus duration in minutes"
+                autoFocus
+                keyboardType="number-pad"
+                maxLength={3}
+                onChangeText={setCustomMinutes}
+                placeholder="25"
+                placeholderTextColor={colors.labelTertiary}
+                selectTextOnFocus
+                style={styles.customInput}
+                value={customMinutes}
+              />
+              <Text style={styles.customInputUnit}>minutes</Text>
+            </View>
+            <Text style={[styles.customHint, !customDurationIsValid && styles.customHintError]}>
+              Enter a whole number from 1 to 120 minutes.
+            </Text>
+          </View>
+        ) : null}
 
         {jailActive ? (
           <CourtCard variant="glass">
@@ -145,7 +198,12 @@ export default function FocusTimerModal() {
           </CourtCard>
         ) : null}
 
-        <CourtButton title={`Start ${minutes}-minute Focus`} variant="primary" onPress={handleStart} />
+        <CourtButton
+          title={durationSelection === 'custom' && !customDurationIsValid ? 'Enter a valid duration' : `Start ${minutes}-minute Focus`}
+          variant="primary"
+          disabled={durationSelection === 'custom' && !customDurationIsValid}
+          onPress={handleStart}
+        />
         <CourtButton title="Cancel" variant="ghost" onPress={() => router.back()} />
       </View>
     </CourtBackground>
@@ -165,23 +223,59 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
 
-  durationGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  durCard: {
-    flexGrow: 1,
-    flexBasis: '45%',
-    paddingVertical: 22,
-    borderRadius: radius.xl,
-    backgroundColor: 'rgba(120,120,128,0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(120,120,128,0.16)',
-    alignItems: 'center',
-    gap: 2,
+  durationGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'space-between',
   },
-  durCardOn: { backgroundColor: 'rgba(0,122,255,0.12)', borderColor: colors.blue },
-  durValue: { color: colors.label, fontSize: 34, fontWeight: '800', letterSpacing: -0.8 },
+  durCard: {
+    width: '30%',
+    minHeight: 96,
+    paddingVertical: 16,
+    borderRadius: radius.xl,
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+    ...shadows.soft,
+  },
+  durCardPressed: { transform: [{ translateY: 2 }], borderBottomWidth: 1 },
+  durCardOn: { backgroundColor: colors.blueLight, borderColor: colors.blue },
+  durValue: { color: colors.label, fontSize: 28, fontWeight: '800', letterSpacing: -0.8 },
   durValueOn: { color: colors.blue },
-  durUnit: { color: colors.labelSecondary, fontSize: 13, fontWeight: '600' },
+  durUnit: { color: colors.labelSecondary, fontSize: 12, fontWeight: '600' },
   durUnitOn: { color: colors.blue },
+
+  customDuration: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: radius.xl,
+    backgroundColor: colors.surfaceMuted,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    gap: 6,
+  },
+  customDurationLabel: { color: colors.label, fontSize: 15, fontWeight: '700' },
+  customInputRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  customInput: {
+    minWidth: 88,
+    minHeight: 48,
+    paddingHorizontal: 14,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.blue,
+    color: colors.label,
+    fontSize: 22,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  customInputUnit: { color: colors.labelSecondary, fontSize: 15, fontWeight: '600' },
+  customHint: { color: colors.labelSecondary, fontSize: 12, lineHeight: 16 },
+  customHintError: { color: colors.red },
 
   toggleRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   toggleText: { flex: 1, gap: 3 },

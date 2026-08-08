@@ -86,6 +86,14 @@ export default function JailTab() {
           eyebrow="DISTRACTION JAIL"
           title="Sentence"
           subtitle="Serve time or earn parole through action."
+          rightAction={
+            <CourtButton
+              title="Report"
+              small
+              variant="secondary"
+              onPress={() => router.push('/report')}
+            />
+          }
           assetKey="ASSET_DISTRACTION_JAIL_BUILDING"
         />
 

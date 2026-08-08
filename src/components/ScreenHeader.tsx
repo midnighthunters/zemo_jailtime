@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import type { FocusCourtAssetKey } from '@/src/constants/assets';
@@ -9,9 +10,10 @@ type ScreenHeaderProps = {
   title: string;
   subtitle?: string;
   assetKey?: FocusCourtAssetKey;
+  rightAction?: ReactNode;
 };
 
-export function ScreenHeader({ eyebrow, title, subtitle, assetKey }: ScreenHeaderProps) {
+export function ScreenHeader({ eyebrow, title, subtitle, assetKey, rightAction }: ScreenHeaderProps) {
   return (
     <Animated.View entering={FadeInDown.duration(180)} style={styles.root}>
       <View style={styles.accent} />
@@ -24,7 +26,8 @@ export function ScreenHeader({ eyebrow, title, subtitle, assetKey }: ScreenHeade
           ) : null}
         </View>
 
-        {assetKey ? (
+        {rightAction ? <View style={styles.actionStage}>{rightAction}</View> : null}
+        {!rightAction && assetKey ? (
           <View style={styles.assetStage}>
             <AssetImage assetKey={assetKey} width={72} height={72} />
           </View>
@@ -87,6 +90,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
     fontWeight: '500',
+  },
+  actionStage: {
+    alignItems: 'flex-end',
+    justifyContent: 'center',
   },
   assetStage: {
     width: 82,

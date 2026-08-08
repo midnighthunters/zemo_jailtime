@@ -96,6 +96,7 @@ export default function RootLayout() {
           <Stack.Screen name="index" />
           <Stack.Screen name="onboarding" />
           <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="report" />
           <Stack.Screen name="blocked/[appId]" />
           <Stack.Screen name="modals/charges-filed" options={{ presentation: 'modal' }} />
           <Stack.Screen name="modals/sentence" options={{ presentation: 'modal' }} />
