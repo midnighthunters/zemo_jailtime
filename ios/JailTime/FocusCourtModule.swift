@@ -79,10 +79,15 @@ class FocusCourtModule: NSObject {
                 selection: existing ?? FamilyActivitySelection(),
                 onDone: { selection in
                     AppGroupStorage.saveSelection(selection)
-                    resolve(["selected": true, "count": selection.applications.count])
+                    resolve([
+                        "selected": true,
+                        "count": selection.applications.count,
+                        "categories": selection.categories.count,
+                        "webDomains": selection.webDomains.count
+                    ])
                 },
                 onCancel: {
-                    resolve(["selected": false, "count": 0])
+                    resolve(["selected": false, "count": 0, "categories": 0, "webDomains": 0])
                 }
             )
             rootVC.present(pickerVC, animated: true)
@@ -94,6 +99,41 @@ class FocusCourtModule: NSObject {
         rejecter reject: @escaping RCTPromiseRejectBlock
     ) {
         resolve(AppGroupStorage.hasSelection())
+    }
+
+    @objc func getSelectionCount(
+        _ resolve: @escaping RCTPromiseResolveBlock,
+        rejecter reject: @escaping RCTPromiseRejectBlock
+    ) {
+        guard let selection = AppGroupStorage.loadSelection() else {
+            resolve(["applications": 0, "categories": 0, "webDomains": 0])
+            return
+        }
+        // Only counts are exposed. Apple keeps ApplicationTokens opaque, so the
+        // app process can never read the names or bundle IDs behind them.
+        resolve([
+            "applications": selection.applications.count,
+            "categories": selection.categories.count,
+            "webDomains": selection.webDomains.count
+        ])
+    }
+
+    // ── Policy readback ──────────────────────────────────────────────────────
+    // The DeviceActivityMonitor extension flips `blockingActive` when the daily
+    // limit is reached, even while the app is closed. JS polls this to learn that
+    // a real law break happened and file a case for it.
+
+    @objc func getPolicyState(
+        _ resolve: @escaping RCTPromiseResolveBlock,
+        rejecter reject: @escaping RCTPromiseRejectBlock
+    ) {
+        let policy = AppGroupStorage.loadPolicy()
+        resolve([
+            "dailyLimitMinutes": policy.dailyLimitMinutes,
+            "blockingActive": policy.blockingActive,
+            "blockStartedAt": policy.blockStartedAt ?? NSNull(),
+            "hasSelection": AppGroupStorage.hasSelection()
+        ])
     }
 
     // ── Policy (schedule-based blocking via DeviceActivityMonitor) ───────────

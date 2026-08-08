@@ -16,6 +16,8 @@ import { formatMinutes } from '@/src/utils/format';
 
 type CaseCardProps = {
   item: CourtCase;
+  /** How many selections a jail verdict would shield. */
+  protectedCount: number;
   /** True while a focus timer is serving this case. */
   serving?: boolean;
   onWarn: () => void;
@@ -30,6 +32,7 @@ type CaseCardProps = {
  */
 export function CaseCard({
   item,
+  protectedCount,
   serving = false,
   onWarn,
   onJail,
@@ -38,6 +41,7 @@ export function CaseCard({
 }: CaseCardProps) {
   const remainingSeconds = caseFocusRemainingSeconds(item);
   const progress = caseFocusProgress(item);
+  const appsLabel = protectedCount === 1 ? 'your app' : `all ${protectedCount} of your apps`;
 
   return (
     <CourtCard variant={verdictVariant(item.verdict)}>
@@ -47,13 +51,18 @@ export function CaseCard({
       </View>
 
       <Text style={styles.title}>{item.title}</Text>
-      <Text style={styles.app}>{item.appName}</Text>
+      <View style={styles.metaRow}>
+        <Text style={styles.law}>{item.lawName}</Text>
+        <Text style={styles.source}>
+          {item.source === 'deviceLimit' ? 'Detected by iOS' : 'Self-reported'}
+        </Text>
+      </View>
       <Text style={styles.evidence}>{item.evidenceLine}</Text>
 
       {item.verdict === 'hearing' ? (
         <>
           <Text style={styles.hint}>
-            Decide the verdict. Jail locks {item.appName} until you focus for{' '}
+            Decide the verdict. Jail locks {appsLabel} until you focus for{' '}
             {formatMinutes(item.requiredFocusMinutes)}.
           </Text>
           <View style={styles.actions}>
@@ -71,7 +80,7 @@ export function CaseCard({
       {item.verdict === 'warning' ? (
         <>
           <Text style={styles.hint}>
-            {item.appName} stays open. Break this law again and the court will not be as kind.
+            Your apps stay open. Break this law again and the court will not be as kind.
           </Text>
           <CourtButton title="Escalate to Jail" variant="destructive" small onPress={onJail} />
         </>
@@ -92,8 +101,7 @@ export function CaseCard({
               <View style={[styles.fill, { width: `${progress}%` }]} />
             </View>
             <Text style={styles.progressCopy}>
-              {formatMinutes(Math.ceil(remainingSeconds / 60))} of focus left to release{' '}
-              {item.appName}.
+              {formatMinutes(Math.ceil(remainingSeconds / 60))} of focus left to release {appsLabel}.
             </Text>
           </View>
           <CourtButton
@@ -108,12 +116,12 @@ export function CaseCard({
 
       {item.verdict === 'served' ? (
         <Text style={styles.hint}>
-          {item.appName} is released. You served {formatMinutes(item.requiredFocusMinutes)} of focus.
+          Released. You served {formatMinutes(item.requiredFocusMinutes)} of focus.
         </Text>
       ) : null}
 
       {item.verdict === 'dismissed' ? (
-        <Text style={styles.hint}>Case dismissed. {item.appName} was never locked.</Text>
+        <Text style={styles.hint}>Case dismissed. Nothing was locked.</Text>
       ) : null}
     </CourtCard>
   );
@@ -139,11 +147,22 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
     marginTop: 10,
   },
-  app: {
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 4,
+  },
+  law: {
     color: colors.blue,
     fontSize: 13,
     fontWeight: '600',
-    marginTop: 3,
+  },
+  source: {
+    color: colors.labelTertiary,
+    fontSize: 12,
+    fontWeight: '500',
   },
   evidence: {
     color: colors.labelSecondary,

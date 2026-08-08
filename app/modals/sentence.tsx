@@ -35,7 +35,7 @@ export default function SentenceModal() {
               <Text style={styles.title}>{formatMinutes(minutes)}</Text>
               <Text style={styles.copy}>
                 {item
-                  ? `${item.appName} locks until you serve ${formatMinutes(minutes)} of focus. Nothing else is affected.`
+                  ? `Your court-ordered apps lock until you serve ${formatMinutes(minutes)} of focus under ${item.lawName}.`
                   : 'No case is waiting for a verdict.'}
               </Text>
             </View>

@@ -8,25 +8,31 @@ export function isCaseOpen(item: CourtCase) {
   return item.verdict === 'hearing' || item.verdict === 'jailed';
 }
 
-/** The case currently holding an app in custody, if any. */
-export function jailedCaseForApp(cases: CourtCase[], appId: string) {
-  return cases.find((item) => item.appId === appId && item.verdict === 'jailed');
+/** Every case currently holding the protected apps in custody. */
+export function jailedCases(cases: CourtCase[]) {
+  return cases.filter((item) => item.verdict === 'jailed');
 }
 
-/** Every app held by an active jail verdict. */
-export function jailedAppIds(cases: CourtCase[]) {
-  return Array.from(
-    new Set(cases.filter((item) => item.verdict === 'jailed').map((item) => item.appId)),
-  );
+/** The case to serve first — the one with the least focus time left. */
+export function primaryJailedCase(cases: CourtCase[]) {
+  return jailedCases(cases).sort(
+    (a, b) => caseFocusRemainingSeconds(a) - caseFocusRemainingSeconds(b),
+  )[0];
 }
 
 /**
- * Whether an app is locked right now.
+ * Whether the protected apps are locked right now. A jail verdict shields the
+ * whole selection, because iOS reports a limit breach without naming the app.
  * Enforcement being off unlocks everything, whatever the docket says.
  */
-export function isAppLocked(cases: CourtCase[], appId: string, enforcementEnabled: boolean) {
+export function appsLocked(cases: CourtCase[], enforcementEnabled: boolean) {
   if (!enforcementEnabled) return false;
-  return Boolean(jailedCaseForApp(cases, appId));
+  return jailedCases(cases).length > 0;
+}
+
+/** Total focus seconds owed across every open jail verdict. */
+export function totalFocusOwedSeconds(cases: CourtCase[]) {
+  return jailedCases(cases).reduce((sum, item) => sum + caseFocusRemainingSeconds(item), 0);
 }
 
 /** Focus seconds still owed before a jailed case is served. */

@@ -103,7 +103,7 @@ export default function ChargesFiledModal() {
               <Text style={styles.quoteLabel}>PROSECUTOR</Text>
               <Text style={styles.quoteLine}>
                 {law?.prosecutorLine ??
-                  `${courtCase?.appName ?? 'The app'} was opened with suspicious confidence.`}
+                  'The protected apps were opened with suspicious confidence.'}
               </Text>
             </View>
             <AssetImage assetKey="ASSET_GUILTY_STAMP" width={60} height={60} />

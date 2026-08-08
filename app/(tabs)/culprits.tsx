@@ -19,38 +19,34 @@ import { AssetImage } from '@/src/components/AssetImage';
 import { CourtBackground } from '@/src/components/CourtBackground';
 import { CourtButton } from '@/src/components/CourtButton';
 import { CourtCard } from '@/src/components/CourtCard';
-import { DistractionsSection } from '@/src/components/DistractionsSection';
+import { ProtectedAppsCard } from '@/src/components/ProtectedAppsCard';
 import { ScreenHeader } from '@/src/components/ScreenHeader';
 import { StampBadge } from '@/src/components/StampBadge';
 import { colors, radius, shadows } from '@/src/constants/theme';
+import { syncPolicyToNative } from '@/src/services/screenTime/BlockingBridge';
 import { useCourtStore } from '@/src/store/useCourtStore';
 import { usePremiumStore } from '@/src/store/usePremiumStore';
-import { jailedAppIds } from '@/src/utils/docket';
+import { jailedCases } from '@/src/utils/docket';
 import { describesSchedule } from '@/src/utils/lawPolicy';
-import type { AppSuspect, FocusLaw } from '@/src/types/court';
+import type { FocusLaw } from '@/src/types/court';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-// Two cards per row with padding and gap
-const LAW_CARD_WIDTH = (SCREEN_WIDTH - 32 - 10) / 2;
-
-// ─── Carousel constants ───────────────────────────────────────────────────────
 const CAROUSEL_H_PAD = 20;
 const CAROUSEL_CARD_WIDTH = SCREEN_WIDTH - CAROUSEL_H_PAD * 2;
 const MAX_CAROUSEL_LAWS = 5;
 
 const categoryAccent: Record<string, string> = {
   shortVideo: colors.red,
-  social:     colors.blue,
-  video:      colors.purple,
-  game:       colors.green,
-  shopping:   colors.orange,
-  dating:     colors.pink,
-  news:       colors.teal,
-  custom:     colors.indigo,
-  all:        colors.blue,
+  social: colors.blue,
+  video: colors.purple,
+  game: colors.green,
+  shopping: colors.orange,
+  dating: colors.pink,
+  news: colors.teal,
+  custom: colors.indigo,
+  all: colors.blue,
 };
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
 function getEnforcementColor(mode?: string) {
   if (mode === 'hardBlock') return colors.red;
   if (mode === 'focusSession') return colors.blue;
@@ -66,182 +62,9 @@ function getEnforcementLabel(mode?: string) {
 }
 
 function getScheduleText(law: FocusLaw) {
-  if (law.blockedStart && law.blockedEnd) {
-    return `${law.blockedStart} – ${law.blockedEnd}`;
-  }
+  if (law.blockedStart && law.blockedEnd) return `${law.blockedStart} – ${law.blockedEnd}`;
   return describesSchedule(law);
 }
-
-function getBlockingText(law: FocusLaw, suspects: AppSuspect[]) {
-  if (law.category === 'all') return 'All apps';
-  if (law.appIds && law.appIds.length > 0) {
-    const names = law.appIds
-      .map((id) => suspects.find((s) => s.id === id)?.displayName)
-      .filter(Boolean)
-      .slice(0, 2)
-      .join(', ');
-    return names || law.category;
-  }
-  return law.category;
-}
-
-
-// ─── Law Grid Card (compact, 2-up) ───────────────────────────────────────────
-function FocusLawCard({
-  law,
-  suspects,
-  locked,
-  onToggle,
-  onPress,
-}: {
-  law: FocusLaw;
-  suspects: AppSuspect[];
-  locked: boolean;
-  onToggle: () => void;
-  onPress: () => void;
-}) {
-  const enforcementColor = getEnforcementColor(law.enforcementMode);
-  const blockingText = getBlockingText(law, suspects);
-
-  return (
-    <Pressable onPress={onPress} style={{ width: LAW_CARD_WIDTH }}>
-      <View style={[lawCardStyles.card, law.isEnabled && lawCardStyles.cardActive]}>
-        {/* Top: icon + toggle */}
-        <View style={lawCardStyles.topRow}>
-          <View style={lawCardStyles.iconWrap}>
-            <AssetImage assetKey={law.assetKey} width={36} height={36} />
-          </View>
-          <Switch
-            value={law.isEnabled}
-            onValueChange={onToggle}
-            thumbColor={colors.white}
-            trackColor={{ true: colors.blue, false: 'rgba(120,120,128,0.22)' }}
-            ios_backgroundColor="rgba(120,120,128,0.22)"
-            style={lawCardStyles.switch}
-          />
-        </View>
-
-        {/* Name */}
-        <Text style={lawCardStyles.lawName} numberOfLines={2}>{law.name}</Text>
-
-        {/* Enforcement pill */}
-        <View style={[lawCardStyles.enforcePill, { backgroundColor: `${enforcementColor}18`, borderColor: `${enforcementColor}36` }]}>
-          <Text style={[lawCardStyles.enforceText, { color: enforcementColor }]} numberOfLines={1}>
-            {getEnforcementLabel(law.enforcementMode)}
-          </Text>
-        </View>
-
-        {/* Apps line */}
-        <Text style={lawCardStyles.appsLine} numberOfLines={1}>{blockingText}</Text>
-
-        {locked && (
-          <View style={lawCardStyles.lockOverlay}>
-            <StampBadge label="Pro only" tone="purple" />
-          </View>
-        )}
-      </View>
-    </Pressable>
-  );
-}
-
-
-const lawCardStyles = StyleSheet.create({
-  card: {
-    borderRadius: radius.xl,
-    backgroundColor: colors.surface,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    borderBottomWidth: 4,
-    borderBottomColor: colors.depthEdge,
-    padding: 12,
-    gap: 6,
-    minHeight: 148,
-    ...shadows.soft,
-  },
-  cardActive: {
-    backgroundColor: '#FBFCFF',
-    borderColor: '#C9D7F7',
-    borderBottomColor: '#B9C8EF',
-  },
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  iconWrap: {
-    width: 40, height: 40,
-    borderRadius: 12,
-    backgroundColor: colors.surfaceMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  switch: { transform: [{ scaleX: 0.82 }, { scaleY: 0.82 }] },
-  lawName: {
-    color: colors.label,
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: -0.2,
-    lineHeight: 17,
-  },
-  enforcePill: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-  },
-  enforceText: { fontSize: 10, fontWeight: '700', letterSpacing: 0.1 },
-  appsLine: {
-    color: colors.labelSecondary,
-    fontSize: 11,
-    fontWeight: '500',
-    letterSpacing: -0.1,
-  },
-  lockOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255,255,255,0.78)',
-    borderRadius: radius.xl,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-  },
-});
-
-
-// ─── Add Law Card (compact, matches grid) ────────────────────────────────────
-function AddLawCard({ onPress }: { onPress: () => void }) {
-  return (
-    <Pressable onPress={onPress} style={{ width: LAW_CARD_WIDTH }}>
-      <View style={addCardStyles.card}>
-        <View style={addCardStyles.content}>
-          <Text style={addCardStyles.label}>New Law</Text>
-          <Text style={addCardStyles.sub}>Custom rule</Text>
-        </View>
-      </View>
-    </Pressable>
-  );
-}
-
-const addCardStyles = StyleSheet.create({
-  card: {
-    minHeight: 148,
-    borderRadius: radius.xl,
-    backgroundColor: colors.surface,
-    borderWidth: 1.5,
-    borderColor: '#C9D7F7',
-    borderBottomWidth: 4,
-    borderBottomColor: '#B9C8EF',
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.soft,
-  },
-  content: { alignItems: 'center', gap: 6 },
-  label: { color: colors.blue, fontSize: 15, fontWeight: '700', letterSpacing: -0.2 },
-  sub: { color: colors.labelSecondary, fontSize: 11, fontWeight: '500' },
-});
-
 
 // ─── Carousel Law Card ────────────────────────────────────────────────────────
 function CarouselLawCard({
@@ -258,12 +81,15 @@ function CarouselLawCard({
   const accent = categoryAccent[law.category] ?? colors.blue;
 
   return (
-    <Pressable onPress={onPress} style={carouselStyles.cardWrap}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${law.name}, ${law.isEnabled ? 'active' : 'off'}. Tap to edit.`}
+      onPress={onPress}
+      style={carouselStyles.cardWrap}
+    >
       <View style={carouselStyles.card}>
-        {/* Accent top bar */}
         <View style={[carouselStyles.accentBar, { backgroundColor: accent }]} />
 
-        {/* Header: icon + badges + toggle */}
         <View style={carouselStyles.cardHeader}>
           <AssetImage assetKey={law.assetKey} width={60} height={60} />
           <View style={carouselStyles.cardHeaderRight}>
@@ -278,6 +104,9 @@ function CarouselLawCard({
               />
             </View>
             <Pressable
+              accessibilityRole="switch"
+              accessibilityState={{ checked: law.isEnabled }}
+              accessibilityLabel={`${law.isEnabled ? 'Disable' : 'Enable'} ${law.name}`}
               onPress={onToggle}
               style={[carouselStyles.togglePill, law.isEnabled && { backgroundColor: accent }]}
             >
@@ -289,28 +118,24 @@ function CarouselLawCard({
           </View>
         </View>
 
-        {/* Divider */}
         <View style={[carouselStyles.divider, { backgroundColor: accent + '40' }]} />
 
-        {/* Name + description */}
         <Text style={carouselStyles.lawName}>{law.name}</Text>
         <Text style={carouselStyles.lawDesc} numberOfLines={2}>{law.description}</Text>
 
-        {/* Judge quote */}
         <View style={[carouselStyles.quoteBox, { borderLeftColor: accent }]}>
           <Text style={carouselStyles.quoteText} numberOfLines={2}>"{law.judgeLine}"</Text>
         </View>
 
-        {/* Footer */}
         <View style={carouselStyles.footer}>
-          <Text style={carouselStyles.footerLabel}>SENTENCE</Text>
+          <Text style={carouselStyles.footerLabel}>FOCUS OWED</Text>
           <Text style={[carouselStyles.footerValue, { color: accent }]}>
             {law.firstPunishmentMinutes}–{law.maxSentenceMinutes ?? 45} min
           </Text>
           <View style={carouselStyles.footerSpacer} />
-          <Text style={carouselStyles.footerLabel}>TRIGGER</Text>
+          <Text style={carouselStyles.footerLabel}>LIMIT</Text>
           <Text style={[carouselStyles.footerValue, { color: accent }]}>
-            {law.trigger ?? 'appLaunch'}
+            {law.dailyLimitMinutes ? `${law.dailyLimitMinutes} min` : getScheduleText(law)}
           </Text>
         </View>
       </View>
@@ -319,9 +144,7 @@ function CarouselLawCard({
 }
 
 const carouselStyles = StyleSheet.create({
-  cardWrap: {
-    width: CAROUSEL_CARD_WIDTH,
-  },
+  cardWrap: { width: CAROUSEL_CARD_WIDTH },
   card: {
     borderRadius: radius.xl,
     backgroundColor: colors.surface,
@@ -334,92 +157,41 @@ const carouselStyles = StyleSheet.create({
     gap: 12,
     ...shadows.card,
   },
-  accentBar: {
-    position: 'absolute',
-    top: 0, left: 0, right: 0,
-    height: 3,
-    opacity: 0.85,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 14,
-    paddingTop: 6,
-  },
-  cardHeaderRight: {
-    flex: 1,
-    gap: 10,
-  },
-  badges: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
+  accentBar: { position: 'absolute', top: 0, left: 0, right: 0, height: 3, opacity: 0.85 },
+  cardHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 14, paddingTop: 6 },
+  cardHeaderRight: { flex: 1, gap: 10 },
+  badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   togglePill: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
     gap: 6,
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 8,
+    minHeight: 34,
     borderRadius: radius.pill,
-    backgroundColor: 'rgba(120,120,128,0.18)',
+    backgroundColor: colors.surfaceMuted,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  toggleDot: {
-    width: 8, height: 8, borderRadius: 4,
-    backgroundColor: colors.labelTertiary,
-  },
+  toggleDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.labelTertiary },
   toggleDotOn: { backgroundColor: colors.white },
-  toggleText: {
-    fontSize: 12, fontWeight: '700', letterSpacing: 0.4,
-    color: colors.labelSecondary,
-  },
+  toggleText: { fontSize: 12, fontWeight: '700', letterSpacing: 0.4, color: colors.labelSecondary },
   toggleTextOn: { color: colors.white },
   divider: { height: 1, borderRadius: 1 },
-  lawName: {
-    color: colors.label,
-    fontSize: 20,
-    fontWeight: '700',
-    letterSpacing: -0.4,
-    lineHeight: 25,
-  },
-  lawDesc: {
-    color: colors.labelSecondary,
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  quoteBox: {
-    borderLeftWidth: 3,
-    paddingLeft: 10,
-    paddingVertical: 2,
-  },
-  quoteText: {
-    color: colors.labelSecondary,
-    fontSize: 13,
-    fontStyle: 'italic',
-    lineHeight: 18,
-  },
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingTop: 2,
-  },
+  lawName: { color: colors.label, fontSize: 20, fontWeight: '700', letterSpacing: -0.4, lineHeight: 25 },
+  lawDesc: { color: colors.labelSecondary, fontSize: 14, lineHeight: 20 },
+  quoteBox: { borderLeftWidth: 3, paddingLeft: 10, paddingVertical: 2 },
+  quoteText: { color: colors.labelSecondary, fontSize: 13, fontStyle: 'italic', lineHeight: 18 },
+  footer: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingTop: 2 },
   footerSpacer: { flex: 1 },
-  footerLabel: {
-    color: colors.labelTertiary,
-    fontSize: 10, fontWeight: '700', letterSpacing: 0.6,
-  },
-  footerValue: {
-    fontSize: 12, fontWeight: '700', letterSpacing: -0.1,
-  },
+  footerLabel: { color: colors.labelTertiary, fontSize: 10, fontWeight: '700', letterSpacing: 0.6 },
+  footerValue: { fontSize: 12, fontWeight: '700', letterSpacing: -0.1 },
 });
-
 
 // ─── Law Detail Sheet ─────────────────────────────────────────────────────────
 function LawDetailSheet({
   law,
-  suspects,
   isPro,
   visible,
   onClose,
@@ -427,7 +199,6 @@ function LawDetailSheet({
   onSave,
 }: {
   law: FocusLaw | null;
-  suspects: AppSuspect[];
   isPro: boolean;
   visible: boolean;
   onClose: () => void;
@@ -437,7 +208,6 @@ function LawDetailSheet({
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [dailyLimit, setDailyLimit] = useState(30);
-  const [selectedAppIds, setSelectedAppIds] = useState<string[]>([]);
   const [syncedId, setSyncedId] = useState<string | null>(null);
 
   if (law && law.id !== syncedId) {
@@ -445,7 +215,6 @@ function LawDetailSheet({
     setName(law.name);
     setDescription(law.description);
     setDailyLimit(law.dailyLimitMinutes ?? 30);
-    setSelectedAppIds([...(law.appIds ?? [])]);
   }
 
   if (!law) return null;
@@ -457,15 +226,8 @@ function LawDetailSheet({
       name: name.trim() || law.name,
       description: description.trim() || law.description,
       dailyLimitMinutes: dailyLimit,
-      appIds: selectedAppIds,
     });
     onClose();
-  };
-
-  const toggleApp = (appId: string) => {
-    setSelectedAppIds((prev) =>
-      prev.includes(appId) ? prev.filter((id) => id !== appId) : [...prev, appId],
-    );
   };
 
   return (
@@ -473,7 +235,7 @@ function LawDetailSheet({
       <View style={sheetStyles.root}>
         <View style={sheetStyles.inner}>
           <View style={sheetStyles.handle} />
-          {/* Header */}
+
           <View style={sheetStyles.header}>
             <View style={sheetStyles.headerLeft}>
               <View style={sheetStyles.headerIcon}>
@@ -492,10 +254,12 @@ function LawDetailSheet({
               ios_backgroundColor="rgba(120,120,128,0.22)"
             />
           </View>
-          {/* Status badges */}
+
           <View style={sheetStyles.badgeRow}>
             <View style={[sheetStyles.badge, { backgroundColor: `${enforcementColor}18`, borderColor: `${enforcementColor}36` }]}>
-              <Text style={[sheetStyles.badgeText, { color: enforcementColor }]}>{getEnforcementLabel(law.enforcementMode)}</Text>
+              <Text style={[sheetStyles.badgeText, { color: enforcementColor }]}>
+                {getEnforcementLabel(law.enforcementMode)}
+              </Text>
             </View>
             <View style={sheetStyles.badge}>
               <Text style={sheetStyles.badgeText}>Trigger: {law.trigger ?? 'appLaunch'}</Text>
@@ -506,8 +270,8 @@ function LawDetailSheet({
               </View>
             ) : null}
           </View>
+
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={sheetStyles.scroll}>
-            {/* Name */}
             <View style={sheetStyles.section}>
               <Text style={sheetStyles.sectionLabel}>LAW NAME</Text>
               <TextInput
@@ -516,10 +280,10 @@ function LawDetailSheet({
                 onChangeText={setName}
                 editable={canEdit}
                 placeholder={law.name}
-                placeholderTextColor={colors.muted}
+                placeholderTextColor={colors.labelTertiary}
               />
             </View>
-            {/* Description */}
+
             <View style={sheetStyles.section}>
               <Text style={sheetStyles.sectionLabel}>DESCRIPTION</Text>
               <TextInput
@@ -529,54 +293,53 @@ function LawDetailSheet({
                 editable={canEdit}
                 multiline
                 placeholder={law.description}
-                placeholderTextColor={colors.muted}
+                placeholderTextColor={colors.labelTertiary}
                 textAlignVertical="top"
               />
             </View>
-            {/* Daily limit */}
+
             <View style={sheetStyles.section}>
               <Text style={sheetStyles.sectionLabel}>DAILY LIMIT</Text>
+              <Text style={sheetStyles.sectionSub}>
+                The strictest active limit is the one iOS enforces on your selection.
+              </Text>
               <View style={sheetStyles.stepper}>
                 <Text style={sheetStyles.stepperValue}>{dailyLimit} min</Text>
                 <View style={sheetStyles.stepperBtns}>
-                  <Pressable style={[sheetStyles.stepBtn, !canEdit && sheetStyles.stepBtnDisabled]} onPress={() => canEdit && setDailyLimit((v) => Math.max(5, v - 5))}>
-                    <Text style={sheetStyles.stepBtnText}>−</Text>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Decrease daily limit by 5 minutes"
+                    style={[sheetStyles.stepBtn, !canEdit && sheetStyles.stepBtnDisabled]}
+                    onPress={() => canEdit && setDailyLimit((v) => Math.max(5, v - 5))}
+                  >
+                    <Text style={sheetStyles.stepBtnText}>Less</Text>
                   </Pressable>
-                  <Pressable style={[sheetStyles.stepBtn, !canEdit && sheetStyles.stepBtnDisabled]} onPress={() => canEdit && setDailyLimit((v) => Math.min(360, v + 5))}>
-                    <Text style={sheetStyles.stepBtnText}>+</Text>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Increase daily limit by 5 minutes"
+                    style={[sheetStyles.stepBtn, !canEdit && sheetStyles.stepBtnDisabled]}
+                    onPress={() => canEdit && setDailyLimit((v) => Math.min(360, v + 5))}
+                  >
+                    <Text style={sheetStyles.stepBtnText}>More</Text>
                   </Pressable>
                 </View>
               </View>
             </View>
-            {/* App selector */}
+
             <View style={sheetStyles.section}>
-              <Text style={sheetStyles.sectionLabel}>APPS GOVERNED BY THIS LAW</Text>
+              <Text style={sheetStyles.sectionLabel}>WHAT THIS LAW GOVERNS</Text>
               <Text style={sheetStyles.sectionSub}>
-                {law.category === 'all' ? 'Applies to all apps.' : selectedAppIds.length === 0 ? 'No apps assigned. Tap to add.' : `${selectedAppIds.length} app${selectedAppIds.length > 1 ? 's' : ''} selected`}
+                Every app in your court-ordered selection. iOS reports that the limit broke without
+                naming which app did it, so laws apply to the whole selection.
               </Text>
-              <View style={sheetStyles.appGrid}>
-                {suspects.map((suspect) => {
-                  const isSelected = selectedAppIds.includes(suspect.id);
-                  return (
-                    <Pressable key={suspect.id} onPress={() => canEdit && toggleApp(suspect.id)}
-                      style={[sheetStyles.appChip, isSelected && sheetStyles.appChipSelected]}>
-                      <View style={[sheetStyles.appDot, { backgroundColor: suspect.iconColor }]}>
-                        <Text style={sheetStyles.appDotText}>{suspect.displayName.slice(0, 1)}</Text>
-                      </View>
-                      <Text style={[sheetStyles.appChipLabel, isSelected && sheetStyles.appChipLabelSelected]} numberOfLines={1}>
-                        {suspect.displayName}
-                      </Text>
-                      {isSelected && <Text style={sheetStyles.appCheckmark}>On</Text>}
-                    </Pressable>
-                  );
-                })}
-              </View>
             </View>
-            {/* Info stats */}
+
             <View style={sheetStyles.infoGrid}>
               <View style={sheetStyles.infoCell}>
-                <Text style={sheetStyles.infoCellLabel}>SENTENCE</Text>
-                <Text style={sheetStyles.infoCellValue}>{law.firstPunishmentMinutes}–{law.maxSentenceMinutes} min</Text>
+                <Text style={sheetStyles.infoCellLabel}>FOCUS OWED</Text>
+                <Text style={sheetStyles.infoCellValue}>
+                  {law.firstPunishmentMinutes}–{law.maxSentenceMinutes} min
+                </Text>
               </View>
               <View style={sheetStyles.infoCellDivider} />
               <View style={sheetStyles.infoCell}>
@@ -589,15 +352,21 @@ function LawDetailSheet({
                 <Text style={sheetStyles.infoCellValue}>×{law.repeatMultiplier}</Text>
               </View>
             </View>
+
             {!canEdit && (
               <View style={sheetStyles.proGate}>
-                <Text style={sheetStyles.proGateText}>Editing requires Supreme Court Mode (Pro)</Text>
+                <Text style={sheetStyles.proGateText}>
+                  Editing requires Supreme Court Mode (Pro)
+                </Text>
               </View>
             )}
+
             <View style={sheetStyles.actions}>
-              {canEdit
-                ? <CourtButton title="Save Changes" variant="primary" onPress={handleSave} />
-                : <CourtButton title="Upgrade to Edit" variant="gold" onPress={onClose} />}
+              {canEdit ? (
+                <CourtButton title="Save Changes" variant="primary" onPress={handleSave} />
+              ) : (
+                <CourtButton title="Upgrade to Edit" variant="purple" onPress={onClose} />
+              )}
               <CourtButton title="Close" variant="ghost" onPress={onClose} />
             </View>
           </ScrollView>
@@ -606,222 +375,140 @@ function LawDetailSheet({
     </Modal>
   );
 }
+
 const sheetStyles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   inner: { flex: 1, paddingTop: 12 },
   handle: {
-    width: 36, height: 5, borderRadius: 3,
-    backgroundColor: 'rgba(60,60,67,0.2)',
-    alignSelf: 'center', marginBottom: 12,
+    width: 36,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: colors.borderStrong,
+    alignSelf: 'center',
+    marginBottom: 12,
   },
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingBottom: 12,
   },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
   headerIcon: {
-    width: 52, height: 52, borderRadius: 14,
-    backgroundColor: 'rgba(0,122,255,0.08)',
-    alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: colors.surfaceMuted,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
   },
   headerText: { flex: 1, gap: 2 },
   headerEyebrow: { color: colors.blue, fontSize: 10, fontWeight: '700', letterSpacing: 0.6 },
   headerTitle: { color: colors.label, fontSize: 20, fontWeight: '700', letterSpacing: -0.3 },
-  badgeRow: {
-    flexDirection: 'row', flexWrap: 'wrap', gap: 8,
-    paddingHorizontal: 20, paddingBottom: 14,
-  },
+  badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 20, paddingBottom: 14 },
   badge: {
-    paddingHorizontal: 10, paddingVertical: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: radius.pill,
-    backgroundColor: 'rgba(120,120,128,0.1)',
-    borderWidth: 1, borderColor: 'rgba(120,120,128,0.15)',
+    backgroundColor: colors.surfaceMuted,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   badgeText: { color: colors.labelSecondary, fontSize: 11, fontWeight: '600' },
   scroll: { paddingHorizontal: 20, paddingBottom: 48, gap: 20 },
   section: { gap: 8 },
   sectionLabel: { color: colors.labelTertiary, fontSize: 11, fontWeight: '700', letterSpacing: 0.6 },
-  sectionSub: { color: colors.labelSecondary, fontSize: 13, fontWeight: '400', marginTop: -4 },
+  sectionSub: { color: colors.labelSecondary, fontSize: 13, lineHeight: 19, fontWeight: '400', marginTop: -4 },
   input: {
-    minHeight: 46, paddingHorizontal: 14, paddingVertical: 11,
+    minHeight: 46,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
     borderRadius: radius.md,
-    backgroundColor: 'rgba(120,120,128,0.08)',
-    borderWidth: 1, borderColor: 'rgba(120,120,128,0.14)',
-    color: colors.label, fontSize: 15, fontWeight: '500',
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    color: colors.label,
+    fontSize: 15,
+    fontWeight: '500',
   },
   textArea: { minHeight: 80, textAlignVertical: 'top' },
-  inputDisabled: { opacity: 0.5 },
+  inputDisabled: { opacity: 0.5, backgroundColor: colors.surfaceMuted },
   stepper: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 14, paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     borderRadius: radius.md,
-    backgroundColor: 'rgba(120,120,128,0.08)',
-    borderWidth: 1, borderColor: 'rgba(120,120,128,0.14)',
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.border,
   },
-  stepperValue: { color: colors.label, fontSize: 16, fontWeight: '600' },
-  stepperBtns: { flexDirection: 'row', gap: 10 },
+  stepperValue: { color: colors.label, fontSize: 17, fontWeight: '700' },
+  stepperBtns: { flexDirection: 'row', gap: 8 },
   stepBtn: {
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: colors.blue,
-    alignItems: 'center', justifyContent: 'center',
+    minHeight: 38,
+    paddingHorizontal: 14,
+    borderRadius: radius.sm,
+    backgroundColor: colors.blueLight,
+    borderWidth: 1,
+    borderColor: '#D5E0F8',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   stepBtnDisabled: { opacity: 0.4 },
-  stepBtnText: { color: colors.white, fontSize: 20, fontWeight: '400', lineHeight: 22 },
-  appGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  appChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingHorizontal: 10, paddingVertical: 7,
-    borderRadius: radius.pill,
-    backgroundColor: 'rgba(120,120,128,0.08)',
-    borderWidth: 1, borderColor: 'rgba(120,120,128,0.15)',
-  },
-  appChipSelected: { backgroundColor: 'rgba(0,122,255,0.1)', borderColor: 'rgba(0,122,255,0.3)' },
-  appDot: { width: 22, height: 22, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
-  appDotText: { color: colors.white, fontSize: 11, fontWeight: '700' },
-  appChipLabel: { color: colors.labelSecondary, fontSize: 13, fontWeight: '500', maxWidth: 100 },
-  appChipLabelSelected: { color: colors.blue, fontWeight: '600' },
-  appCheckmark: { color: colors.blue, fontSize: 12, fontWeight: '700' },
+  stepBtnText: { color: colors.blue, fontSize: 13, fontWeight: '700' },
   infoGrid: {
-    flexDirection: 'row', alignItems: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
     borderRadius: radius.md,
-    backgroundColor: 'rgba(120,120,128,0.07)',
-    borderWidth: 1, borderColor: 'rgba(120,120,128,0.12)',
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.border,
     overflow: 'hidden',
   },
   infoCell: { flex: 1, alignItems: 'center', paddingVertical: 14, gap: 4 },
-  infoCellDivider: { width: 1, height: 36, backgroundColor: 'rgba(120,120,128,0.15)' },
+  infoCellDivider: { width: 1, height: 36, backgroundColor: colors.border },
   infoCellLabel: { color: colors.labelTertiary, fontSize: 10, fontWeight: '700', letterSpacing: 0.4 },
   infoCellValue: { color: colors.label, fontSize: 15, fontWeight: '700', letterSpacing: -0.2 },
   proGate: {
-    paddingHorizontal: 16, paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderRadius: radius.md,
-    backgroundColor: 'rgba(175,82,222,0.08)',
-    borderWidth: 1, borderColor: 'rgba(175,82,222,0.2)',
+    backgroundColor: colors.purpleLight,
+    borderWidth: 1,
+    borderColor: '#DED6F1',
   },
-  proGateText: { color: colors.purple, fontSize: 13, fontWeight: '600', textAlign: 'center' },
+  proGateText: { color: colors.indigo, fontSize: 13, fontWeight: '600', textAlign: 'center' },
   actions: { gap: 10, paddingTop: 4 },
 });
-
-
-function SuspectRow({
-  suspect, onToggle, onTimerChange, isPro,
-}: {
-  suspect: AppSuspect;
-  onToggle: () => void;
-  onTimerChange: (minutes: number) => void;
-  isPro: boolean;
-}) {
-  const [editing, setEditing] = useState(false);
-  const [draftMinutes, setDraftMinutes] = useState(String(suspect.dailyUsageMinutes || 30));
-  const locked = suspect.isPremium && !isPro;
-
-  const commitTimer = () => {
-    const val = parseInt(draftMinutes, 10);
-    if (!isNaN(val) && val > 0) onTimerChange(val);
-    setEditing(false);
-  };
-
-  return (
-    <View style={[styles.suspectRow, suspect.isSelected && styles.suspectRowSelected]}>
-      <View style={[styles.suspectIcon, { backgroundColor: suspect.iconColor }]}>
-        <Text style={styles.suspectIconText}>{suspect.displayName.slice(0, 1)}</Text>
-      </View>
-      <View style={styles.suspectInfo}>
-        <Text style={styles.suspectName}>{suspect.displayName}</Text>
-        <Text style={styles.suspectVillain}>{suspect.villainName}</Text>
-        {suspect.isSelected && (
-          <View style={styles.timerRow}>
-            <Text style={styles.timerLabel}>Daily limit:</Text>
-            {editing ? (
-              <TextInput
-                style={styles.timerInput}
-                value={draftMinutes}
-                onChangeText={setDraftMinutes}
-                keyboardType="numeric"
-                autoFocus
-                onBlur={commitTimer}
-                onSubmitEditing={commitTimer}
-                returnKeyType="done"
-                maxLength={4}
-              />
-            ) : (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Daily limit ${draftMinutes} minutes, tap to edit`}
-                onPress={() => { if (!locked) setEditing(true); }}
-                style={styles.timerPill}
-              >
-                <Text style={styles.timerPillText}>{draftMinutes} min</Text>
-                {!locked && <Text style={styles.timerEditHint}>Edit</Text>}
-              </Pressable>
-            )}
-          </View>
-        )}
-      </View>
-      <View style={styles.suspectActions}>
-        {locked ? <StampBadge label="Pro" tone="purple" /> : null}
-        <Switch
-          value={suspect.isSelected}
-          onValueChange={onToggle}
-          thumbColor={colors.white}
-          trackColor={{ true: colors.blue, false: 'rgba(120,120,128,0.22)' }}
-          ios_backgroundColor="rgba(120,120,128,0.22)"
-        />
-      </View>
-    </View>
-  );
-}
-
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
 export default function CulpritsTab() {
   const router = useRouter();
-  const suspects = useCourtStore((state) => state.suspects);
   const laws = useCourtStore((state) => state.laws);
-  const toggleSuspect = useCourtStore((state) => state.toggleSuspect);
   const updateLaw = useCourtStore((state) => state.updateLaw);
   const toggleLaw = useCourtStore((state) => state.toggleLaw);
   const enforcementEnabled = useCourtStore((state) => state.enforcementEnabled);
   const setEnforcementEnabled = useCourtStore((state) => state.setEnforcementEnabled);
-  const jailedCount = useCourtStore((state) => jailedAppIds(state.cases).length);
+  const lockedCount = useCourtStore((state) => jailedCases(state.cases).length);
   const isPro = usePremiumStore((state) => state.isPro);
 
   const [selectedLaw, setSelectedLaw] = useState<FocusLaw | null>(null);
   const [sheetVisible, setSheetVisible] = useState(false);
 
-  // Carousel state
   const flatRef = useRef<FlatList<FocusLaw>>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const selectedCount = suspects.filter((s) => s.isSelected).length;
   const enabledLawsCount = laws.filter((l) => l.isEnabled).length;
-
-  // Enabled laws first, then disabled, max 5
   const carouselLaws = [
     ...laws.filter((l) => l.isEnabled),
     ...laws.filter((l) => !l.isEnabled),
   ].slice(0, MAX_CAROUSEL_LAWS);
-
-  const handleToggleSuspect = (id: string) => {
-    const result = toggleSuspect(id, isPro);
-    if (!result.allowed) {
-      Alert.alert(
-        'Pro Required',
-        result.reason ?? 'Upgrade to add more suspects.',
-        [
-          { text: 'Upgrade', onPress: () => router.push('/modals/paywall') },
-          { text: 'Cancel', style: 'cancel' },
-        ],
-      );
-    }
-  };
-
-  const handleTimerChange = (suspect: AppSuspect, minutes: number) => {
-    const matchingLaw = laws.find(
-      (l) => l.category === suspect.category && l.trigger === 'dailyLimit',
-    );
-    if (matchingLaw) updateLaw(matchingLaw.id, { dailyLimitMinutes: minutes }, isPro);
-  };
 
   const handleLawToggle = (lawId: string, isPremium?: boolean) => {
     if (isPremium && !isPro) {
@@ -837,26 +524,28 @@ export default function CulpritsTab() {
         { text: 'Upgrade', onPress: () => router.push('/modals/paywall') },
         { text: 'OK', style: 'cancel' },
       ]);
+      return;
     }
-  };
-
-  const handleOpenSheet = (law: FocusLaw) => {
-    setSelectedLaw(law);
-    setSheetVisible(true);
+    // Laws drive the native daily-limit schedule.
+    syncPolicyToNative().catch(() => undefined);
   };
 
   const handleSaveLaw = (id: string, updates: Partial<FocusLaw>) => {
     const result = updateLaw(id, updates, isPro);
-    if (!result.allowed) router.push('/modals/paywall');
+    if (!result.allowed) {
+      router.push('/modals/paywall');
+      return;
+    }
+    syncPolicyToNative().catch(() => undefined);
   };
 
   return (
     <CourtBackground>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <ScreenHeader
-          eyebrow="SUSPECT LINEUP"
+          eyebrow="COURT AUTHORITY"
           title="Culprits"
-          subtitle="Set your focus laws and add the apps they govern."
+          subtitle="Choose the apps the court watches and the laws it enforces."
           assetKey="ASSET_SELECT_SUSPECTS_LINEUP"
         />
 
@@ -867,9 +556,9 @@ export default function CulpritsTab() {
               <Text style={styles.enforceTitle}>Court enforcement</Text>
               <Text style={styles.enforceCopy}>
                 {enforcementEnabled
-                  ? jailedCount > 0
-                    ? `On. ${jailedCount} app${jailedCount === 1 ? '' : 's'} in custody right now.`
-                    : 'On. The court files cases and locks apps when a law breaks.'
+                  ? lockedCount > 0
+                    ? 'On. Your apps are locked until focus time is served.'
+                    : 'On. The court files a case when a law breaks.'
                   : 'Off. Nothing locks and no case gets filed.'}
               </Text>
             </View>
@@ -883,24 +572,30 @@ export default function CulpritsTab() {
           </View>
         </CourtCard>
 
-        {/* ── Focus Laws Section ────────────────────────────────────── */}
+        {/* ── Real device apps, chosen through the system picker ────── */}
+        <ProtectedAppsCard />
+
+        {/* ── Focus Laws ────────────────────────────────────────────── */}
         <View style={styles.sectionHeaderRow}>
           <View style={styles.sectionHeaderLeft}>
-            <AssetImage assetKey="ASSET_LAW_BOOK_LIBRARY" width={32} height={32} />
-            <View>
-              <Text style={styles.sectionTitle}>Focus Laws</Text>
-              <Text style={styles.sectionCopy}>{enabledLawsCount} active · Tap to edit</Text>
-            </View>
+            <Text style={styles.sectionTitle}>Focus Laws</Text>
+            <Text style={styles.sectionCopy}>{enabledLawsCount} active · Tap to edit</Text>
           </View>
           <View style={styles.sectionHeaderRight}>
-            <Text style={styles.carouselCounter}>{activeIndex + 1} / {carouselLaws.length}</Text>
-            <Pressable onPress={() => router.push('/(tabs)/laws')} style={styles.seeAllBtn}>
+            <Text style={styles.carouselCounter}>
+              {activeIndex + 1} / {carouselLaws.length}
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="See all focus laws"
+              onPress={() => router.push('/(tabs)/laws')}
+              style={styles.seeAllBtn}
+            >
               <Text style={styles.seeAllText}>See All</Text>
             </Pressable>
           </View>
         </View>
 
-        {/* Horizontal law carousel */}
         <FlatList
           ref={flatRef}
           data={carouselLaws}
@@ -919,17 +614,21 @@ export default function CulpritsTab() {
               law={item}
               locked={!!item.isPremium && !isPro}
               onToggle={() => handleLawToggle(item.id, item.isPremium)}
-              onPress={() => handleOpenSheet(item)}
+              onPress={() => {
+                setSelectedLaw(item);
+                setSheetVisible(true);
+              }}
             />
           )}
         />
 
-        {/* Dot indicators */}
         <View style={styles.dots}>
-          {carouselLaws.map((_, i) => (
+          {carouselLaws.map((law, i) => (
             <Pressable
-              key={i}
-              hitSlop={8}
+              key={law.id}
+              accessibilityRole="button"
+              accessibilityLabel={`Go to law ${i + 1}`}
+              hitSlop={10}
               onPress={() => {
                 flatRef.current?.scrollToIndex({ index: i, animated: true });
                 setActiveIndex(i);
@@ -939,35 +638,10 @@ export default function CulpritsTab() {
             </Pressable>
           ))}
         </View>
-
-        {/* ── Distractions (Distracting / Always Allowed / Never Allowed) ── */}
-        <DistractionsSection />
-
-        {/* ── Real iOS Blocking ─────────────────────────────────────── */}
-        <CourtCard variant="blue">
-          <View style={styles.blockingRow}>
-            <AssetImage assetKey="ASSET_STRICT_MODE_LOCK" width={64} height={64} />
-            <View style={styles.blockingText}>
-              <Text style={styles.blockingTitle}>Real iOS Blocking</Text>
-              <Text style={styles.blockingCopy}>
-                Select installed apps. When your daily limit hits, iOS locks them with a jail
-                screen — even when JailTime is closed.
-              </Text>
-              <CourtButton
-                title="Select Apps to Block"
-                variant="primary"
-                small
-                onPress={() => router.push('/modals/select-apps')}
-              />
-            </View>
-          </View>
-        </CourtCard>
       </ScrollView>
 
-      {/* Law Detail Sheet */}
       <LawDetailSheet
         law={selectedLaw}
-        suspects={suspects}
         isPro={isPro}
         visible={sheetVisible}
         onClose={() => setSheetVisible(false)}
@@ -978,130 +652,38 @@ export default function CulpritsTab() {
   );
 }
 
-
 const styles = StyleSheet.create({
-  content: {
-    gap: 14,
-    paddingBottom: 110,
-  },
+  content: { gap: 14, paddingBottom: 110 },
 
-  // ── section header ──
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 2,
-  },
-  sectionHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  sectionHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  sectionTitle: { color: colors.label, fontSize: 18, fontWeight: '700', letterSpacing: -0.3 },
-  sectionCopy: { color: colors.labelSecondary, fontSize: 12, fontWeight: '500' },
-  carouselCounter: {
-    color: colors.labelTertiary,
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  seeAllBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: radius.pill,
-    backgroundColor: 'rgba(0,122,255,0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(0,122,255,0.16)',
-  },
-  seeAllText: { color: colors.blue, fontSize: 12, fontWeight: '600' },
-
-  // ── carousel dots ──
-  dots: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 6,
-  },
-  dot: {
-    width: 6, height: 6, borderRadius: 3,
-    backgroundColor: 'rgba(120,120,128,0.28)',
-  },
-  dotActive: {
-    width: 20, height: 6, borderRadius: 3,
-    backgroundColor: colors.blue,
-  },
-
-  // ── law grid (kept for reference, no longer rendered) ──
-  lawGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-
-  // ── header card ──
-  cardHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  cardHeaderText: { flex: 1, gap: 8 },
-  cardTitle: { color: colors.label, fontSize: 20, fontWeight: '700', letterSpacing: -0.3 },
-  cardCopy: { color: colors.labelSecondary, fontSize: 13, lineHeight: 18, fontWeight: '400' },
-
-  // ── suspect rows ──
-  suspectList: { gap: 10 },
-  suspectRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 14,
-    borderRadius: radius.xl,
-    backgroundColor: colors.surface,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    borderBottomWidth: 4,
-    borderBottomColor: colors.depthEdge,
-    ...shadows.soft,
-  },
-  suspectRowSelected: { backgroundColor: '#FBFCFF', borderColor: '#C9D7F7', borderBottomColor: '#B9C8EF' },
-  suspectIcon: {
-    width: 46, height: 46,
-    borderRadius: 14,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  suspectIconText: { color: colors.white, fontSize: 20, fontWeight: '700' },
-  suspectInfo: { flex: 1, gap: 3 },
-  suspectName: { color: colors.label, fontSize: 15, fontWeight: '600', letterSpacing: -0.2 },
-  suspectVillain: { color: colors.blue, fontSize: 12, fontWeight: '500' },
-  suspectActions: { alignItems: 'center', gap: 6 },
-
-  // ── timer ──
-  timerRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
-  timerLabel: { color: colors.labelSecondary, fontSize: 11, fontWeight: '500' },
-  timerPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10, paddingVertical: 4,
-    borderRadius: radius.pill,
-    backgroundColor: 'rgba(0,122,255,0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(0,122,255,0.22)',
-  },
-  timerPillText: { color: colors.blue, fontSize: 12, fontWeight: '600' },
-  timerEditHint: { color: colors.blue, fontSize: 11, fontWeight: '600', marginLeft: 6 },
-  timerInput: {
-    width: 72,
-    paddingHorizontal: 10, paddingVertical: 4,
-    borderRadius: radius.pill,
-    backgroundColor: 'rgba(0,122,255,0.08)',
-    borderWidth: 1,
-    borderColor: colors.blue,
-    color: colors.label,
-    fontSize: 13, fontWeight: '600',
-    textAlign: 'center',
-  },
-
-  // ── enforcement switch ──
   enforceRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   enforceText: { flex: 1, gap: 4 },
   enforceTitle: { color: colors.label, fontSize: 17, fontWeight: '700', letterSpacing: -0.3 },
   enforceCopy: { color: colors.labelSecondary, fontSize: 13, lineHeight: 18, fontWeight: '400' },
 
-  // ── blocking CTA ──
-  blockingRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  blockingText: { flex: 1, gap: 8 },
-  blockingTitle: { color: colors.label, fontSize: 17, fontWeight: '700', letterSpacing: -0.3 },
-  blockingCopy: { color: colors.labelSecondary, fontSize: 13, lineHeight: 18, fontWeight: '400' },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 2,
+    marginTop: 2,
+  },
+  sectionHeaderLeft: { gap: 2 },
+  sectionHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  sectionTitle: { color: colors.label, fontSize: 20, fontWeight: '700', letterSpacing: -0.3 },
+  sectionCopy: { color: colors.labelSecondary, fontSize: 12, fontWeight: '500' },
+  carouselCounter: { color: colors.labelTertiary, fontSize: 11, fontWeight: '600' },
+  seeAllBtn: {
+    minHeight: 32,
+    paddingHorizontal: 12,
+    justifyContent: 'center',
+    borderRadius: radius.pill,
+    backgroundColor: colors.blueLight,
+    borderWidth: 1,
+    borderColor: '#D5E0F8',
+  },
+  seeAllText: { color: colors.blue, fontSize: 12, fontWeight: '600' },
+
+  dots: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6 },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.borderStrong },
+  dotActive: { width: 20, height: 6, borderRadius: 3, backgroundColor: colors.blue },
 });

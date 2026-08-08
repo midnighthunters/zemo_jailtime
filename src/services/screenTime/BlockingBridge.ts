@@ -19,7 +19,7 @@
 import { Platform } from 'react-native';
 import { IosScreenTimeService } from '@/src/services/screenTime/IosScreenTimeService';
 import { useCourtStore } from '@/src/store/useCourtStore';
-import { jailedAppIds } from '@/src/utils/docket';
+import { appsLocked } from '@/src/utils/docket';
 
 let _initialized = false;
 let _previousBlocking = false;
@@ -29,7 +29,7 @@ export function initBlockingBridge() {
   _initialized = true;
 
   useCourtStore.subscribe((state) => {
-    const shouldBlock = state.enforcementEnabled && jailedAppIds(state.cases).length > 0;
+    const shouldBlock = appsLocked(state.cases, state.enforcementEnabled);
 
     if (shouldBlock && !_previousBlocking) {
       // First app entered custody → shield now.
@@ -44,18 +44,29 @@ export function initBlockingBridge() {
 }
 
 /**
- * Call after toggling suspects or laws to push the updated daily-limit
- * schedule to DeviceActivityMonitor.
+ * Call after changing laws or the app selection to push the updated daily-limit
+ * schedule to DeviceActivityMonitor. No-ops until the user has picked real apps,
+ * since the native schedule needs a selection to watch.
  */
 export async function syncPolicyToNative() {
   if (Platform.OS !== 'ios') return;
-  const { laws, suspects, profile } = useCourtStore.getState();
-  const selectedSuspects = suspects.filter((s) => s.isSelected);
-  if (selectedSuspects.length === 0) return;
+  const { laws, profile, appSelection } = useCourtStore.getState();
+  const hasSelection =
+    appSelection.applications + appSelection.categories + appSelection.webDomains > 0;
+  if (!hasSelection) return;
 
-  await IosScreenTimeService.applyPolicy?.({
+  await IosScreenTimeService.applyPolicy({
     laws,
-    suspects,
     settings: profile.screenTimeSettings,
   });
+}
+
+/**
+ * Reads the real selection back from the system and stores the counts. Called on
+ * launch and after the picker closes so the UI always reflects the device.
+ */
+export async function syncAppSelectionFromNative() {
+  if (Platform.OS !== 'ios') return;
+  const counts = await IosScreenTimeService.getSelectionCount();
+  useCourtStore.getState().setAppSelection(counts);
 }

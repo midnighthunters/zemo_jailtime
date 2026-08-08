@@ -13,7 +13,7 @@ import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { AssetBootstrapService } from '@/src/services/assets/AssetBootstrapService';
 import { NotificationService } from '@/src/services/notifications/NotificationService';
-import { initBlockingBridge } from '@/src/services/screenTime/BlockingBridge';
+import { initBlockingBridge, syncAppSelectionFromNative } from '@/src/services/screenTime/BlockingBridge';
 import { CourtClerk } from '@/src/services/court/CourtClerk';
 import { useCourtStore } from '@/src/store/useCourtStore';
 import { usePremiumStore } from '@/src/store/usePremiumStore';
@@ -57,6 +57,8 @@ export default function RootLayout() {
     NotificationService.configure();
     AssetBootstrapService.preload().catch(() => undefined);
     initBlockingBridge();
+    // Read the real app selection back from the system on every launch.
+    syncAppSelectionFromNative().catch(() => undefined);
 
     // Hide splash screen once everything is bootstrapped.
     SplashScreen.hideAsync().catch(() => {
@@ -85,8 +87,9 @@ export default function RootLayout() {
       store.renewDocket();
       store.tickDocket();
       store.tickFocusSession();
-      // The clerk reads daily usage, which changes slowly. Every 30s is plenty.
-      if (ticks % 30 === 0) CourtClerk.evaluateNow();
+      // Poll the shared policy for a real limit breach. The monitor extension
+      // can fire while the app is closed, so this also catches it on resume.
+      if (ticks % 15 === 0) CourtClerk.checkDeviceLimit().catch(() => undefined);
       ticks += 1;
     }, 1000);
     return () => clearInterval(timer);
@@ -115,9 +118,6 @@ export default function RootLayout() {
           <Stack.Screen name="modals/law-editor" options={{ presentation: 'modal' }} />
           <Stack.Screen name="modals/screen-time-settings" options={{ presentation: 'modal' }} />
           <Stack.Screen name="modals/paywall" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="modals/select-apps" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="modals/add-app" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="modals/unblock" options={{ presentation: 'modal' }} />
           <Stack.Screen name="modals/focus-timer" options={{ presentation: 'modal' }} />
           <Stack.Screen name="modals/weekly-report" options={{ presentation: 'modal' }} />
         </Stack>

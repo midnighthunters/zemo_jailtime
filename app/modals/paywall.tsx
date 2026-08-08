@@ -10,7 +10,6 @@ import { colors, radius, shadows } from '@/src/constants/theme';
 import { usePremiumStore } from '@/src/store/usePremiumStore';
 
 const benefits = [
-  'Unlimited suspect apps',
   'Unlimited Focus Laws',
   'Supreme Strict Mode',
   'Advanced evidence reports',

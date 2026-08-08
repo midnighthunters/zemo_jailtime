@@ -3,16 +3,15 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { DEFAULT_LAWS } from '@/src/data/laws';
 import { DEFAULT_PERMISSION_STATUSES } from '@/src/data/permissions';
-import { DEFAULT_SUSPECTS } from '@/src/data/suspects';
-import type { AgeRange, AppCategory, AppSuspect, BlockCategory, CaseVerdict, CourtCase, DailyScreenTime, DreamType, FocusGoal, FocusLaw, FocusSession, PermissionId, PermissionStatus, StrictnessLevel, UserProfile, UserRole } from '@/src/types/court';
+import type { AgeRange, AppSelection, CaseVerdict, CourtCase, DailyScreenTime, DreamType, FocusGoal, FocusLaw, FocusSession, PermissionId, PermissionStatus, StrictnessLevel, UserProfile, UserRole } from '@/src/types/court';
 import { nowIso, todayKey } from '@/src/utils/date';
 import { caseFocusRemainingSeconds } from '@/src/utils/docket';
 import { sentenceForRepeat } from '@/src/utils/sentence';
 
-const freeSuspectLimit = 3;
 const freeLawLimit = 3;
-// The court will never grant more than 15 minutes of temporary access.
-export const MAX_UNBLOCK_MINUTES = 15;
+
+/** No apps under the court's authority until the user picks real ones. */
+const emptySelection: AppSelection = { applications: 0, categories: 0, webDomains: 0 };
 
 const initialProfile: UserProfile = {
   whyFocus: 'sleep_better',
@@ -68,32 +67,22 @@ function mergeProfile(saved?: Partial<UserProfile>): UserProfile {
 
 type ToggleResult = { allowed: boolean; reason?: string };
 
-// Input for filing a case. Everything not supplied is derived from the law and
-// the suspect so callers stay terse.
+// Input for filing a case. Everything not supplied is derived from the law so
+// callers stay terse.
 type FileCaseInput = {
   lawId: string;
-  appId: string;
+  source: CourtCase['source'];
   title?: string;
   evidenceLine?: string;
   requiredFocusMinutes?: number;
+  /** Dedupe key within the day. Defaults to the law id. */
+  dedupeKey?: string;
 };
-
-type AddSuspectInput = {
-  displayName: string;
-  category: AppCategory;
-  villainName?: string;
-  iconColor?: string;
-  dangerLevel?: 1 | 2 | 3 | 4 | 5;
-  blockCategory?: BlockCategory;
-  isWebsite?: boolean;
-  url?: string;
-};
-
-type AddSuspectResult = ToggleResult & { id?: string };
 
 type CourtState = {
   profile: UserProfile;
-  suspects: AppSuspect[];
+  /** Counts from the system app picker. Never app names — iOS does not expose them. */
+  appSelection: AppSelection;
   laws: FocusLaw[];
   // Today's docket, newest case first. Cleared and renewed each local day.
   cases: CourtCase[];
@@ -118,11 +107,7 @@ type CourtState = {
   setAgeRange: (age: AgeRange) => void;
   setUserRole: (role: UserRole) => void;
   setDailyScreenTime: (screenTime: DailyScreenTime) => void;
-  toggleSuspect: (id: string, isPro?: boolean) => ToggleResult;
-  setBlockCategory: (id: string, blockCategory: BlockCategory) => void;
-  addSuspect: (input: AddSuspectInput, isPro?: boolean) => AddSuspectResult;
-  removeSuspect: (id: string) => void;
-  unblockApp: (id: string, minutes: number) => void;
+  setAppSelection: (selection: Partial<AppSelection>) => void;
   setEnforcementEnabled: (enabled: boolean) => void;
   startFocusSession: (minutes: number, caseId?: string) => void;
   cancelFocusSession: () => void;
@@ -149,7 +134,7 @@ export const useCourtStore = create<CourtState>()(
   persist(
     (set, get) => ({
       profile: initialProfile,
-      suspects: DEFAULT_SUSPECTS,
+      appSelection: emptySelection,
       laws: DEFAULT_LAWS,
       cases: [],
       docketDate: todayKey(),
@@ -226,91 +211,17 @@ export const useCourtStore = create<CourtState>()(
         set((state) => ({ profile: { ...state.profile, dailyScreenTime } }));
       },
 
-      toggleSuspect(id, isPro = false) {
-        const state = get();
-        const suspect = state.suspects.find((item) => item.id === id);
-        if (!suspect) return { allowed: false, reason: 'Suspect not found' };
-        if (!suspect.isSelected && suspect.isPremium && !isPro) {
-          return { allowed: false, reason: 'Supreme Court Mode unlocks this suspect.' };
-        }
-        const selectedCount = state.suspects.filter((item) => item.isSelected).length;
-        if (!suspect.isSelected && !isPro && selectedCount >= freeSuspectLimit) {
-          return { allowed: false, reason: 'Free court authority covers 3 suspect apps.' };
-        }
+      /**
+       * Records what the system picker reported. Counts only — iOS never hands
+       * over the app identities behind a FamilyActivitySelection.
+       */
+      setAppSelection(selection) {
         set((current) => ({
-          suspects: current.suspects.map((item) => (item.id === id ? { ...item, isSelected: !item.isSelected } : item)),
-        }));
-        return { allowed: true };
-      },
-
-      setBlockCategory(id, blockCategory) {
-        set((current) => ({
-          suspects: current.suspects.map((item) =>
-            item.id === id
-              ? {
-                  ...item,
-                  blockCategory,
-                  // Always-allowed apps are never monitored; the other two are.
-                  isSelected: blockCategory === 'alwaysAllowed' ? false : true,
-                  // Re-categorising clears any temporary unblock.
-                  unblockedUntil: undefined,
-                }
-              : item,
-          ),
-        }));
-      },
-
-      addSuspect(input, isPro = false) {
-        const state = get();
-        if (!isPro) {
-          const customCount = state.suspects.filter((item) => item.isCustom).length;
-          if (customCount >= freeSuspectLimit) {
-            return { allowed: false, reason: 'Free court authority covers 3 custom apps or sites.' };
-          }
-        }
-        const slug = input.displayName
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/(^-|-$)/g, '');
-        const id = `custom-${slug || 'app'}-${Date.now().toString(36)}`;
-        const suspect: AppSuspect = {
-          id,
-          displayName: input.displayName,
-          category: input.category,
-          villainName: input.villainName ?? 'Mystery Culprit',
-          dailyUsageMinutes: 0,
-          dailyOpenCount: 0,
-          dangerLevel: input.dangerLevel ?? 3,
-          iconColor: input.iconColor ?? '#40B96E',
-          isSelected: input.blockCategory !== 'alwaysAllowed',
-          isCustom: true,
-          blockCategory: input.blockCategory ?? 'distracting',
-          isWebsite: input.isWebsite,
-          url: input.url,
-        };
-        set((current) => ({ suspects: [...current.suspects, suspect] }));
-        return { allowed: true, id };
-      },
-
-      removeSuspect(id) {
-        set((current) => ({ suspects: current.suspects.filter((item) => item.id !== id) }));
-      },
-
-      unblockApp(id, minutes) {
-        const capped = Math.min(MAX_UNBLOCK_MINUTES, Math.max(1, Math.round(minutes)));
-        const until = new Date(Date.now() + capped * 60 * 1000).toISOString();
-        set((current) => ({
-          suspects: current.suspects.map((item) => (item.id === id ? { ...item, unblockedUntil: until } : item)),
-          paroleRecords: [
-            {
-              id: `unblock-${Date.now()}`,
-              type: 'manual',
-              pointsEarned: 0,
-              message: `Temporary access granted for ${capped} min after a breathing check-in.`,
-              createdAt: nowIso(),
-            },
-            ...current.paroleRecords,
-          ],
+          appSelection: {
+            ...current.appSelection,
+            ...selection,
+            updatedAt: nowIso(),
+          },
         }));
       },
 
@@ -437,33 +348,30 @@ export const useCourtStore = create<CourtState>()(
       fileCase(input) {
         const state = get();
         const law = state.laws.find((item) => item.id === input.lawId);
-        const suspect = state.suspects.find((item) => item.id === input.appId);
-        if (!law || !suspect) return undefined;
+        if (!law) return undefined;
 
         const today = todayKey();
-        // One law break yields one case per app per day.
+        const dedupeKey = input.dedupeKey ?? law.id;
+        // One breach yields one case per key per day.
         const duplicate = state.cases.find(
-          (item) => item.date === today && item.lawId === law.id && item.appId === suspect.id,
+          (item) => item.date === today && item.id === `case-${today}-${dedupeKey}`,
         );
         if (duplicate) return duplicate.id;
 
-        const id = `case-${today}-${law.id}-${suspect.id}`;
+        const id = `case-${today}-${dedupeKey}`;
         const item: CourtCase = {
           id,
           date: today,
           lawId: law.id,
           lawName: law.name,
-          appId: suspect.id,
-          appName: suspect.displayName,
           title: input.title ?? `${law.shortName} broken`,
           evidenceLine:
-            input.evidenceLine ??
-            `${suspect.displayName} crossed the line set by ${law.name}.`,
-          severity: suspect.dangerLevel,
+            input.evidenceLine ?? `Your protected apps crossed the line set by ${law.name}.`,
+          severity: law.strictness === 'brutal' ? 5 : law.strictness === 'balanced' ? 3 : 2,
           verdict: 'hearing',
           filedAt: nowIso(),
-          requiredFocusMinutes:
-            input.requiredFocusMinutes ?? sentenceForRepeat(law, state.cases),
+          source: input.source,
+          requiredFocusMinutes: input.requiredFocusMinutes ?? sentenceForRepeat(law, state.cases),
           focusServedSeconds: 0,
         };
 
@@ -474,21 +382,13 @@ export const useCourtStore = create<CourtState>()(
       setVerdict(caseId, verdict) {
         const resolved = verdict !== 'hearing' && verdict !== 'jailed';
         set((current) => {
-          const target = current.cases.find((item) => item.id === caseId);
-          if (!target) return current;
+          if (!current.cases.some((item) => item.id === caseId)) return current;
           return {
             cases: current.cases.map((item) =>
               item.id === caseId
                 ? { ...item, verdict, resolvedAt: resolved ? nowIso() : undefined }
                 : item,
             ),
-            // Leaving custody also drops any temporary access window.
-            suspects:
-              verdict === 'jailed'
-                ? current.suspects
-                : current.suspects.map((suspect) =>
-                    suspect.id === target.appId ? { ...suspect, unblockedUntil: undefined } : suspect,
-                  ),
             // A session serving a case that just left custody is finished.
             focusSession:
               !resolved || current.focusSession?.caseId !== caseId ? current.focusSession : null,
@@ -511,7 +411,7 @@ export const useCourtStore = create<CourtState>()(
               id: `warning-${caseId}-${Date.now()}`,
               type: 'manual',
               pointsEarned: 0,
-              message: `Warning issued for ${item.appName}. The court is keeping the file open.`,
+              message: `Warning issued under ${item.lawName}. The court is keeping the file open.`,
               createdAt: nowIso(),
             },
             ...current.paroleRecords,
@@ -543,7 +443,7 @@ export const useCourtStore = create<CourtState>()(
 
           const total = target.focusServedSeconds + banked;
           served = total >= target.requiredFocusMinutes * 60;
-          releasedName = target.appName;
+          releasedName = target.lawName;
 
           return {
             cases: current.cases.map((item) =>
@@ -570,7 +470,7 @@ export const useCourtStore = create<CourtState>()(
                 id: `released-${caseId}-${Date.now()}`,
                 type: 'focus' as const,
                 pointsEarned: 0,
-                message: `${releasedName} released. Focus time served in full.`,
+                message: `Apps released. Focus time served in full under ${releasedName}.`,
                 createdAt: nowIso(),
               },
               ...current.paroleRecords,
@@ -602,7 +502,7 @@ export const useCourtStore = create<CourtState>()(
               id: `mercy-${Date.now()}`,
               type: 'manual',
               pointsEarned: 12,
-              message: `Mercy pass spent on ${target.appName}. The court allows emergencies, not excuses.`,
+              message: `Mercy pass spent on ${target.lawName}. The court allows emergencies, not excuses.`,
               createdAt: nowIso(),
             },
             ...current.paroleRecords,
@@ -619,7 +519,7 @@ export const useCourtStore = create<CourtState>()(
             focusCoins: current.profile.focusCoins + 10,
             cleanRecordStreak: current.profile.cleanRecordStreak + 1,
           },
-          // Parole clears every app still in custody.
+          // Parole clears every case still holding apps in custody.
           cases: current.cases.map((item) =>
             item.verdict === 'jailed'
               ? { ...item, verdict: 'served' as const, resolvedAt: nowIso() }
@@ -665,50 +565,46 @@ export const useCourtStore = create<CourtState>()(
       renewDocket(force = false) {
         const today = todayKey();
         if (!force && get().docketDate === today) return;
-        set((current) => ({
+        set(() => ({
           docketDate: today,
           cases: [],
           focusSession: null,
-          suspects: current.suspects.map((suspect) => ({
-            ...suspect,
-            dailyUsageMinutes: 0,
-            dailyOpenCount: 0,
-            unblockedUntil: undefined,
-          })),
         }));
       },
     }),
     {
       name: 'focus-court-store',
-      version: 2,
+      version: 3,
       storage: createJSONStorage(() => AsyncStorage),
-      // v1 stored a single global `activeCase` plus a flat `charges` array.
-      // Those shapes cannot be mapped onto per-app cases, so case state is
-      // dropped and the user starts on a clean docket. Profile, laws,
-      // suspects, and parole history are preserved.
+      // v1: one global `activeCase` plus a flat `charges` array.
+      // v2: per-app cases plus a `suspects` list of placeholder apps.
+      // v3: law-scoped cases and a real app selection from the system picker.
+      //     The placeholder suspect list is dropped because the app can no
+      //     longer invent apps — the user re-picks real ones in the picker.
+      //     Profile, laws, and parole history are preserved throughout.
       migrate: (persisted, version) => {
         const saved = (persisted ?? {}) as Record<string, unknown>;
-        if (version >= 2) return saved as Partial<CourtState>;
-        const { activeCase, charges, activeChargeId, ...rest } = saved;
+        if (version >= 3) return saved as Partial<CourtState>;
+        const { activeCase, charges, activeChargeId, suspects, ...rest } = saved;
         return {
           ...rest,
           cases: [],
           docketDate: todayKey(),
           enforcementEnabled: true,
+          appSelection: emptySelection,
           focusSession: null,
         } as Partial<CourtState>;
       },
       merge: (persisted, current) => {
         const saved = persisted as Partial<CourtState> | undefined;
-        const savedDate = saved?.docketDate;
         // A docket from an earlier day never survives a relaunch.
-        const isToday = savedDate === todayKey();
+        const isToday = saved?.docketDate === todayKey();
         return {
           ...current,
           ...saved,
           profile: mergeProfile(saved?.profile),
           laws: mergeById(DEFAULT_LAWS, saved?.laws),
-          suspects: mergeById(DEFAULT_SUSPECTS, saved?.suspects),
+          appSelection: { ...emptySelection, ...saved?.appSelection },
           docketDate: todayKey(),
           cases: isToday ? saved?.cases ?? [] : [],
           enforcementEnabled: saved?.enforcementEnabled ?? true,

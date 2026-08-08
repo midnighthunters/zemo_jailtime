@@ -43,32 +43,20 @@ export type AppCategory =
   | 'news'
   | 'custom';
 
-// How the court treats an app:
-//  - distracting   → monitored & jailed when limits are broken (the default offenders)
-//  - alwaysAllowed → whitelisted, never blocked (e.g. phone, maps, messages)
-//  - neverAllowed  → hard-locked at all times (no parole, shows a lock overlay)
-export type BlockCategory = 'distracting' | 'alwaysAllowed' | 'neverAllowed';
-
-export type AppSuspect = {
-  id: string;
-  displayName: string;
-  packageName?: string;
-  bundleId?: string;
-  category: AppCategory;
-  villainName: string;
-  dailyUsageMinutes: number;
-  dailyOpenCount: number;
-  dangerLevel: 1 | 2 | 3 | 4 | 5;
-  iconColor: string;
-  isSelected: boolean;
-  isPremium?: boolean;
-  // ── Distraction management ──
-  blockCategory?: BlockCategory;
-  isWebsite?: boolean;
-  url?: string;
-  isCustom?: boolean;
-  // Temporary unblock granted via the breathing flow — ISO timestamp.
-  unblockedUntil?: string;
+/**
+ * The user's protected apps, as much as iOS will ever tell us.
+ *
+ * A FamilyActivityPicker selection is a set of opaque `ApplicationToken`s. The
+ * app process cannot read their names, bundle IDs, or icons — only how many were
+ * chosen. So the court tracks counts and lets the system name the apps inside
+ * the picker and on its own shield screen.
+ */
+export type AppSelection = {
+  applications: number;
+  categories: number;
+  webDomains: number;
+  /** ISO timestamp of the last time the user confirmed a selection. */
+  updatedAt?: string;
 };
 
 // A running focus timer.
@@ -131,22 +119,28 @@ export type PermissionRequirement = {
 //  - dismissed → thrown out via mercy pass or the user's choice
 export type CaseVerdict = 'hearing' | 'warning' | 'jailed' | 'served' | 'dismissed';
 
-// One law break against one app. The docket holds every case filed today and is
-// renewed from scratch at the start of each local day.
+/**
+ * One break of one focus law. The docket holds every case filed today and is
+ * renewed from scratch at the start of each local day.
+ *
+ * A case is scoped to a law, not to a named app: iOS reports that the protected
+ * selection crossed its limit without ever revealing which app did it. A
+ * `jailed` verdict shields the whole protected selection.
+ */
 export type CourtCase = {
   id: string;
   // Local day key (YYYY-MM-DD) this case belongs to.
   date: string;
   lawId: string;
   lawName: string;
-  appId: string;
-  appName: string;
   title: string;
   evidenceLine: string;
   severity: 1 | 2 | 3 | 4 | 5;
   verdict: CaseVerdict;
   filedAt: string;
   resolvedAt?: string;
+  /** How the case reached the court. */
+  source: 'deviceLimit' | 'selfReported';
   // Focus minutes required to clear a `jailed` verdict.
   requiredFocusMinutes: number;
   // Focus seconds banked so far. Partial sessions still count.

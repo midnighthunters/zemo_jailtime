@@ -2,7 +2,6 @@ import { useRouter } from 'expo-router';
 import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { AssetImage } from '@/src/components/AssetImage';
-import { BlockedAppTile } from '@/src/components/BlockedAppTile';
 import { CaseCard } from '@/src/components/CaseCard';
 import { CourtBackground } from '@/src/components/CourtBackground';
 import { CourtButton } from '@/src/components/CourtButton';
@@ -13,69 +12,57 @@ import { StampBadge } from '@/src/components/StampBadge';
 import { colors } from '@/src/constants/theme';
 import { CourtClerk } from '@/src/services/court/CourtClerk';
 import { useCourtStore } from '@/src/store/useCourtStore';
-import type { AppSuspect } from '@/src/types/court';
-import { isCaseOpen, jailedCaseForApp } from '@/src/utils/docket';
+import { isCaseOpen, jailedCases, primaryJailedCase } from '@/src/utils/docket';
 import { formatCountdown } from '@/src/utils/format';
 
 /**
- * The single Court screen. Absorbs everything the old Jail tab did: today's
- * docket, apps in custody, verdict controls, the focus timer, and bypass.
+ * The single Court screen: today's docket, verdict controls, custody status, the
+ * focus timer, and bypass.
  */
 export default function CourtroomTab() {
   const router = useRouter();
   const profile = useCourtStore((state) => state.profile);
   const cases = useCourtStore((state) => state.cases);
-  const suspects = useCourtStore((state) => state.suspects);
+  const laws = useCourtStore((state) => state.laws);
+  const appSelection = useCourtStore((state) => state.appSelection);
   const focusSession = useCourtStore((state) => state.focusSession);
   const enforcementEnabled = useCourtStore((state) => state.enforcementEnabled);
   const warnCase = useCourtStore((state) => state.warnCase);
-  const jailCase = useCourtStore((state) => state.jailCase);
   const dismissCase = useCourtStore((state) => state.dismissCase);
 
-  const jailedCases = cases.filter((item) => item.verdict === 'jailed');
+  const locked = jailedCases(cases);
   const openCount = cases.filter(isCaseOpen).length;
-  const custody = CourtClerk.monitoredSuspects(suspects);
+  const protectedCount =
+    appSelection.applications + appSelection.categories + appSelection.webDomains;
+  const hasSelection = protectedCount > 0;
 
   const openFocusTimer = (caseId?: string) =>
-    router.push({
-      pathname: '/modals/focus-timer',
-      params: caseId ? { caseId } : {},
-    });
+    router.push({ pathname: '/modals/focus-timer', params: caseId ? { caseId } : {} });
 
-  // Tapping an app is how a law break reaches the court today.
-  // Already jailed → the only way out is a focus timer.
-  // Still free     → opening it during an active law files the case.
-  const handleTapApp = (suspect: AppSuspect) => {
-    const jailed = jailedCaseForApp(cases, suspect.id);
-    if (jailed) {
-      Alert.alert(
-        `${suspect.displayName} is in custody`,
-        'The court releases this app only after you serve focus time. Start a timer now?',
-        [
-          { text: 'Not now', style: 'cancel' },
-          { text: 'Start Focus Timer', onPress: () => openFocusTimer(jailed.id) },
-        ],
-      );
+  // Hand yourself in. The device files its own case the moment the daily limit
+  // breaks, but an honest defendant can report a slip early.
+  const handleSelfReport = () => {
+    const active = laws.filter((law) => law.isEnabled);
+    if (active.length === 0) {
+      Alert.alert('No active laws', 'Enable a focus law on the Culprits tab first.');
       return;
     }
-
-    if (!enforcementEnabled) {
-      Alert.alert(
-        'Enforcement is off',
-        'Turn the court back on from the Culprits tab to let it file cases again.',
-      );
-      return;
-    }
-
-    const caseId = CourtClerk.fileForAppLaunch(suspect.id);
-    if (!caseId) {
-      Alert.alert(
-        'No law covers this app',
-        `Enable a focus law for ${suspect.displayName} on the Culprits tab first.`,
-      );
-      return;
-    }
-    router.push({ pathname: '/modals/charges-filed', params: { caseId } });
+    Alert.alert(
+      'Report a slip',
+      'Which law did you break?',
+      [
+        ...active.slice(0, 5).map((law) => ({
+          text: law.shortName,
+          onPress: () => {
+            const caseId = CourtClerk.selfReport(law.id);
+            if (caseId) {
+              router.push({ pathname: '/modals/charges-filed', params: { caseId } });
+            }
+          },
+        })),
+        { text: 'Cancel', style: 'cancel' as const },
+      ],
+    );
   };
 
   const focusRemaining = focusSession
@@ -102,20 +89,40 @@ export default function CourtroomTab() {
         <ProgressDocket
           items={[
             { label: 'Open cases', value: openCount },
-            { label: 'In custody', value: jailedCases.length },
+            { label: 'Apps watched', value: protectedCount },
             { label: 'Clean streak', value: profile.cleanRecordStreak },
           ]}
         />
 
+        {/* ── Setup gate ───────────────────────────────────────────────── */}
+        {!hasSelection ? (
+          <CourtCard variant="blue">
+            <StampBadge label="Setup needed" tone="blue" />
+            <Text style={styles.noticeTitle}>No apps under court order yet.</Text>
+            <Text style={styles.noticeCopy}>
+              The court can only act on real apps you pick on this device. Choose them on the
+              Culprits tab and iOS will enforce your limits from then on.
+            </Text>
+            <View style={styles.noticeAction}>
+              <CourtButton
+                title="Choose Apps"
+                variant="primary"
+                small
+                onPress={() => router.push('/(tabs)/culprits')}
+              />
+            </View>
+          </CourtCard>
+        ) : null}
+
         {!enforcementEnabled ? (
           <CourtCard variant="orange">
             <StampBadge label="Court adjourned" tone="orange" />
-            <Text style={styles.adjournedTitle}>Enforcement is off.</Text>
-            <Text style={styles.adjournedCopy}>
-              No app is locked and no case will be filed. Turn the court back on whenever you are
+            <Text style={styles.noticeTitle}>Enforcement is off.</Text>
+            <Text style={styles.noticeCopy}>
+              Nothing is locked and no case will be filed. Turn the court back on whenever you are
               ready.
             </Text>
-            <View style={styles.adjournedAction}>
+            <View style={styles.noticeAction}>
               <CourtButton
                 title="Open Culprits"
                 variant="secondary"
@@ -126,38 +133,28 @@ export default function CourtroomTab() {
           </CourtCard>
         ) : null}
 
-        {/* ── Apps under watch ─────────────────────────────────────────── */}
-        {custody.length > 0 ? (
-          <CourtCard variant="glass">
-            <View style={styles.custodyHeader}>
-              <Text style={styles.custodyTitle}>Under Watch</Text>
-              <Text style={styles.custodyCount}>
-                {jailedCases.length} of {custody.length} locked
-              </Text>
-            </View>
-            <ScrollView
-              horizontal
-              showsVerticalScrollIndicator={false}
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.custodyStrip}
-            >
-              {custody.map((suspect) => (
-                <BlockedAppTile
-                  key={suspect.id}
-                  suspect={suspect}
-                  locked={enforcementEnabled && Boolean(jailedCaseForApp(cases, suspect.id))}
-                  onPress={() => handleTapApp(suspect)}
-                />
-              ))}
-            </ScrollView>
-            <Text style={styles.custodyHint}>
-              Tap an app to open it. Locked apps need focus time first.
+        {/* ── Custody status ───────────────────────────────────────────── */}
+        {locked.length > 0 && enforcementEnabled ? (
+          <CourtCard variant="red">
+            <StampBadge label="In custody" tone="danger" />
+            <Text style={styles.noticeTitle}>Your apps are locked.</Text>
+            <Text style={styles.noticeCopy}>
+              iOS is shielding all {protectedCount} of your court-ordered selections. Serve the focus
+              time on the case below and they open again.
             </Text>
+            <View style={styles.noticeAction}>
+              <CourtButton
+                title="Start Focus Timer"
+                variant="primary"
+                small
+                onPress={() => openFocusTimer(primaryJailedCase(cases)?.id)}
+              />
+            </View>
           </CourtCard>
         ) : null}
 
         {/* ── Focus timer ──────────────────────────────────────────────── */}
-        <CourtCard variant="blue">
+        <CourtCard variant="glass">
           <View style={styles.timerRow}>
             <AssetImage assetKey="ASSET_JAIL_TIMER_HOURGLASS" width={56} height={56} />
             <View style={styles.timerText}>
@@ -166,10 +163,8 @@ export default function CourtroomTab() {
               </Text>
               <Text style={styles.timerCopy}>
                 {focusSession
-                  ? `${formatCountdown(focusRemaining)} left${
-                      focusSession.caseId ? ' · serving a case' : ''
-                    }`
-                  : jailedCases.length > 0
+                  ? `${formatCountdown(focusRemaining)} left${focusSession.caseId ? ' · serving a case' : ''}`
+                  : locked.length > 0
                     ? 'Focus time is the only way out of custody.'
                     : 'Run a timer any time to earn parole points.'}
               </Text>
@@ -178,7 +173,7 @@ export default function CourtroomTab() {
               title={focusSession ? 'View' : 'Start'}
               small
               variant="primary"
-              onPress={() => openFocusTimer(focusSession?.caseId ?? jailedCases[0]?.id)}
+              onPress={() => openFocusTimer(focusSession?.caseId ?? primaryJailedCase(cases)?.id)}
             />
           </View>
         </CourtCard>
@@ -200,7 +195,8 @@ export default function CourtroomTab() {
               <StampBadge label="Clean record" tone="success" />
               <Text style={styles.emptyTitle}>The court is quiet.</Text>
               <Text style={styles.emptyCopy}>
-                No focus law broken today. Break one and a case lands at the top of this docket.
+                No focus law broken today. When your apps pass their daily limit, iOS tells the court
+                and a case lands at the top of this docket.
               </Text>
             </View>
           </CourtCard>
@@ -210,6 +206,7 @@ export default function CourtroomTab() {
               <CaseCard
                 key={item.id}
                 item={item}
+                protectedCount={protectedCount}
                 serving={focusSession?.caseId === item.id}
                 onWarn={() => warnCase(item.id)}
                 onJail={() =>
@@ -222,7 +219,11 @@ export default function CourtroomTab() {
           </View>
         )}
 
-        {jailedCases.length > 0 ? (
+        {enforcementEnabled ? (
+          <CourtButton title="Report a Slip" variant="secondary" onPress={handleSelfReport} />
+        ) : null}
+
+        {locked.length > 0 ? (
           <CourtButton
             title="Emergency Bypass"
             variant="destructive"
@@ -235,66 +236,28 @@ export default function CourtroomTab() {
 }
 
 const styles = StyleSheet.create({
-  content: {
-    gap: 14,
-    paddingBottom: 110,
-  },
+  content: { gap: 14, paddingBottom: 110 },
 
-  adjournedTitle: {
+  noticeTitle: {
     color: colors.label,
     fontSize: 18,
     fontWeight: '700',
     letterSpacing: -0.3,
     marginTop: 10,
   },
-  adjournedCopy: {
+  noticeCopy: {
     color: colors.labelSecondary,
     fontSize: 14,
     lineHeight: 20,
     fontWeight: '400',
     marginTop: 6,
   },
-  adjournedAction: { marginTop: 12, alignSelf: 'flex-start' },
-
-  custodyHeader: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  custodyTitle: {
-    color: colors.label,
-    fontSize: 18,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-  },
-  custodyCount: {
-    color: colors.labelSecondary,
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  custodyStrip: { gap: 14, paddingRight: 8 },
-  custodyHint: {
-    color: colors.labelTertiary,
-    fontSize: 12,
-    fontWeight: '500',
-    marginTop: 12,
-  },
+  noticeAction: { marginTop: 12, alignSelf: 'flex-start' },
 
   timerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   timerText: { flex: 1, gap: 4 },
-  timerTitle: {
-    color: colors.label,
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-  },
-  timerCopy: {
-    color: colors.labelSecondary,
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: '400',
-  },
+  timerTitle: { color: colors.label, fontSize: 16, fontWeight: '700', letterSpacing: -0.3 },
+  timerCopy: { color: colors.labelSecondary, fontSize: 13, lineHeight: 18, fontWeight: '400' },
 
   docketHeader: {
     flexDirection: 'row',
@@ -303,26 +266,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
     marginTop: 2,
   },
-  docketTitle: {
-    color: colors.label,
-    fontSize: 20,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-  },
-  docketSub: {
-    color: colors.labelSecondary,
-    fontSize: 13,
-    fontWeight: '500',
-  },
+  docketTitle: { color: colors.label, fontSize: 20, fontWeight: '700', letterSpacing: -0.3 },
+  docketSub: { color: colors.labelSecondary, fontSize: 13, fontWeight: '500' },
   docket: { gap: 12 },
 
   empty: { alignItems: 'center', gap: 12, paddingVertical: 8 },
-  emptyTitle: {
-    color: colors.label,
-    fontSize: 24,
-    fontWeight: '700',
-    letterSpacing: -0.4,
-  },
+  emptyTitle: { color: colors.label, fontSize: 24, fontWeight: '700', letterSpacing: -0.4 },
   emptyCopy: {
     color: colors.labelSecondary,
     fontSize: 15,

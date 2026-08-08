@@ -81,9 +81,9 @@ export default function FocusTimerModal() {
           <Text style={styles.bigTitle}>Time served.</Text>
           <Text style={styles.bigSub}>
             {released
-              ? `${servingCase.appName} is released from custody.`
+              ? 'Your apps are released from custody.'
               : servingCase
-                ? `${formatMinutes(Math.ceil(caseFocusRemainingSeconds(servingCase) / 60))} of focus still owed on ${servingCase.appName}.`
+                ? `${formatMinutes(Math.ceil(caseFocusRemainingSeconds(servingCase) / 60))} of focus still owed under ${servingCase.lawName}.`
                 : 'Parole points earned.'}
           </Text>
           <CourtButton title="Done" variant="green" onPress={() => router.back()} />
@@ -112,7 +112,7 @@ export default function FocusTimerModal() {
 
           <Text style={styles.bigSub}>
             {jailedCase
-              ? `When the timer ends, ${jailedCase.appName} is released.`
+              ? 'When the timer ends, your apps are released.'
               : 'Phone down. Let the timer run.'}
           </Text>
 
@@ -135,7 +135,7 @@ export default function FocusTimerModal() {
           title="Start a Timer"
           subtitle={
             jailedCase
-              ? `Serve ${formatMinutes(owedMinutes)} to release ${jailedCase.appName}.`
+              ? `Serve ${formatMinutes(owedMinutes)} to release your apps.`
               : 'Run a focus session to earn parole points.'
           }
           assetKey="ASSET_JAIL_TIMER_HOURGLASS"
@@ -144,7 +144,7 @@ export default function FocusTimerModal() {
         {jailedCase ? (
           <CourtCard variant="red">
             <StampBadge label="In custody" tone="danger" />
-            <Text style={styles.caseTitle}>{jailedCase.appName}</Text>
+            <Text style={styles.caseTitle}>{jailedCase.lawName}</Text>
             <Text style={styles.caseCopy}>
               {formatMinutes(owedMinutes)} of focus left. Any session counts toward it, so you can
               chip away at it in shorter runs.

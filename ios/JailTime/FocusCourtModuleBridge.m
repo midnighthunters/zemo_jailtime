@@ -27,6 +27,16 @@ RCT_EXTERN_METHOD(
 )
 
 RCT_EXTERN_METHOD(
+  getSelectionCount:(RCTPromiseResolveBlock)resolve
+  rejecter:(RCTPromiseRejectBlock)reject
+)
+
+RCT_EXTERN_METHOD(
+  getPolicyState:(RCTPromiseResolveBlock)resolve
+  rejecter:(RCTPromiseRejectBlock)reject
+)
+
+RCT_EXTERN_METHOD(
   applyPolicy:(NSInteger)dailyLimitMinutes
   resolver:(RCTPromiseResolveBlock)resolve
   rejecter:(RCTPromiseRejectBlock)reject

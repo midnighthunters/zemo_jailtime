@@ -71,7 +71,7 @@ export default function ScreenTimeSettingsModal() {
         <CourtCard variant="wood" delay={120}>
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Monitoring</Text>
-            <SettingSwitch label="Monitor suspect apps" value={settings.monitoringEnabled} onValueChange={(monitoringEnabled) => updateScreenTimeSettings({ monitoringEnabled })} />
+            <SettingSwitch label="Monitor court-ordered apps" value={settings.monitoringEnabled} onValueChange={(monitoringEnabled) => updateScreenTimeSettings({ monitoringEnabled })} />
             <SettingSwitch label="Block while sentence is active" value={settings.blockDuringActiveSentence} onValueChange={(blockDuringActiveSentence) => updateScreenTimeSettings({ blockDuringActiveSentence })} />
             <SettingSwitch label="Background refresh checks" value={settings.backgroundRefreshEnabled} onValueChange={(backgroundRefreshEnabled) => updateScreenTimeSettings({ backgroundRefreshEnabled })} />
             <SettingSwitch label="Focus session required for parole" value={settings.requireFocusSessionForParole} onValueChange={(requireFocusSessionForParole) => updateScreenTimeSettings({ requireFocusSessionForParole })} />

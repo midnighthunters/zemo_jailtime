@@ -1,14 +1,18 @@
 /**
  * IosScreenTimeService.ts
  *
- * Bridges the Swift FocusCourtModule native module to the ScreenTimeService
- * interface used by the rest of the app.
+ * Bridges the Swift FocusCourtModule to the ScreenTimeService interface. This is
+ * the only screen-time implementation — there is no mock. Every app under the
+ * court's authority is a real app the user picked on this device through
+ * Apple's FamilyActivityPicker.
  *
  * The native module exposes:
  *   FocusCourtModule.requestAuthorization()       → { granted, reason? }
  *   FocusCourtModule.getAuthorizationStatus()     → "authorized"|"denied"|"notDetermined"
- *   FocusCourtModule.presentAppPicker()           → { selected, count }
+ *   FocusCourtModule.presentAppPicker()           → { selected, count, categories, webDomains }
  *   FocusCourtModule.hasAppSelection()            → boolean
+ *   FocusCourtModule.getSelectionCount()          → { applications, categories, webDomains }
+ *   FocusCourtModule.getPolicyState()             → { dailyLimitMinutes, blockingActive, blockStartedAt, hasSelection }
  *   FocusCourtModule.applyPolicy(minutes)         → { success }
  *   FocusCourtModule.clearPolicy()                → { success }
  *   FocusCourtModule.applyImmediateBlock()        → { success }
@@ -16,15 +20,21 @@
  */
 
 import { NativeModules, Platform } from 'react-native';
-import type { ScreenTimeService } from '@/src/services/screenTime/ScreenTimeService';
+import type {
+  AppSelectionCount,
+  PolicyState,
+  ScreenTimeService,
+} from '@/src/services/screenTime/ScreenTimeService';
 
-// Pull the native module — it is unavailable in Expo Go without the iOS native module.
+// Unavailable in Expo Go — the FamilyControls entitlement needs a dev/release build.
 const { FocusCourtModule } = NativeModules as {
   FocusCourtModule?: {
     requestAuthorization(): Promise<{ granted: boolean; reason?: string }>;
     getAuthorizationStatus(): Promise<'authorized' | 'denied' | 'notDetermined'>;
     presentAppPicker(): Promise<{ selected: boolean; count: number }>;
     hasAppSelection(): Promise<boolean>;
+    getSelectionCount(): Promise<AppSelectionCount>;
+    getPolicyState(): Promise<PolicyState>;
     applyPolicy(dailyLimitMinutes: number): Promise<{ success: boolean }>;
     clearPolicy(): Promise<{ success: boolean }>;
     applyImmediateBlock(): Promise<{ success: boolean }>;
@@ -32,33 +42,36 @@ const { FocusCourtModule } = NativeModules as {
   };
 };
 
-function nativeAvailable() {
+const EMPTY_SELECTION: AppSelectionCount = { applications: 0, categories: 0, webDomains: 0 };
+
+const EMPTY_POLICY: PolicyState = {
+  dailyLimitMinutes: 30,
+  blockingActive: false,
+  blockStartedAt: null,
+  hasSelection: false,
+};
+
+/** True only in a build that actually contains the native module. */
+export function screenTimeAvailable() {
   return Platform.OS === 'ios' && FocusCourtModule != null;
 }
 
-export const IosScreenTimeService: ScreenTimeService & {
-  /** Show FamilyActivityPicker so user can choose which apps to monitor. */
-  presentAppPicker(): Promise<{ selected: boolean; count: number }>;
-  /** Check if user has already selected apps. */
-  hasAppSelection(): Promise<boolean>;
-  /** Shield selected apps immediately (sentence active). */
-  applyImmediateBlock(): Promise<void>;
-  /** Remove immediate shield (parole granted / emergency bypass). */
-  clearImmediateBlock(): Promise<void>;
-} = {
+export const IosScreenTimeService: ScreenTimeService = {
   // ── Authorization ───────────────────────────────────────────────────────
 
   async requestPermissions() {
-    if (!nativeAvailable()) {
-      return { granted: false, reason: 'FocusCourtModule not available on this platform.' };
+    if (!screenTimeAvailable()) {
+      return {
+        granted: false,
+        reason: 'Screen Time needs a development or release build — it is unavailable in Expo Go.',
+      };
     }
-    const result = await FocusCourtModule!.requestAuthorization();
-    return result;
+    return FocusCourtModule!.requestAuthorization();
   },
 
   async getPermissionStatus() {
-    if (!nativeAvailable()) {
-      return { granted: false, reason: 'iOS only.' };
+    if (!screenTimeAvailable()) {
+      return { granted: false, reason: 'Screen Time is unavailable in this build.' };
     }
     const status = await FocusCourtModule!.getAuthorizationStatus();
     return {
@@ -67,86 +80,68 @@ export const IosScreenTimeService: ScreenTimeService & {
     };
   },
 
-  // ── App picker ──────────────────────────────────────────────────────────
+  // ── App selection ───────────────────────────────────────────────────────
 
   async presentAppPicker() {
-    if (!nativeAvailable()) return { selected: false, count: 0 };
+    if (!screenTimeAvailable()) return { selected: false, count: 0 };
     return FocusCourtModule!.presentAppPicker();
   },
 
   async hasAppSelection() {
-    if (!nativeAvailable()) return false;
+    if (!screenTimeAvailable()) return false;
     return FocusCourtModule!.hasAppSelection();
   },
 
-  // ── Policy (schedule-based daily limit blocking) ────────────────────────
+  async getSelectionCount() {
+    if (!screenTimeAvailable()) return EMPTY_SELECTION;
+    try {
+      return await FocusCourtModule!.getSelectionCount();
+    } catch {
+      return EMPTY_SELECTION;
+    }
+  },
+
+  // ── Policy ──────────────────────────────────────────────────────────────
+
+  async getPolicyState() {
+    if (!screenTimeAvailable()) return EMPTY_POLICY;
+    try {
+      return await FocusCourtModule!.getPolicyState();
+    } catch {
+      return EMPTY_POLICY;
+    }
+  },
 
   async applyPolicy(policy) {
-    if (!nativeAvailable()) return;
-    // Use the first enabled law that has a dailyLimitMinutes, or fall back to 30
-    const firstLimit = policy.laws
-      .filter((l) => l.isEnabled && l.dailyLimitMinutes != null)
+    if (!screenTimeAvailable()) return;
+    // The DeviceActivity schedule takes one threshold, so the strictest enabled
+    // daily limit wins.
+    const strictest = policy.laws
+      .filter((law) => law.isEnabled && law.dailyLimitMinutes != null)
       .sort((a, b) => (a.dailyLimitMinutes ?? 99) - (b.dailyLimitMinutes ?? 99))[0];
-    const minutes = firstLimit?.dailyLimitMinutes ?? 30;
-    await FocusCourtModule!.applyPolicy(minutes);
+    await FocusCourtModule!.applyPolicy(strictest?.dailyLimitMinutes ?? 30);
   },
 
   async clearPolicy() {
-    if (!nativeAvailable()) return;
+    if (!screenTimeAvailable()) return;
     await FocusCourtModule!.clearPolicy();
   },
 
-  // ── Immediate block / unblock (sentence / parole) ───────────────────────
+  async openPermissionSettings() {
+    if (!screenTimeAvailable()) return;
+    // requestAuthorization already presents the system sheet.
+    await FocusCourtModule!.requestAuthorization();
+  },
+
+  // ── Shield ──────────────────────────────────────────────────────────────
 
   async applyImmediateBlock() {
-    if (!nativeAvailable()) return;
+    if (!screenTimeAvailable()) return;
     await FocusCourtModule!.applyImmediateBlock();
   },
 
   async clearImmediateBlock() {
-    if (!nativeAvailable()) return;
-    await FocusCourtModule!.clearImmediateBlock();
-  },
-
-  // ── Stubs for interface methods not yet backed by a report extension ────
-
-  async getTodayUsage() {
-    // DeviceActivityReport requires a separate App Extension using SwiftUI.
-    // For now return an empty array — usage data comes from the court store simulation.
-    return [];
-  },
-
-  async getInstalledApps() {
-    // FamilyActivityPicker is the only sanctioned way to get this on iOS.
-    // Return empty — the picker stores the selection natively.
-    return [];
-  },
-
-  async openPermissionSettings() {
-    if (!nativeAvailable()) return;
-    // requestAuthorization already presents the system sheet
-    await FocusCourtModule!.requestAuthorization();
-  },
-
-  async startMonitoring() {
-    // Monitoring starts automatically when applyPolicy() is called.
-  },
-
-  async stopMonitoring() {
-    if (!nativeAvailable()) return;
-    await FocusCourtModule!.clearPolicy();
-  },
-
-  async shieldApp() {
-    // Individual app shielding goes through applyImmediateBlock which shields
-    // the whole selection. Per-app granularity requires the selection to contain
-    // only that app — handled at the JS level via the picker.
-    if (!nativeAvailable()) return;
-    await FocusCourtModule!.applyImmediateBlock();
-  },
-
-  async unshieldApp() {
-    if (!nativeAvailable()) return;
+    if (!screenTimeAvailable()) return;
     await FocusCourtModule!.clearImmediateBlock();
   },
 };

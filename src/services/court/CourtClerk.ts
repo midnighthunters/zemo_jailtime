@@ -1,87 +1,76 @@
 /**
  * CourtClerk.ts
  *
- * Watches the store for broken focus laws and files cases onto today's docket.
+ * Files cases onto today's docket. There is no simulated usage here — a case is
+ * only ever opened by a real event.
  *
- * A law is broken when a monitored suspect's daily usage crosses the daily
- * limit of an enabled law that governs it. `fileCase` dedupes on
- * date + lawId + appId, so one law break yields exactly one case per day.
+ * Two sources:
  *
- * The clerk only files. It never decides a verdict — that stays with the user
- * on the Court screen.
+ *  1. `checkDeviceLimit()` reads the shared policy the DeviceActivityMonitor
+ *     extension writes. iOS flips `blockingActive` the moment the protected
+ *     apps cross their daily limit, even with JailTime closed. That is the real
+ *     law break, so the clerk files a case for it.
+ *
+ *  2. `selfReport()` lets the user hand themselves in. Useful when they know
+ *     they slipped before the system threshold fired.
+ *
+ * The clerk never picks a verdict. That stays with the user on the Court screen.
  */
 
+import { IosScreenTimeService } from '@/src/services/screenTime/IosScreenTimeService';
 import { useCourtStore } from '@/src/store/useCourtStore';
-import type { AppSuspect, BlockCategory, FocusLaw } from '@/src/types/court';
+import type { FocusLaw } from '@/src/types/court';
+import { todayKey } from '@/src/utils/date';
 
-function blockCategory(suspect: AppSuspect): BlockCategory {
-  return suspect.blockCategory ?? 'distracting';
+/** The enabled law whose daily limit the native schedule is enforcing. */
+export function activeLimitLaw(laws: FocusLaw[]): FocusLaw | undefined {
+  const withLimits = laws.filter((law) => law.isEnabled && law.dailyLimitMinutes != null);
+  if (withLimits.length === 0) return laws.find((law) => law.isEnabled);
+  // The strictest limit is the one applyPolicy pushed to DeviceActivity.
+  return withLimits.sort(
+    (a, b) => (a.dailyLimitMinutes ?? 99) - (b.dailyLimitMinutes ?? 99),
+  )[0];
 }
 
-/** Apps the court is allowed to file against. */
-export function monitoredSuspects(suspects: AppSuspect[]) {
-  return suspects.filter((suspect) => {
-    const category = blockCategory(suspect);
-    if (category === 'alwaysAllowed') return false;
-    if (category === 'neverAllowed') return true;
-    return suspect.isSelected;
+/**
+ * Polls the shared policy for a real limit breach and files a case for it.
+ * Returns the case id when one is opened or already on file.
+ */
+export async function checkDeviceLimit(): Promise<string | undefined> {
+  const state = useCourtStore.getState();
+  if (!state.enforcementEnabled) return undefined;
+
+  const policy = await IosScreenTimeService.getPolicyState();
+  if (!policy.hasSelection || !policy.blockingActive) return undefined;
+
+  const law = activeLimitLaw(state.laws);
+  if (!law) return undefined;
+
+  return useCourtStore.getState().fileCase({
+    lawId: law.id,
+    source: 'deviceLimit',
+    dedupeKey: `limit-${law.id}`,
+    title: `${law.shortName} broken`,
+    evidenceLine: `Your protected apps passed their ${policy.dailyLimitMinutes} minute daily limit. iOS shielded them at the threshold.`,
   });
 }
 
-/** The enabled law that governs an app, most specific first. */
-export function governingLaw(laws: FocusLaw[], suspect: AppSuspect): FocusLaw | undefined {
-  const enabled = laws.filter((law) => law.isEnabled);
-  return (
-    enabled.find((law) => law.appIds?.includes(suspect.id)) ??
-    enabled.find((law) => law.category === suspect.category) ??
-    enabled.find((law) => law.category === 'all')
-  );
-}
-
 /**
- * Files a case for every monitored app that is over its governing law's daily
- * limit. Returns the ids of any cases created or already on file.
+ * Files a case because the user reported breaking a law themselves.
+ * Deduped per law per day, same as a device-detected breach.
  */
-export function evaluateNow(): string[] {
+export function selfReport(lawId: string): string | undefined {
   const state = useCourtStore.getState();
-  if (!state.enforcementEnabled) return [];
-
-  const filed: string[] = [];
-  for (const suspect of monitoredSuspects(state.suspects)) {
-    const law = governingLaw(state.laws, suspect);
-    if (!law) continue;
-
-    const limit = law.dailyLimitMinutes;
-    if (limit == null) continue;
-    if (suspect.dailyUsageMinutes < limit) continue;
-
-    const id = useCourtStore.getState().fileCase({
-      lawId: law.id,
-      appId: suspect.id,
-      evidenceLine: `${suspect.displayName} ran ${suspect.dailyUsageMinutes} min against a ${limit} min limit.`,
-    });
-    if (id) filed.push(id);
-  }
-  return filed;
-}
-
-/**
- * Files a case because the user tried to open a monitored app. This is the
- * interactive path and it works without native usage data.
- */
-export function fileForAppLaunch(appId: string): string | undefined {
-  const state = useCourtStore.getState();
-  const suspect = state.suspects.find((item) => item.id === appId);
-  if (!suspect) return undefined;
-
-  const law = governingLaw(state.laws, suspect);
+  const law = state.laws.find((item) => item.id === lawId);
   if (!law) return undefined;
 
   return state.fileCase({
     lawId: law.id,
-    appId: suspect.id,
-    evidenceLine: `${suspect.displayName} was opened while ${law.name} was in force.`,
+    source: 'selfReported',
+    dedupeKey: `self-${law.id}-${todayKey()}`,
+    title: `${law.shortName} broken`,
+    evidenceLine: `You reported breaking ${law.name}. The court respects an honest defendant.`,
   });
 }
 
-export const CourtClerk = { evaluateNow, fileForAppLaunch, governingLaw, monitoredSuspects };
+export const CourtClerk = { activeLimitLaw, checkDeviceLimit, selfReport };

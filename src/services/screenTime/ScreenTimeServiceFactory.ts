@@ -1,9 +1,11 @@
-import { Platform } from 'react-native';
 import { IosScreenTimeService } from '@/src/services/screenTime/IosScreenTimeService';
-import { MockScreenTimeService } from '@/src/services/screenTime/MockScreenTimeService';
 
+/**
+ * There is one screen-time implementation. The mock service was removed so that
+ * nothing but real, user-selected device apps can ever be placed under the
+ * court's authority. Outside a native build every call degrades to a safe no-op
+ * and reports "not available" rather than inventing data.
+ */
 export function getScreenTimeService() {
-  if (process.env.EXPO_PUBLIC_USE_MOCK_SCREEN_TIME === '1') return MockScreenTimeService;
-  if (Platform.OS === 'ios') return IosScreenTimeService;
-  return MockScreenTimeService;
+  return IosScreenTimeService;
 }

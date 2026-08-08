@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Svg, { G, Rect, Text as SvgText } from 'react-native-svg';
 
 import { AssetImage } from '@/src/components/AssetImage';
 import { CharacterBubble } from '@/src/components/CharacterBubble';
@@ -17,31 +16,7 @@ import { Dialogues } from '@/src/data/dialogues';
 import { COURT_RANKS, rankForPoints } from '@/src/data/ranks';
 import { REWARD_CARDS } from '@/src/data/rewards';
 import { useCourtStore } from '@/src/store/useCourtStore';
-
-function CrimeDistributionChart() {
-  const suspects = useCourtStore((state) => state.suspects);
-  const sorted = [...suspects]
-    .sort((a, b) => b.dailyUsageMinutes - a.dailyUsageMinutes)
-    .slice(0, 4);
-  const max = Math.max(20, ...sorted.map((item) => item.dailyUsageMinutes));
-
-  return (
-    <Svg width="100%" height={140} viewBox="0 0 320 140">
-      {sorted.map((item, index) => {
-        const height = Math.max(16, (item.dailyUsageMinutes / max) * 80);
-        const x = 24 + index * 74;
-        return (
-          <G key={item.id}>
-            <Rect x={x} y={100 - height} width={44} height={height} rx={10} fill={item.iconColor} opacity={0.85} />
-            <SvgText x={x + 22} y={122} fill="rgba(60,60,67,0.6)" fontSize={10} fontWeight="600" textAnchor="middle">
-              {item.displayName.split(' ')[0]}
-            </SvgText>
-          </G>
-        );
-      })}
-    </Svg>
-  );
-}
+import { formatMinutes } from '@/src/utils/format';
 
 function SectionToggle({
   title,
@@ -82,13 +57,18 @@ export default function ReportScreen() {
   const [paroleExpanded, setParoleExpanded] = useState(true);
 
   const profile = useCourtStore((state) => state.profile);
-  const suspects = useCourtStore((state) => state.suspects);
+  const appSelection = useCourtStore((state) => state.appSelection);
   const cases = useCourtStore((state) => state.cases);
   const paroleRecords = useCourtStore((state) => state.paroleRecords);
 
-  const worst = [...suspects].sort((a, b) => b.dailyUsageMinutes - a.dailyUsageMinutes)[0];
-  const worstName = worst?.displayName ?? 'your biggest distraction';
-  const worstUsage = worst?.dailyUsageMinutes || 47;
+  const protectedCount =
+    appSelection.applications + appSelection.categories + appSelection.webDomains;
+  const repeatLaw = [...cases]
+    .map((item) => ({ item, count: cases.filter((c) => c.lawId === item.lawId).length }))
+    .sort((a, b) => b.count - a.count)[0];
+  const focusServedMinutes = Math.round(
+    cases.reduce((sum, item) => sum + item.focusServedSeconds, 0) / 60,
+  );
   const paroleChance = Math.min(96, 34 + profile.parolePoints + profile.cleanRecordStreak * 6);
   const rank = rankForPoints(profile.parolePoints);
   const nextRank = COURT_RANKS.find((item) => item.minPoints > profile.parolePoints);
@@ -116,11 +96,17 @@ export default function ReportScreen() {
           line={Dialogues.owlJustice[1]}
         />
 
-        <CourtCard variant="red">
-          <Text style={styles.worstLabel}>WORST OFFENDER</Text>
-          <Text style={styles.worstTitle}>{worstName}</Text>
+        <CourtCard variant={repeatLaw ? 'red' : 'green'}>
+          <Text style={styles.worstLabel}>
+            {repeatLaw ? 'MOST BROKEN LAW' : 'CLEAN RECORD'}
+          </Text>
+          <Text style={styles.worstTitle}>
+            {repeatLaw ? repeatLaw.item.lawName : 'Nothing broken today'}
+          </Text>
           <Text style={styles.worstCopy}>
-            Exhibit A: {worstUsage} minutes vanished into {worstName.toLowerCase()}.
+            {repeatLaw
+              ? `Filed ${repeatLaw.count} time${repeatLaw.count === 1 ? '' : 's'} today. You have served ${formatMinutes(focusServedMinutes)} of focus.`
+              : `${protectedCount} selection${protectedCount === 1 ? '' : 's'} under court order and no case on the docket.`}
           </Text>
         </CourtCard>
 
@@ -146,47 +132,26 @@ export default function ReportScreen() {
                 </View>
                 <AssetImage assetKey="ASSET_OWL_JUSTICE_INSPECT" width={92} height={92} />
               </View>
-              <View style={styles.chartWrap}>
-                <CrimeDistributionChart />
-              </View>
             </CourtCard>
 
-            <EvidenceCard
-              exhibit="EXHIBIT A"
-              text={`${worstUsage} minutes vanished into ${worstName.toLowerCase()}.`}
-              severity={5}
-              assetKey="ASSET_EXHIBIT_A_FILE"
-            />
-            <EvidenceCard
-              exhibit="EXHIBIT B"
-              text={`You opened ${worstName.toLowerCase()} ${worst?.dailyOpenCount || 9} times after warning.`}
-              severity={4}
-              assetKey="ASSET_REPEAT_OFFENDER_APP"
-            />
-            <EvidenceCard
-              exhibit="EXHIBIT C"
-              text="Sleep was robbed at 2:34 AM."
-              severity={4}
-              assetKey="ASSET_EVIDENCE_LOST_SLEEP"
-            />
-            <EvidenceCard
-              exhibit="EXHIBIT D"
-              text="Your gym plan was delayed by scrolling."
-              severity={3}
-              assetKey="ASSET_EVIDENCE_SKIPPED_GOALS"
-            />
-            <EvidenceCard
-              exhibit="DANGER HOUR"
-              text="The worst hour is becoming obvious. The court recommends a lockdown window."
-              severity={3}
-              assetKey="ASSET_DANGER_HOURS_CLOCK"
-            />
-            <EvidenceCard
-              exhibit="DREAMS DELAYED"
-              text="Every tap can steal sleep, focus, and dreams."
-              severity={2}
-              assetKey="ASSET_DREAMS_DELAYED_BOARD"
-            />
+            {cases.map((item) => (
+              <EvidenceCard
+                key={item.id}
+                exhibit={item.source === 'deviceLimit' ? 'DETECTED BY IOS' : 'SELF-REPORTED'}
+                text={item.evidenceLine}
+                severity={item.severity}
+                assetKey="ASSET_EXHIBIT_A_FILE"
+              />
+            ))}
+
+            <CourtCard variant="orange">
+              <Text style={styles.infoTitle}>Per-app minutes are unavailable</Text>
+              <Text style={styles.infoCopy}>
+                Apple keeps your app identities private, and detailed usage breakdowns need a Device
+                Activity report extension that is not built yet. The court reports the cases it can
+                actually prove.
+              </Text>
+            </CourtCard>
 
             <CourtCard variant="purple">
               <View style={styles.reportRow}>
@@ -323,7 +288,6 @@ const styles = StyleSheet.create({
   infoTitle: { color: colors.label, fontSize: 20, fontWeight: '700', letterSpacing: -0.3 },
   infoCopy: { color: colors.labelSecondary, fontSize: 13, lineHeight: 18, fontWeight: '400' },
   list: { gap: 10 },
-  chartWrap: { marginTop: 8, borderRadius: radius.lg, backgroundColor: 'rgba(120,120,128,0.05)', overflow: 'hidden' },
   reportRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   reportText: { flex: 1, gap: 8 },
   rankRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },

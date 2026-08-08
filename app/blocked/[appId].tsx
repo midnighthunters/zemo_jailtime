@@ -7,22 +7,23 @@ import { CourtCard } from '@/src/components/CourtCard';
 import { StampBadge } from '@/src/components/StampBadge';
 import { colors } from '@/src/constants/theme';
 import { useCourtStore } from '@/src/store/useCourtStore';
-import { caseFocusRemainingSeconds, jailedCaseForApp } from '@/src/utils/docket';
+import { caseFocusRemainingSeconds, primaryJailedCase } from '@/src/utils/docket';
 import { formatMinutes } from '@/src/utils/format';
 
 /**
- * Native-block fallback. Shows the case holding this app and routes straight to
- * the focus timer that can release it.
+ * Deep-link target for the shield screen. iOS never tells us which app the user
+ * tapped, so this reports the case holding the selection and routes to the focus
+ * timer that clears it. The `appId` segment is accepted for link compatibility
+ * but is not treated as a real app identity.
  */
 export default function BlockedAppScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ appId: string }>();
-  const suspect = useCourtStore((state) =>
-    state.suspects.find((item) => item.id === params.appId),
-  );
-  const courtCase = useCourtStore((state) => jailedCaseForApp(state.cases, params.appId));
+  useLocalSearchParams<{ appId?: string }>();
 
-  const appName = suspect?.displayName ?? courtCase?.appName ?? 'This app';
+  const courtCase = useCourtStore((state) => primaryJailedCase(state.cases));
+  const enforcementEnabled = useCourtStore((state) => state.enforcementEnabled);
+  const locked = Boolean(courtCase) && enforcementEnabled;
+
   const owedMinutes = courtCase
     ? Math.max(1, Math.ceil(caseFocusRemainingSeconds(courtCase) / 60))
     : 0;
@@ -30,23 +31,23 @@ export default function BlockedAppScreen() {
   return (
     <CourtBackground>
       <View style={styles.content}>
-        <CourtCard variant={courtCase ? 'red' : 'green'}>
+        <CourtCard variant={locked ? 'red' : 'green'}>
           <View style={styles.center}>
             <AssetImage assetKey="ASSET_STRICT_MODE_LOCK" width={130} height={130} />
             <StampBadge
-              label={courtCase ? 'In custody' : 'Released'}
-              tone={courtCase ? 'danger' : 'success'}
+              label={locked ? 'In custody' : 'Released'}
+              tone={locked ? 'danger' : 'success'}
             />
             <Text style={styles.title}>
-              {courtCase ? `${appName} is in custody.` : `${appName} is open.`}
+              {locked ? 'Your apps are in custody.' : 'Your apps are open.'}
             </Text>
             <Text style={styles.copy}>
-              {courtCase
-                ? `${courtCase.lawName} was broken. Serve ${formatMinutes(owedMinutes)} of focus and the court releases it.`
-                : 'No case is holding this app. You are free to carry on.'}
+              {locked && courtCase
+                ? `${courtCase.lawName} was broken. Serve ${formatMinutes(owedMinutes)} of focus and the court releases them.`
+                : 'No case is holding your apps. You are free to carry on.'}
             </Text>
 
-            {courtCase ? (
+            {locked && courtCase ? (
               <CourtButton
                 title={`Start ${formatMinutes(owedMinutes)} Focus Timer`}
                 variant="primary"
