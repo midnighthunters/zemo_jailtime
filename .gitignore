@@ -1,7 +1,12 @@
 node_modules
 .expo/
 
-assets
+# Metro resolves these PNGs at bundle time, so the generated final assets must ship with every checkout.
+assets/*
+!assets/focus-court/
+!assets/focus-court/**
+!assets/onboarding/
+!assets/onboarding/**
 !src/services/assets/
 !src/services/assets/AssetBootstrapService.ts
 

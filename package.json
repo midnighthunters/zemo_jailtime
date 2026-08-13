@@ -5,6 +5,7 @@
   "main": "expo-router/entry",
   "scripts": {
     "assets:extract": "tsx scripts/extract-ui-assets.ts",
+    "assets:verify": "tsx scripts/verify-static-assets.ts",
     "prestart": "npm run assets:extract",
     "preios": "npm run assets:extract",
     "start": "expo start",

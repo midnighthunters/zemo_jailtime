@@ -52,6 +52,12 @@ jobs:
           paths:
             - node_modules
 
+      - run:
+          name: Verify JavaScript assets and types
+          command: |
+            npm run assets:verify
+            npm run typecheck
+
       - restore_cache:
           keys:
             - cocoapods-v2-{{ checksum "package-lock.json" }}-{{ checksum "ios/Podfile" }}
