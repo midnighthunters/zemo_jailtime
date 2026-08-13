@@ -18,7 +18,9 @@ permissions:
 jobs:
   build-ios:
     name: Archive and export IPA
-    runs-on: macos-15
+    # macos-15 defaults to Xcode 16.4 / iPhoneOS 18.5, which App Store
+    # Connect no longer accepts for uploads. macos-26 supplies Xcode 26.
+    runs-on: macos-26
     env:
       APP_SCHEME: JailTime
       APP_WORKSPACE: ios/JailTime.xcworkspace
@@ -36,15 +38,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Select and verify Xcode
+      - name: Select and verify Xcode 26
         shell: bash
         run: |
           set -euo pipefail
-          if [[ -d /Applications/Xcode_26.4.1.app ]]; then
-            sudo xcode-select --switch /Applications/Xcode_26.4.1.app/Contents/Developer
+          XCODE_PATH="/Applications/Xcode_26.4.1.app/Contents/Developer"
+          if [[ ! -d "$XCODE_PATH" ]]; then
+            echo "Required Xcode 26.4.1 is unavailable at $XCODE_PATH." >&2
+            ls -1 /Applications/Xcode*.app 2>/dev/null || true
+            exit 1
           fi
+          sudo xcode-select --switch "$XCODE_PATH"
           xcodebuild -version
           xcode-select -p
+          SDK_VERSION="$(xcrun --sdk iphoneos --show-sdk-version)"
+          SDK_MAJOR="${SDK_VERSION%%.*}"
+          echo "iPhoneOS SDK: $SDK_VERSION"
+          if [[ "$SDK_MAJOR" -lt 26 ]]; then
+            echo "App Store Connect requires iPhoneOS SDK 26 or later." >&2
+            exit 1
+          fi
 
       - name: Set up Node.js 22
         uses: actions/setup-node@v4
