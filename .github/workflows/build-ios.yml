@@ -157,7 +157,7 @@ jobs:
           set -euo pipefail
           ARCHIVE_PATH="$RUNNER_TEMP/JailTime.xcarchive"
           echo "ARCHIVE_PATH=$ARCHIVE_PATH" >> "$GITHUB_ENV"
-          xcodebuild clean archive \
+          xcodebuild -quiet clean archive \
             -workspace "$APP_WORKSPACE" \
             -scheme "$APP_SCHEME" \
             -configuration Release \
@@ -221,7 +221,7 @@ jobs:
           </plist>
           EOF
 
-          xcodebuild -exportArchive \
+          xcodebuild -quiet -exportArchive \
             -archivePath "$ARCHIVE_PATH" \
             -exportPath "$EXPORT_PATH" \
             -exportOptionsPlist "$PLIST_PATH"
