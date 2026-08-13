@@ -14,8 +14,8 @@ require Pod::Executable.execute_command('node', ['-p',
     {paths: [process.argv[1]]},
   )', __dir__]).strip
 
-# Expo SDK 54 requires iOS 15.1 minimum (RN 0.81)
-platform :ios, '15.1'
+# JailTime requires iOS 16.0 for named ManagedSettings stores.
+platform :ios, '16.0'
 prepare_react_native_project!
 
 linkage = ENV['USE_FRAMEWORKS']
