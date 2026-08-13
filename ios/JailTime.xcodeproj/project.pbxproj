@@ -12,6 +12,12 @@
 		C1A9E5D7428B6F103DC4A801 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C1A9E5D7428B6F103DC4A800 /* Images.xcassets */; };
 		A3B1C2D3E4F5A6B7C8D9E0F1 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A3B1C2D3E4F5A6B7C8D9E0F0 /* PrivacyInfo.xcprivacy */; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ED297161215061F000B7C4FE /* JavaScriptCore.framework */; };
+		FCA000000000000000000101 /* FocusCourtModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCA000000000000000000201 /* FocusCourtModule.swift */; };
+		FCA000000000000000000102 /* FocusCourtModuleBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = FCA000000000000000000202 /* FocusCourtModuleBridge.m */; };
+		FCA000000000000000000103 /* AppGroupStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCA000000000000000000203 /* AppGroupStorage.swift */; };
+		FCA000000000000000000104 /* FamilyControls.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FCA000000000000000000204 /* FamilyControls.framework */; };
+		FCA000000000000000000105 /* DeviceActivity.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FCA000000000000000000205 /* DeviceActivity.framework */; };
+		FCA000000000000000000106 /* ManagedSettings.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FCA000000000000000000206 /* ManagedSettings.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -23,6 +29,12 @@
 		ED297161215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		DD2B8E0A23C6F8BB00EC62FD /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = JailTime/Info.plist; sourceTree = "<group>"; };
 		A4C2D3E4F5B6C7D8E9F0A1B2 /* JailTime.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = JailTime.entitlements; path = JailTime/JailTime.entitlements; sourceTree = "<group>"; };
+		FCA000000000000000000201 /* FocusCourtModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FocusCourtModule.swift; path = JailTime/FocusCourtModule.swift; sourceTree = "<group>"; };
+		FCA000000000000000000202 /* FocusCourtModuleBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = FocusCourtModuleBridge.m; path = JailTime/FocusCourtModuleBridge.m; sourceTree = "<group>"; };
+		FCA000000000000000000203 /* AppGroupStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppGroupStorage.swift; path = JailTime/AppGroupStorage.swift; sourceTree = "<group>"; };
+		FCA000000000000000000204 /* FamilyControls.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FamilyControls.framework; path = System/Library/Frameworks/FamilyControls.framework; sourceTree = SDKROOT; };
+		FCA000000000000000000205 /* DeviceActivity.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = DeviceActivity.framework; path = System/Library/Frameworks/DeviceActivity.framework; sourceTree = SDKROOT; };
+		FCA000000000000000000206 /* ManagedSettings.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ManagedSettings.framework; path = System/Library/Frameworks/ManagedSettings.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -31,6 +43,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework in Frameworks */,
+				FCA000000000000000000104 /* FamilyControls.framework in Frameworks */,
+				FCA000000000000000000105 /* DeviceActivity.framework in Frameworks */,
+				FCA000000000000000000106 /* ManagedSettings.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -41,6 +56,9 @@
 			isa = PBXGroup;
 			children = (
 				13B07FB01A68108700A75B9A /* AppDelegate.swift */,
+				FCA000000000000000000201 /* FocusCourtModule.swift */,
+				FCA000000000000000000202 /* FocusCourtModuleBridge.m */,
+				FCA000000000000000000203 /* AppGroupStorage.swift */,
 				DD2B8E0A23C6F8BB00EC62FD /* Info.plist */,
 				C1A9E5D7428B6F103DC4A800 /* Images.xcassets */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
@@ -54,6 +72,9 @@
 			isa = PBXGroup;
 			children = (
 				ED297161215061F000B7C4FE /* JavaScriptCore.framework */,
+				FCA000000000000000000204 /* FamilyControls.framework */,
+				FCA000000000000000000205 /* DeviceActivity.framework */,
+				FCA000000000000000000206 /* ManagedSettings.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -189,6 +210,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				13B07FBC1A68108700A75B9A /* AppDelegate.swift in Sources */,
+				FCA000000000000000000101 /* FocusCourtModule.swift in Sources */,
+				FCA000000000000000000102 /* FocusCourtModuleBridge.m in Sources */,
+				FCA000000000000000000103 /* AppGroupStorage.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
