@@ -22,26 +22,41 @@ import { colors } from '@/src/constants/theme';
 // Keep the splash screen visible while initial state loads.
 SplashScreen.preventAutoHideAsync();
 
-// ── Startup Error Boundary ─────────────────────────────────────────────────
-// Catches any render-time JS error during startup and shows a readable message
-// instead of a blank crash. This is the last line of defence — the crash guard
-// in bootstrap/crashGuard.ts handles pre-render fatal errors.
-class StartupErrorBoundary extends Component<
-  { children: ReactNode },
-  { hasError: boolean; message: string }
-> {
-  state = { hasError: false, message: '' };
+// ── App Error Boundary ─────────────────────────────────────────────────────
+// Catches any render-time JS error and shows a readable message instead of a
+// blank crash. This wraps the whole navigator, so it covers every screen for
+// the entire session, not just startup. The crash guard in
+// bootstrap/crashGuard.ts handles pre-render fatal errors.
+//
+// `getDerivedStateFromError` swaps in the fallback during the render phase, and
+// the component stack is kept because it is the only thing that names the
+// component behind a render loop ("Maximum update depth exceeded").
+type AppErrorState = { hasError: boolean; message: string; componentStack: string };
 
-  componentDidCatch(error: Error) {
-    this.setState({ hasError: true, message: error.message });
+class AppErrorBoundary extends Component<{ children: ReactNode }, AppErrorState> {
+  state: AppErrorState = { hasError: false, message: '', componentStack: '' };
+
+  static getDerivedStateFromError(error: Error): Partial<AppErrorState> {
+    return { hasError: true, message: error.message };
+  }
+
+  componentDidCatch(error: Error, errorInfo: { componentStack?: string | null }) {
+    const componentStack = errorInfo.componentStack ?? '';
+    console.error('[AppErrorBoundary]', error, componentStack);
+    this.setState({ componentStack });
   }
 
   render() {
     if (this.state.hasError) {
       return (
         <View style={styles.errorScreen}>
-          <Text style={styles.errorTitle}>Startup failed</Text>
+          <Text style={styles.errorTitle}>Something broke</Text>
           <Text style={styles.errorMessage}>{this.state.message}</Text>
+          {this.state.componentStack ? (
+            <Text style={styles.errorStack} numberOfLines={12}>
+              {this.state.componentStack.trim()}
+            </Text>
+          ) : null}
         </View>
       );
     }
@@ -96,7 +111,7 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <StartupErrorBoundary>
+    <AppErrorBoundary>
       <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
 
         <StatusBar style="dark" />
@@ -122,7 +137,7 @@ export default function RootLayout() {
           <Stack.Screen name="modals/weekly-report" options={{ presentation: 'modal' }} />
         </Stack>
       </GestureHandlerRootView>
-    </StartupErrorBoundary>
+    </AppErrorBoundary>
   );
 }
 
@@ -144,5 +159,13 @@ const styles = StyleSheet.create({
     color: colors.red,
     fontSize: 14,
     textAlign: 'center',
+  },
+  errorStack: {
+    color: colors.labelSecondary,
+    fontSize: 11,
+    lineHeight: 15,
+    marginTop: 16,
+    textAlign: 'left',
+    alignSelf: 'stretch',
   },
 });

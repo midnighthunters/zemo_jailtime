@@ -5,8 +5,18 @@ import { FOCUS_GOAL_OPTIONS, getOnboardingStep } from '@/src/data/onboarding';
 import { useCourtStore } from '@/src/store/useCourtStore';
 import type { FocusGoal } from '@/src/types/court';
 
+/**
+ * Stable fallback for a profile saved before focus goals existed.
+ *
+ * This must be a module constant. Zustand compares selector results with
+ * `Object.is`, so returning a fresh `[]` from the selector hands React a new
+ * snapshot on every render and loops until it throws "Maximum update depth
+ * exceeded".
+ */
+const NO_GOALS: FocusGoal[] = [];
+
 export default function GoalsOnboarding() {
-  const focusGoals = useCourtStore((state) => state.profile.focusGoals ?? []);
+  const focusGoals = useCourtStore((state) => state.profile.focusGoals ?? NO_GOALS);
   const toggleFocusGoal = useCourtStore((state) => state.toggleFocusGoal);
 
   return (

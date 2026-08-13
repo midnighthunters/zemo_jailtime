@@ -18,6 +18,9 @@ const initialProfile: UserProfile = {
   dangerWindow: 'late_night',
   dailyScreenGoalMinutes: 120,
   dreams: ['sleep', 'study', 'fitness'],
+  // Always an array so selectors never need a fresh `?? []` fallback, which
+  // would break Zustand's reference equality check and loop React.
+  focusGoals: [],
   bedtime: '22:30',
   wakeTime: '06:30',
   strictness: 'balanced',
