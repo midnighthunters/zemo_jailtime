@@ -7,6 +7,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   name: 'JailTime: Focus Court',
   slug: 'jailtime-focus-court',
   version: '1.0.0',
+  icon: './assets/icon.png',
   platforms: ['ios'],
   orientation: 'portrait',
   scheme: 'zemolabsjailtime',
@@ -34,6 +35,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       NSUserTrackingUsageDescription:
         'Allow JailTime to track your activity across other companies\u2019 apps and websites to measure how digital distractions impact your focus goals.',
       UILaunchStoryboardName: 'LaunchScreen',
+      CFBundleIconName: 'AppIcon',
     },
     entitlements: {
       'com.apple.developer.family-controls': true,

@@ -132,6 +132,18 @@ jobs:
             cat ios/.xcode.env.local
 
       - run:
+          name: Verify iOS build toolchain
+          command: |
+            xcodebuild -version
+            SDK_VERSION="$(xcrun --sdk iphoneos --show-sdk-version)"
+            SDK_MAJOR="${SDK_VERSION%%.*}"
+            echo "iPhoneOS SDK: $SDK_VERSION"
+            if [ "$SDK_MAJOR" -lt 26 ]; then
+              echo "ERROR: App Store Connect requires the iOS 26 SDK or later; found $SDK_VERSION."
+              exit 1
+            fi
+
+      - run:
           name: Build iOS archive
           command: |
             ARCHIVE_PATH=$TMPDIR/JailTime.xcarchive
@@ -146,6 +158,19 @@ jobs:
               DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
               PROVISIONING_PROFILE_SPECIFIER="$IOS_PROVISIONING_PROFILE_NAME" \
               CODE_SIGN_IDENTITY="Apple Distribution"
+
+      - run:
+          name: Verify app icon embedded in archive
+          command: |
+            source $BASH_ENV
+            SOURCE_ICON=ios/JailTime/Images.xcassets/AppIcon.appiconset/AppIcon-60x60@2x.png
+            APP_PATH="$ARCHIVE_PATH/Products/Applications/JailTime.app"
+            INFO_PLIST="$APP_PATH/Info.plist"
+            test -f "$SOURCE_ICON"
+            test "$(sips -g pixelWidth -g pixelHeight "$SOURCE_ICON" | awk '/pixel/ { print $2 }' | tr '\n' ' ')" = "120 120 "
+            test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIconName' "$INFO_PLIST")" = "AppIcon"
+            test -f "$APP_PATH/Assets.car"
+            echo "AppIcon is configured and compiled into the archive."
 
       - run:
           name: Verify JS bundle embedded in archive
