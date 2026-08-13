@@ -169,9 +169,9 @@ class FocusCourtModule: NSObject {
         // Event: when accumulated usage of selected apps hits the limit
         let threshold = DateComponents(minute: dailyLimitMinutes)
         let event = DeviceActivityEvent(
-            applications: selection.applications,
-            categories: selection.categories,
-            webDomains: selection.webDomains,
+            applications: selection.applicationTokens,
+            categories: selection.categoryTokens,
+            webDomains: selection.webDomainTokens,
             threshold: threshold
         )
 
@@ -213,9 +213,9 @@ class FocusCourtModule: NSObject {
         }
 
         // Shield the selected apps
-        store.shield.applications = selection.applications
-        store.shield.applicationCategories = .specific(selection.categories)
-        store.shield.webDomains = selection.webDomains
+        store.shield.applications = selection.applicationTokens
+        store.shield.applicationCategories = .specific(selection.categoryTokens)
+        store.shield.webDomains = selection.webDomainTokens
 
         // Persist state
         var policy = AppGroupStorage.loadPolicy()
