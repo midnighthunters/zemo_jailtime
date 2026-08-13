@@ -18,7 +18,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-router',
     'expo-notifications',
     'expo-asset',
-    'expo-tracking-transparency',
   ],
   experiments: {
     typedRoutes: false,
@@ -32,8 +31,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         'JailTime sends focus warnings, bedtime notices, and parole reminders.',
       NSFamilyControlsUsageDescription:
         'JailTime uses Screen Time authorization to let you select and shield distracting apps.',
-      NSUserTrackingUsageDescription:
-        'Allow JailTime to track your activity across other companies\u2019 apps and websites to measure how digital distractions impact your focus goals.',
       UILaunchStoryboardName: 'LaunchScreen',
       CFBundleIconName: 'AppIcon',
     },

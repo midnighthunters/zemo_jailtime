@@ -40,7 +40,7 @@ Redesign all 36 route-backed screens of JailTime: Focus Court into one premium, 
 - Migrate evidence, law, suspect, blocked-app, distraction, progress, parole, sentence, permission, character, parchment, and premium-gate components.
 - Preserve every public prop, callback, and data path used by route files.
 
-### 3. Onboarding — 16 screens
+### 3. Onboarding — 15 screens
 
 - Apply one light progress/hero/form/CTA hierarchy to all onboarding routes.
 - Keep illustrations inside bounded neutral media stages.

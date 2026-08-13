@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 
-JailTime: Focus Court is an Expo Router iOS app. Route files live in `app/`: onboarding is a 16-step flow, `(tabs)` contains three visible tabs plus three hidden deep-link routes, `modals` contains transient workflows, and `blocked/[appId].tsx` is the native-block fallback screen. See `docs/SCREEN_INVENTORY.md` before changing navigation. Persistent product state is in `src/store/useCourtStore.ts`; premium state is in `src/store/usePremiumStore.ts`. Domain fixtures and copy are under `src/data`, reusable UI is under `src/components`, and device integrations are under `src/services`. The `ios/` directory contains the app target plus FamilyControls, DeviceActivity, ManagedSettings, and App Group native targets.
+JailTime: Focus Court is an Expo Router iOS app. Route files live in `app/`: onboarding is a 15-step flow, `(tabs)` contains three visible tabs plus three hidden deep-link routes, `modals` contains transient workflows, and `blocked/[appId].tsx` is the native-block fallback screen. See `docs/SCREEN_INVENTORY.md` before changing navigation. Persistent product state is in `src/store/useCourtStore.ts`; premium state is in `src/store/usePremiumStore.ts`. Domain fixtures and copy are under `src/data`, reusable UI is under `src/components`, and device integrations are under `src/services`. The `ios/` directory contains the app target plus FamilyControls, DeviceActivity, ManagedSettings, and App Group native targets.
 
 ## Build, Test, and Development Commands
 

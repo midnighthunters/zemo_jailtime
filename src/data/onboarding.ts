@@ -58,15 +58,6 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     cta: 'Continue',
   },
   {
-    id: 'tracking',
-    route: '/onboarding/tracking',
-    title: 'Allow Activity Tracking',
-    subtitle: 'JailTime needs to see how your time is spent across apps to build your focus case.',
-    artKey: 'EVIDENCE_BRUTAL',
-    assetKeys: ['ASSET_COURT_AUTHORITY_PERMISSION', 'ASSET_EVIDENCE_BOARD_SCREEN_TIME'],
-    cta: 'Continue',
-  },
-  {
     id: 'profile',
     route: '/onboarding/profile',
     title: 'Open Your Case File',

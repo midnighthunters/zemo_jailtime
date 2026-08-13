@@ -4,16 +4,16 @@ Audited 2026-08-08 from the Expo Router file tree and route implementations.
 
 ## Count
 
-There are **36 route-backed screens**. This count excludes `_layout.tsx` files because they configure navigation rather than render a standalone screen.
+There are **32 route-backed screens**. This count excludes `_layout.tsx` files because they configure navigation rather than render a standalone screen.
 
 | Group | Count | Notes |
 | --- | ---: | --- |
 | Entry and blocked-app routes | 2 | `/` is a hydration/redirect gate; `blocked/[appId]` is the shield deep-link target |
 | Report route | 1 | Dedicated evidence, offender, parole, and rewards report |
-| Onboarding | 16 | Ordered by `src/data/onboarding.ts` |
+| Onboarding | 15 | Ordered by `src/data/onboarding.ts` |
 | Tab routes | 5 | 2 visible tabs and 3 hidden deep-link routes |
 | Modal routes | 9 | Presented as stack modals |
-| **Total** | **33** | |
+| **Total** | **32** | |
 
 Removed routes and why:
 
@@ -37,7 +37,7 @@ Removed routes and why:
 | `/` | Waits for the persisted Zustand store to hydrate, then redirects new users to `/onboarding` or returning users to `/(tabs)/courtroom`. |
 | `/blocked/[appId]` | Shield deep-link target. Reports the case holding the protected selection, shows the focus time still owed, and starts that case's focus timer. The `appId` segment is kept for link compatibility only — iOS never reveals which app was tapped. |
 
-## Onboarding screens (16)
+## Onboarding screens (15)
 
 The standard `OnboardingScene` shows the briefing number, artwork, copy, and next CTA. Each step writes into `useCourtStore`; the final Parole step completes onboarding and replaces the stack with the Courtroom tab.
 
@@ -48,17 +48,16 @@ The standard `OnboardingScene` shows the briefing number, artwork, copy, and nex
 | 3 | `/onboarding/age` | Collects the user’s age range. |
 | 4 | `/onboarding/role` | Collects the user role, such as student, technologist, parent, or creative. |
 | 5 | `/onboarding/screentime-intake` | Collects the user’s estimated average daily screen-time band. |
-| 6 | `/onboarding/tracking` | Requests iOS App Tracking Transparency permission, with an option to continue without it. |
-| 7 | `/onboarding/profile` | Collects an optional defendant name and the user’s main reason for wanting better focus. |
-| 8 | `/onboarding/permissions` | Explains the evidence model and shows a compact iOS permission checklist. |
-| 9 | `/onboarding/screen-time-permission` | Requests iOS FamilyControls/Screen Time authorization and marks screen-time, shielding, and monitoring status. |
-| 10 | `/onboarding/notifications-permission` | Requests notifications for limit warnings, bedtime notices, reports, and parole updates. |
-| 11 | `/onboarding/dreams` | Collects the life areas screen time is taking away from, using multi-select chips. |
-| 12 | `/onboarding/routine` | Sets bedtime, wake time, daily screen target, and danger window. |
-| 13 | `/onboarding/suspects` | Opens Apple's `FamilyActivityPicker` so the user selects real apps on this device, and shows the resulting count. Skippable. |
-| 14 | `/onboarding/style` | Sets court strictness and courtroom humor; Supreme Court strictness is premium-gated. |
-| 15 | `/onboarding/laws` | Lets the user enable the first focus laws; premium laws open the paywall. |
-| 16 | `/onboarding/parole` | Explains the focus-to-parole loop and completes onboarding on the final CTA. |
+| 6 | `/onboarding/profile` | Collects an optional defendant name and the user’s main reason for wanting better focus. |
+| 7 | `/onboarding/permissions` | Explains the evidence model and shows a compact iOS permission checklist. |
+| 8 | `/onboarding/screen-time-permission` | Requests iOS FamilyControls/Screen Time authorization and marks screen-time, shielding, and monitoring status. |
+| 9 | `/onboarding/notifications-permission` | Requests notifications for limit warnings, bedtime notices, reports, and parole updates. |
+| 10 | `/onboarding/dreams` | Collects the life areas screen time is taking away from, using multi-select chips. |
+| 11 | `/onboarding/routine` | Sets bedtime, wake time, daily screen target, and danger window. |
+| 12 | `/onboarding/suspects` | Opens Apple's `FamilyActivityPicker` so the user selects real apps on this device, and shows the resulting count. Skippable. |
+| 13 | `/onboarding/style` | Sets court strictness and courtroom humor; Supreme Court strictness is premium-gated. |
+| 14 | `/onboarding/laws` | Lets the user enable the first focus laws; premium laws open the paywall. |
+| 15 | `/onboarding/parole` | Explains the focus-to-parole loop and completes onboarding on the final CTA. |
 
 ## Tab routes (5)
 
