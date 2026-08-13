@@ -6,7 +6,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'JailTime: Focus Court',
   slug: 'jailtime-focus-court',
-  version: '1.0.0',
+  version: '1.0.1',
   icon: './assets/icon.png',
   platforms: ['ios'],
   orientation: 'portrait',
